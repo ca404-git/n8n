@@ -1,4 +1,3 @@
-import isEmpty from 'lodash/isEmpty';
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -8,7 +7,18 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+
+import isEmpty from 'lodash/isEmpty';
+
+import {
+	adjustChargeFields,
+	adjustCustomerFields,
+	adjustMetadata,
+	handleListing,
+	loadResource,
+	stripeApiRequest,
+} from './helpers';
 
 import {
 	balanceOperations,
@@ -25,14 +35,6 @@ import {
 	tokenFields,
 	tokenOperations,
 } from './descriptions';
-import {
-	adjustChargeFields,
-	adjustCustomerFields,
-	adjustMetadata,
-	handleListing,
-	loadResource,
-	stripeApiRequest,
-} from './helpers';
 
 export class Stripe implements INodeType {
 	description: INodeTypeDescription = {
@@ -46,9 +48,8 @@ export class Stripe implements INodeType {
 		defaults: {
 			name: 'Stripe',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'stripeApi',

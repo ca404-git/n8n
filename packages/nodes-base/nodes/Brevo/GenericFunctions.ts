@@ -18,17 +18,17 @@ export namespace BrevoNode {
 	type BBCEmail = { bbc: Email[] };
 	type ValidatedEmail = ToEmail | SenderEmail | CCEmail | BBCEmail;
 
-	const OVERRIDE_MAP_VALUES = {
-		CATEGORY: 'category',
-		NORMAL: 'boolean',
-		TRANSACTIONAL: 'id',
-	} as const;
+	const enum OVERRIDE_MAP_VALUES {
+		CATEGORY = 'category',
+		NORMAL = 'boolean',
+		TRANSACTIONAL = 'id',
+	}
 
-	const OVERRIDE_MAP_TYPE = {
-		CATEGORY: 'category',
-		NORMAL: 'normal',
-		TRANSACTIONAL: 'transactional',
-	} as const;
+	const enum OVERRIDE_MAP_TYPE {
+		CATEGORY = 'category',
+		NORMAL = 'normal',
+		TRANSACTIONAL = 'transactional',
+	}
 
 	export const INTERCEPTORS = new Map<string, (body: JsonObject) => void>([
 		[

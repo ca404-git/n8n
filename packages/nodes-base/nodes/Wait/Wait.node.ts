@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import type {
 	IExecuteFunctions,
 	INodeExecutionData,
@@ -6,24 +7,8 @@ import type {
 	IDisplayOptions,
 	IWebhookFunctions,
 } from 'n8n-workflow';
-import {
-	NodeConnectionTypes,
-	WAIT_INDEFINITELY,
-	FORM_TRIGGER_NODE_TYPE,
-	tryToParseDateTime,
-	NodeOperationError,
-} from 'n8n-workflow';
+import { WAIT_TIME_UNLIMITED, NodeOperationError, NodeConnectionType } from 'n8n-workflow';
 
-import { updateDisplayOptions } from '../../utils/utilities';
-import {
-	formDescription,
-	formFields,
-	respondWithOptions,
-	formRespondMode,
-	formTitle,
-	appendAttributionToForm,
-} from '../Form/common.descriptions';
-import { formWebhook } from '../Form/utils';
 import {
 	authenticationProperty,
 	credentialsProperty,
@@ -35,6 +20,17 @@ import {
 	responseDataProperty,
 	responseModeProperty,
 } from '../Webhook/description';
+
+import {
+	formDescription,
+	formFields,
+	respondWithOptions,
+	formRespondMode,
+	formTitle,
+	appendAttributionToForm,
+} from '../Form/common.descriptions';
+import { formWebhook } from '../Form/utils';
+import { updateDisplayOptions } from '../../utils/utilities';
 import { Webhook } from '../Webhook/Webhook.node';
 
 const toWaitAmount: INodeProperties = {
@@ -82,7 +78,7 @@ const waitTimeProperties: INodeProperties[] = [
 		type: 'boolean',
 		default: false,
 		description:
-			'Whether to limit the time this node should wait for a user response before execution resumes',
+			'Whether the workflow will automatically resume execution after the specified limit type',
 		displayOptions: {
 			show: {
 				resume: ['webhook', 'form'],
@@ -239,8 +235,8 @@ export class Wait extends Webhook {
 			name: 'Wait',
 			color: '#804050',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: credentialsProperty(this.authPropertyName),
 		webhooks: [
 			{
@@ -256,7 +252,7 @@ export class Wait extends Webhook {
 				path: webhookPath,
 				restartWebhook: true,
 				isFullPath: true,
-				nodeType: 'form',
+				isForm: true,
 			},
 			{
 				name: 'default',
@@ -266,7 +262,7 @@ export class Wait extends Webhook {
 				path: webhookPath,
 				restartWebhook: true,
 				isFullPath: true,
-				nodeType: 'form',
+				isForm: true,
 			},
 		],
 		properties: [
@@ -464,25 +460,7 @@ export class Wait extends Webhook {
 		const resume = context.getNodeParameter('resume', 0) as string;
 
 		if (['webhook', 'form'].includes(resume)) {
-			let hasFormTrigger = false;
-
-			if (resume === 'form') {
-				const parentNodes = context.getParentNodes(context.getNode().name);
-				hasFormTrigger = parentNodes.some((node) => node.type === FORM_TRIGGER_NODE_TYPE);
-			}
-
-			const returnData = await this.configureAndPutToWait(context);
-
-			if (resume === 'form' && hasFormTrigger) {
-				context.sendResponse({
-					headers: {
-						location: context.evaluateExpression('{{ $execution.resumeFormUrl }}', 0),
-					},
-					statusCode: 307,
-				});
-			}
-
-			return returnData;
+			return await this.configureAndPutToWait(context);
 		}
 
 		let waitTill: Date;
@@ -506,17 +484,20 @@ export class Wait extends Webhook {
 			// a number of seconds added to the current timestamp
 			waitTill = new Date(new Date().getTime() + waitAmount);
 		} else {
-			try {
-				const dateTimeStrRaw = context.getNodeParameter('dateTime', 0);
-				const parsedDateTime = tryToParseDateTime(dateTimeStrRaw, context.getTimezone());
+			const dateTimeStr = context.getNodeParameter('dateTime', 0) as string;
 
-				waitTill = parsedDateTime.toUTC().toJSDate();
-			} catch (e) {
+			if (isNaN(Date.parse(dateTimeStr))) {
 				throw new NodeOperationError(
 					context.getNode(),
 					'[Wait node] Cannot put execution to wait because `dateTime` parameter is not a valid date. Please pick a specific date and time to wait until.',
 				);
 			}
+
+			waitTill = DateTime.fromFormat(dateTimeStr, "yyyy-MM-dd'T'HH:mm:ss", {
+				zone: context.getTimezone(),
+			})
+				.toUTC()
+				.toJSDate();
 		}
 
 		const waitValue = Math.max(waitTill.getTime() - new Date().getTime(), 0);
@@ -535,7 +516,7 @@ export class Wait extends Webhook {
 	}
 
 	private async configureAndPutToWait(context: IExecuteFunctions) {
-		let waitTill = WAIT_INDEFINITELY;
+		let waitTill = new Date(WAIT_TIME_UNLIMITED);
 		const limitWaitTime = context.getNodeParameter('limitWaitTime', 0);
 
 		if (limitWaitTime === true) {

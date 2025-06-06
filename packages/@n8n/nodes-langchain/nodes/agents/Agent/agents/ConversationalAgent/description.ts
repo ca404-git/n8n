@@ -1,5 +1,4 @@
 import type { INodeProperties } from 'n8n-workflow';
-
 import { SYSTEM_MESSAGE, HUMAN_MESSAGE } from './prompt';
 
 export const conversationalAgentProperties: INodeProperties[] = [

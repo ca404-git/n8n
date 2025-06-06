@@ -7,14 +7,6 @@ import { MfaSetupModal } from './modals/mfa-setup-modal';
 const changePasswordModal = new ChangePasswordModal();
 const mfaSetupModal = new MfaSetupModal();
 
-/**
- * @deprecated Use functional composables from @composables instead.
- * If a composable doesn't exist for your use case, please create a new one in:
- * cypress/composables
- *
- * This class-based approach is being phased out in favor of more modular functional composables.
- * Each getter and action in this class should be moved to individual composable functions.
- */
 export class PersonalSettingsPage extends BasePage {
 	url = '/settings/personal';
 
@@ -30,8 +22,6 @@ export class PersonalSettingsPage extends BasePage {
 		saveSettingsButton: () => cy.getByTestId('save-settings-button'),
 		enableMfaButton: () => cy.getByTestId('enable-mfa-button'),
 		disableMfaButton: () => cy.getByTestId('disable-mfa-button'),
-		mfaCodeOrMfaRecoveryCodeInput: () => cy.getByTestId('mfa-code-or-recovery-code-input'),
-		mfaSaveButton: () => cy.getByTestId('mfa-save-button'),
 		themeSelector: () => cy.getByTestId('theme-select'),
 		selectOptionsVisible: () => cy.get('.el-select-dropdown:visible .el-select-dropdown__item'),
 	};
@@ -93,11 +83,9 @@ export class PersonalSettingsPage extends BasePage {
 				mfaSetupModal.getters.saveButton().click();
 			});
 		},
-		disableMfa: (mfaCodeOrRecoveryCode: string) => {
+		disableMfa: () => {
 			cy.visit(this.url);
 			this.getters.disableMfaButton().click();
-			this.getters.mfaCodeOrMfaRecoveryCodeInput().type(mfaCodeOrRecoveryCode);
-			this.getters.mfaSaveButton().click();
 		},
 	};
 }

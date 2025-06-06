@@ -1,4 +1,3 @@
-import get from 'lodash/get';
 import type {
 	IExecuteFunctions,
 	ILoadOptionsFunctions,
@@ -9,6 +8,8 @@ import type {
 	IRequestOptions,
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
+
+import get from 'lodash/get';
 
 export async function mondayComApiRequest(
 	this: IExecuteFunctions | IWebhookFunctions | IHookFunctions | ILoadOptionsFunctions,

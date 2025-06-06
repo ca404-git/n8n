@@ -7,7 +7,6 @@ import type {
 	ResourceMapperFields,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-
 import { apiRequest } from '../transport';
 
 type AirtableSchema = {

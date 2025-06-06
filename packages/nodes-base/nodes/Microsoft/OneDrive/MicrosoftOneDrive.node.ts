@@ -1,4 +1,3 @@
-import { IncomingMessage } from 'http';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -7,11 +6,13 @@ import type {
 	INodeTypeDescription,
 	JsonObject,
 } from 'n8n-workflow';
-import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+
+import { microsoftApiRequest, microsoftApiRequestAllItems } from './GenericFunctions';
 
 import { fileFields, fileOperations } from './FileDescription';
+
 import { folderFields, folderOperations } from './FolderDescription';
-import { microsoftApiRequest, microsoftApiRequestAllItems } from './GenericFunctions';
 
 export class MicrosoftOneDrive implements INodeType {
 	description: INodeTypeDescription = {
@@ -25,9 +26,8 @@ export class MicrosoftOneDrive implements INodeType {
 		defaults: {
 			name: 'Microsoft OneDrive',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'microsoftOneDriveOAuth2Api',
@@ -106,7 +106,6 @@ export class MicrosoftOneDrive implements INodeType {
 						responseData = await microsoftApiRequest.call(this, 'GET', `/drive/items/${fileId}`);
 
 						const fileName = responseData.name;
-						const downloadUrl = responseData['@microsoft.graph.downloadUrl'];
 
 						if (responseData.file === undefined) {
 							throw new NodeApiError(this.getNode(), responseData as JsonObject, {
@@ -119,28 +118,16 @@ export class MicrosoftOneDrive implements INodeType {
 							mimeType = responseData.file.mimeType;
 						}
 
-						try {
-							responseData = await microsoftApiRequest.call(
-								this,
-								'GET',
-								`/drive/items/${fileId}/content`,
-								{},
-								{},
-								undefined,
-								{},
-								{ encoding: null, resolveWithFullResponse: true },
-							);
-						} catch (error) {
-							if (downloadUrl) {
-								responseData = await this.helpers.httpRequest({
-									method: 'GET',
-									url: downloadUrl,
-									returnFullResponse: true,
-									encoding: 'arraybuffer',
-									json: false,
-								});
-							}
-						}
+						responseData = await microsoftApiRequest.call(
+							this,
+							'GET',
+							`/drive/items/${fileId}/content`,
+							{},
+							{},
+							undefined,
+							{},
+							{ encoding: null, resolveWithFullResponse: true },
+						);
 
 						const newItem: INodeExecutionData = {
 							json: items[i].json,
@@ -160,15 +147,10 @@ export class MicrosoftOneDrive implements INodeType {
 
 						items[i] = newItem;
 
-						let data;
-						if (responseData?.body instanceof IncomingMessage) {
-							data = responseData.body;
-						} else {
-							data = Buffer.from(responseData.body as Buffer);
-						}
+						const data = Buffer.from(responseData.body as Buffer);
 
 						items[i].binary![dataPropertyNameDownload] = await this.helpers.prepareBinaryData(
-							data,
+							data as unknown as Buffer,
 							fileName as string,
 							mimeType,
 						);

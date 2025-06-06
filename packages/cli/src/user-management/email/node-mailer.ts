@@ -1,12 +1,13 @@
-import { Logger } from '@n8n/backend-common';
 import { GlobalConfig } from '@n8n/config';
-import { Service } from '@n8n/di';
-import pick from 'lodash/pick';
-import { ErrorReporter } from 'n8n-core';
+import { pick } from 'lodash';
+import { ErrorReporterProxy as ErrorReporter } from 'n8n-workflow';
 import path from 'node:path';
 import type { Transporter } from 'nodemailer';
 import { createTransport } from 'nodemailer';
 import type SMTPConnection from 'nodemailer/lib/smtp-connection';
+import { Service } from 'typedi';
+
+import { Logger } from '@/logging/logger.service';
 
 import type { MailData, SendEmailResult } from './interfaces';
 
@@ -19,7 +20,6 @@ export class NodeMailer {
 	constructor(
 		globalConfig: GlobalConfig,
 		private readonly logger: Logger,
-		private readonly errorReporter: ErrorReporter,
 	) {
 		const smtpConfig = globalConfig.userManagement.emails.smtp;
 		const transportConfig: SMTPConnection.Options = pick(smtpConfig, ['host', 'port', 'secure']);
@@ -66,7 +66,7 @@ export class NodeMailer {
 				`Email sent successfully to the following recipients: ${mailData.emailRecipients.toString()}`,
 			);
 		} catch (error) {
-			this.errorReporter.error(error);
+			ErrorReporter.error(error);
 			this.logger.error('Failed to send email', {
 				recipients: mailData.emailRecipients,
 				error: error as Error,

@@ -1,4 +1,5 @@
 import type {
+	ICredentialDataDecryptedObject,
 	ICredentialTestFunctions,
 	ICredentialsDecrypted,
 	IDataObject,
@@ -6,28 +7,29 @@ import type {
 	INodeCredentialTestResult,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-import { createClient } from 'redis';
 
-import type { RedisCredential, RedisClient } from './types';
+import { type RedisClientOptions, createClient } from 'redis';
+export type RedisClientType = ReturnType<typeof createClient>;
 
-export function setupRedisClient(credentials: RedisCredential): RedisClient {
-	return createClient({
+export function setupRedisClient(credentials: ICredentialDataDecryptedObject): RedisClientType {
+	const redisOptions: RedisClientOptions = {
 		socket: {
-			host: credentials.host,
-			port: credentials.port,
+			host: credentials.host as string,
+			port: credentials.port as number,
 			tls: credentials.ssl === true,
 		},
-		database: credentials.database,
-		username: credentials.user || undefined,
-		password: credentials.password || undefined,
-	});
+		database: credentials.database as number,
+		password: (credentials.password as string) || undefined,
+	};
+
+	return createClient(redisOptions);
 }
 
 export async function redisConnectionTest(
 	this: ICredentialTestFunctions,
 	credential: ICredentialsDecrypted,
 ): Promise<INodeCredentialTestResult> {
-	const credentials = credential.data as RedisCredential;
+	const credentials = credential.data as ICredentialDataDecryptedObject;
 
 	try {
 		const client = setupRedisClient(credentials);
@@ -86,7 +88,7 @@ export function convertInfoToObject(stringData: string): IDataObject {
 	return returnData;
 }
 
-export async function getValue(client: RedisClient, keyName: string, type?: string) {
+export async function getValue(client: RedisClientType, keyName: string, type?: string) {
 	if (type === undefined || type === 'automatic') {
 		// Request the type first
 		type = await client.type(keyName);
@@ -105,7 +107,7 @@ export async function getValue(client: RedisClient, keyName: string, type?: stri
 
 export async function setValue(
 	this: IExecuteFunctions,
-	client: RedisClient,
+	client: RedisClientType,
 	keyName: string,
 	value: string | number | object | string[] | number[],
 	expire: boolean,

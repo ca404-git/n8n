@@ -1,4 +1,3 @@
-import { capitalCase } from 'change-case';
 import type {
 	IExecuteFunctions,
 	IHookFunctions,
@@ -7,6 +6,8 @@ import type {
 	IHttpRequestMethods,
 	IRequestOptions,
 } from 'n8n-workflow';
+
+import { capitalCase } from 'change-case';
 
 /**
  * Make an authenticated API request to Lemlist.
@@ -130,7 +131,7 @@ export function getEvents() {
 	];
 
 	return events.map((event: string) => ({
-		name: event === '*' ? '*' : capitalCase(event).replace('Linkedin', 'LinkedIn'),
+		name: event === '*' ? '*' : capitalCase(event),
 		value: event,
 	}));
 }

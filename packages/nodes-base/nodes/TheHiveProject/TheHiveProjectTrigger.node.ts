@@ -1,4 +1,3 @@
-import get from 'lodash/get';
 import {
 	type IWebhookFunctions,
 	type IDataObject,
@@ -6,8 +5,10 @@ import {
 	type INodeType,
 	type INodeTypeDescription,
 	type IWebhookResponseData,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
+
+import get from 'lodash/get';
 
 export class TheHiveProjectTrigger implements INodeType {
 	description: INodeTypeDescription = {
@@ -21,7 +22,7 @@ export class TheHiveProjectTrigger implements INodeType {
 			name: 'TheHive Trigger',
 		},
 		inputs: [],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		webhooks: [
 			{
 				name: 'default',

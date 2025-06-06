@@ -1,4 +1,3 @@
-import get from 'lodash/get';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -8,6 +7,8 @@ import type {
 	IHttpRequestOptions,
 	INodePropertyOptions,
 } from 'n8n-workflow';
+
+import get from 'lodash/get';
 
 /**
  * Make an API request to Asana
@@ -63,7 +64,6 @@ export async function asanaApiRequestAllItems(
 			uri,
 		);
 		uri = get(responseData, 'next_page.uri');
-		query = {}; // query is not needed once we have next_page.uri
 		returnData.push.apply(returnData, responseData.data as IDataObject[]);
 	} while (responseData.next_page !== null);
 

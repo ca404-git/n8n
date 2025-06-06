@@ -1,8 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
-
-import * as shared from './shared';
-import { getAdditionalOptions, getId, mapWith, showFor } from './utils';
 import { memberPresend } from '../GenericFunctions';
+import { getAdditionalOptions, getId, mapWith, showFor } from './utils';
+import * as shared from './shared';
 
 const displayOpts = showFor(['member']);
 

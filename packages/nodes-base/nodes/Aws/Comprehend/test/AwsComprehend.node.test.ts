@@ -1,7 +1,7 @@
-import { NodeTestHarness } from '@nodes-testing/node-test-harness';
 import nock from 'nock';
+import { getWorkflowFilenames, initBinaryDataService, testWorkflows } from '@test/nodes/Helpers';
 
-import { credentials } from '../../__tests__/credentials';
+const workflows = getWorkflowFilenames(__dirname);
 
 describe('Test AWS Comprehend Node', () => {
 	describe('Detect Language', () => {
@@ -19,10 +19,12 @@ describe('Test AWS Comprehend Node', () => {
 				},
 			],
 		};
-
 		beforeAll(async () => {
 			jest.useFakeTimers({ doNotFake: ['nextTick'], now });
 
+			await initBinaryDataService();
+
+			nock.disableNetConnect();
 			const baseUrl = 'https://comprehend.eu-central-1.amazonaws.com';
 
 			mock = nock(baseUrl);
@@ -31,7 +33,10 @@ describe('Test AWS Comprehend Node', () => {
 		beforeEach(async () => {
 			mock.post('/').reply(200, response);
 		});
+		afterAll(() => {
+			nock.restore();
+		});
 
-		new NodeTestHarness().setupTests({ credentials });
+		testWorkflows(workflows);
 	});
 });

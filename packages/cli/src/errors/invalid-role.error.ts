@@ -1,3 +1,3 @@
-import { UnexpectedError } from 'n8n-workflow';
+import { ApplicationError } from 'n8n-workflow';
 
-export class InvalidRoleError extends UnexpectedError {}
+export class InvalidRoleError extends ApplicationError {}

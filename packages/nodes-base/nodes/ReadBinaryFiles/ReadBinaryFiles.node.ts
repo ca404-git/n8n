@@ -1,12 +1,12 @@
-import glob from 'fast-glob';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type IExecuteFunctions,
 	type INodeExecutionData,
 	type INodeType,
 	type INodeTypeDescription,
 } from 'n8n-workflow';
 
+import glob from 'fast-glob';
 import { generatePairedItemData } from '../../utils/utilities';
 
 export class ReadBinaryFiles implements INodeType {
@@ -22,8 +22,8 @@ export class ReadBinaryFiles implements INodeType {
 			name: 'Read Binary Files',
 			color: '#44AA44',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
 				displayName: 'File Selector',

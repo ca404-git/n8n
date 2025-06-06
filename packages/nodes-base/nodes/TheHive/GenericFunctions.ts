@@ -1,4 +1,3 @@
-import moment from 'moment-timezone';
 import type {
 	IExecuteFunctions,
 	IHookFunctions,
@@ -9,6 +8,7 @@ import type {
 } from 'n8n-workflow';
 import { ApplicationError, jsonParse } from 'n8n-workflow';
 
+import moment from 'moment-timezone';
 import { Eq } from './QueryFunctions';
 
 export async function theHiveApiRequest(

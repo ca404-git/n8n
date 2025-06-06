@@ -1,4 +1,7 @@
+import nock from 'nock';
+
 import * as create from '../../../../v2/actions/record/create.operation';
+
 import * as transport from '../../../../v2/transport';
 import { createMockExecuteFunction } from '../helpers';
 
@@ -13,7 +16,18 @@ jest.mock('../../../../v2/transport', () => {
 });
 
 describe('Test AirtableV2, create operation', () => {
-	beforeEach(() => jest.clearAllMocks());
+	beforeAll(() => {
+		nock.disableNetConnect();
+	});
+
+	afterAll(() => {
+		nock.restore();
+		jest.unmock('../../../../v2/transport');
+	});
+
+	afterEach(() => {
+		jest.restoreAllMocks();
+	});
 
 	it('should create a record, autoMapInputData', async () => {
 		const nodeParameters = {

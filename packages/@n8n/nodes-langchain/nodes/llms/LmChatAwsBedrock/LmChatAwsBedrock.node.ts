@@ -1,17 +1,14 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
 import { ChatBedrockConverse } from '@langchain/aws';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
 
-import { getHttpProxyAgent } from '@utils/httpProxyAgent';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
-
-import { makeN8nLlmFailedAttemptHandler } from '../n8nLlmFailedAttemptHandler';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
 import { N8nLlmTracing } from '../N8nLlmTracing';
 
 export class LmChatAwsBedrock implements INodeType {
@@ -43,7 +40,7 @@ export class LmChatAwsBedrock implements INodeType {
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiLanguageModel],
+		outputs: [NodeConnectionType.AiLanguageModel],
 		outputNames: ['Model'],
 		credentials: [
 			{
@@ -57,7 +54,7 @@ export class LmChatAwsBedrock implements INodeType {
 			baseURL: '=https://bedrock.{{$credentials?.region ?? "eu-central-1"}}.amazonaws.com',
 		},
 		properties: [
-			getConnectionHintNoticeField([NodeConnectionTypes.AiChain, NodeConnectionTypes.AiChain]),
+			getConnectionHintNoticeField([NodeConnectionType.AiChain, NodeConnectionType.AiChain]),
 			{
 				displayName: 'Model',
 				name: 'model',
@@ -135,7 +132,7 @@ export class LmChatAwsBedrock implements INodeType {
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		const credentials = await this.getCredentials('aws');
 		const modelName = this.getNodeParameter('model', itemIndex) as string;
 		const options = this.getNodeParameter('options', itemIndex, {}) as {
@@ -148,16 +145,12 @@ export class LmChatAwsBedrock implements INodeType {
 			model: modelName,
 			temperature: options.temperature,
 			maxTokens: options.maxTokensToSample,
-			clientConfig: {
-				httpAgent: getHttpProxyAgent(),
-			},
 			credentials: {
 				secretAccessKey: credentials.secretAccessKey as string,
 				accessKeyId: credentials.accessKeyId as string,
 				sessionToken: credentials.sessionToken as string,
 			},
 			callbacks: [new N8nLlmTracing(this)],
-			onFailedAttempt: makeN8nLlmFailedAttemptHandler(this),
 		});
 
 		return {

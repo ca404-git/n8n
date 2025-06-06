@@ -17,7 +17,7 @@ describe('Workflow Selector Parameter', () => {
 		workflowPage.actions.visit();
 		workflowPage.actions.addInitialNodeToCanvas(EXECUTE_WORKFLOW_NODE_NAME, {
 			keepNdvOpen: true,
-			action: 'Execute A Sub Workflow',
+			action: 'Call Another Workflow',
 		});
 	});
 	it('should render sub-workflows list', () => {
@@ -28,8 +28,6 @@ describe('Workflow Selector Parameter', () => {
 			.should('have.length', 1)
 			.findChildByTestId('rlc-item')
 			.should('have.length', 2);
-
-		getVisiblePopper().findChildByTestId('rlc-item-add-resource').should('have.length', 1);
 	});
 
 	it('should show required parameter warning', () => {
@@ -47,7 +45,6 @@ describe('Workflow Selector Parameter', () => {
 			.should('have.length', 1)
 			.findChildByTestId('rlc-item')
 			.should('have.length', 1)
-			.eq(0)
 			.click();
 
 		ndv.getters
@@ -60,7 +57,7 @@ describe('Workflow Selector Parameter', () => {
 		ndv.getters.resourceLocator('workflowId').should('be.visible');
 		ndv.getters.resourceLocatorInput('workflowId').click();
 
-		getVisiblePopper().findChildByTestId('rlc-item').eq(1).click();
+		getVisiblePopper().findChildByTestId('rlc-item').first().click();
 
 		ndv.getters.resourceLocatorInput('workflowId').find('a').should('exist');
 		cy.getByTestId('radio-button-expression').eq(1).click();
@@ -71,7 +68,7 @@ describe('Workflow Selector Parameter', () => {
 		ndv.getters.resourceLocator('workflowId').should('be.visible');
 		ndv.getters.resourceLocatorInput('workflowId').click();
 
-		getVisiblePopper().findChildByTestId('rlc-item').eq(1).click();
+		getVisiblePopper().findChildByTestId('rlc-item').first().click();
 		ndv.getters
 			.resourceLocatorModeSelector('workflowId')
 			.find('input')
@@ -81,41 +78,5 @@ describe('Workflow Selector Parameter', () => {
 			.resourceLocatorModeSelector('workflowId')
 			.find('input')
 			.should('have.value', 'By ID');
-	});
-
-	it('should render add resource option and redirect to the correct route when clicked', () => {
-		cy.window().then((win) => {
-			cy.stub(win, 'open').as('windowOpen');
-		});
-
-		cy.intercept('POST', '/rest/workflows*').as('createSubworkflow');
-
-		ndv.getters.resourceLocator('workflowId').should('be.visible');
-		ndv.getters.resourceLocatorInput('workflowId').click();
-
-		getVisiblePopper().findChildByTestId('rlc-item-add-resource').eq(0).should('exist');
-		getVisiblePopper()
-			.findChildByTestId('rlc-item-add-resource')
-			.eq(0)
-			.find('span')
-			.should('contain.text', 'Create a'); // Due to some inconsistency we're sometimes in a project and sometimes not, this covers both cases
-
-		getVisiblePopper().findChildByTestId('rlc-item-add-resource').eq(0).click();
-
-		cy.wait('@createSubworkflow').then((interception) => {
-			expect(interception.request.body).to.have.property('name').that.includes('Sub-Workflow');
-			expect(interception.request.body.nodes).to.be.an('array');
-			expect(interception.request.body.nodes).to.have.length(2);
-			expect(interception.request.body.nodes[0]).to.have.property(
-				'name',
-				'When Executed by Another Workflow',
-			);
-			expect(interception.request.body.nodes[1]).to.have.property(
-				'name',
-				'Replace me with your logic',
-			);
-		});
-
-		cy.get('@windowOpen').should('be.calledWithMatch', /\/workflow\/.+/);
 	});
 });

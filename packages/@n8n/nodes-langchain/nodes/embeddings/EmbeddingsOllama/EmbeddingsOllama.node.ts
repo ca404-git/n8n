@@ -1,16 +1,14 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-import { OllamaEmbeddings } from '@langchain/ollama';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
-
-import { logWrapper } from '@utils/logWrapper';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
-
+import { OllamaEmbeddings } from '@langchain/ollama';
+import { logWrapper } from '../../../utils/logWrapper';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
 import { ollamaDescription, ollamaModel } from '../../llms/LMOllama/description';
 
 export class EmbeddingsOllama implements INodeType {
@@ -41,12 +39,12 @@ export class EmbeddingsOllama implements INodeType {
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiEmbedding],
+		outputs: [NodeConnectionType.AiEmbedding],
 		outputNames: ['Embeddings'],
-		properties: [getConnectionHintNoticeField([NodeConnectionTypes.AiVectorStore]), ollamaModel],
+		properties: [getConnectionHintNoticeField([NodeConnectionType.AiVectorStore]), ollamaModel],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		this.logger.debug('Supply data for embeddings Ollama');
 		const modelName = this.getNodeParameter('model', itemIndex) as string;
 		const credentials = await this.getCredentials('ollamaApi');

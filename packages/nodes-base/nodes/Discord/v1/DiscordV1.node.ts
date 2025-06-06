@@ -9,13 +9,13 @@ import type {
 import {
 	jsonParse,
 	NodeApiError,
-	NodeConnectionTypes,
+	NodeConnectionType,
 	NodeOperationError,
 	sleep,
 } from 'n8n-workflow';
 
-import type { DiscordAttachment, DiscordWebhook } from './Interfaces';
 import { oldVersionNotice } from '../../../utils/descriptions';
+import type { DiscordAttachment, DiscordWebhook } from './Interfaces';
 
 const versionDescription: INodeTypeDescription = {
 	displayName: 'Discord',
@@ -27,8 +27,8 @@ const versionDescription: INodeTypeDescription = {
 	defaults: {
 		name: 'Discord',
 	},
-	inputs: [NodeConnectionTypes.Main],
-	outputs: [NodeConnectionTypes.Main],
+	inputs: [NodeConnectionType.Main],
+	outputs: [NodeConnectionType.Main],
 	properties: [
 		oldVersionNotice,
 		{

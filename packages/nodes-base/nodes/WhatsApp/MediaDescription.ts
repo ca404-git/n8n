@@ -1,5 +1,4 @@
 import type { INodeProperties } from 'n8n-workflow';
-
 import { setupUpload } from './MediaFunctions';
 
 export const mediaFields: INodeProperties[] = [

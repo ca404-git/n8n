@@ -21,8 +21,9 @@ export async function elasticSecurityApiRequest(
 	body: IDataObject = {},
 	qs: IDataObject = {},
 ) {
-	const { baseUrl: rawBaseUrl } =
-		await this.getCredentials<ElasticSecurityApiCredentials>('elasticSecurityApi');
+	const { baseUrl: rawBaseUrl } = (await this.getCredentials(
+		'elasticSecurityApi',
+	)) as ElasticSecurityApiCredentials;
 
 	const baseUrl = tolerateTrailingSlash(rawBaseUrl);
 

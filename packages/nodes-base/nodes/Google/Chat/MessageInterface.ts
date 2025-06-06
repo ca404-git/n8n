@@ -31,13 +31,11 @@ export interface IUser {
 	type?: Type;
 	isAnonymous?: boolean;
 }
-const Types = {
-	TYPE_UNSPECIFIED: 0,
-	HUMAN: 1,
-	BOT: 2,
-} as const;
-
-export type Type = (typeof Types)[keyof typeof Types];
+const enum Type {
+	TYPE_UNSPECIFIED,
+	HUMAN,
+	BOT,
+}
 
 // // TODO: define other interfaces
 //

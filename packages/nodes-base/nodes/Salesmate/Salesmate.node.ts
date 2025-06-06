@@ -7,20 +7,19 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
-
-import { activityFields, activityOperations } from './ActivityDescription';
-import type { IActivity } from './ActivityInterface';
-import { companyFields, companyOperations } from './CompanyDescription';
-import type { ICompany } from './CompanyInterface';
-import { dealFields, dealOperations } from './DealDescription';
-import type { IDeal } from './DealInterface';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 import {
 	salesmateApiRequest,
 	salesmateApiRequestAllItems,
 	simplifySalesmateData,
 	validateJSON,
 } from './GenericFunctions';
+import { companyFields, companyOperations } from './CompanyDescription';
+import { activityFields, activityOperations } from './ActivityDescription';
+import type { ICompany } from './CompanyInterface';
+import type { IActivity } from './ActivityInterface';
+import type { IDeal } from './DealInterface';
+import { dealFields, dealOperations } from './DealDescription';
 
 export class Salesmate implements INodeType {
 	description: INodeTypeDescription = {
@@ -35,9 +34,8 @@ export class Salesmate implements INodeType {
 		defaults: {
 			name: 'Salesmate',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'salesmateApi',

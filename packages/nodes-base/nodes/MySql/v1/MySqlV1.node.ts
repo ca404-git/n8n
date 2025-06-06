@@ -1,4 +1,3 @@
-import type mysql2 from 'mysql2/promise';
 import type {
 	ICredentialDataDecryptedObject,
 	ICredentialsDecrypted,
@@ -11,12 +10,14 @@ import type {
 	INodeTypeBaseDescription,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+
+import type mysql2 from 'mysql2/promise';
+
+import { createConnection, searchTables } from './GenericFunctions';
 
 import { oldVersionNotice } from '@utils/descriptions';
 import { getResolvables } from '@utils/utilities';
-
-import { createConnection, searchTables } from './GenericFunctions';
 
 const versionDescription: INodeTypeDescription = {
 	displayName: 'MySQL',
@@ -28,8 +29,8 @@ const versionDescription: INodeTypeDescription = {
 	defaults: {
 		name: 'MySQL',
 	},
-	inputs: [NodeConnectionTypes.Main],
-	outputs: [NodeConnectionTypes.Main],
+	inputs: [NodeConnectionType.Main],
+	outputs: [NodeConnectionType.Main],
 	credentials: [
 		{
 			name: 'mySql',

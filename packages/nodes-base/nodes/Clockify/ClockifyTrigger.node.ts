@@ -1,4 +1,5 @@
 import moment from 'moment-timezone';
+
 import type {
 	IPollFunctions,
 	IDataObject,
@@ -8,11 +9,11 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
 
-import type { EntryType } from './EntryType';
-import { EntryTypes } from './EntryType';
 import { clockifyApiRequest } from './GenericFunctions';
+
+import { EntryTypeEnum } from './EntryTypeEnum';
 import type { IUserDto } from './UserDtos';
 import type { IWorkspaceDto } from './WorkpaceInterfaces';
 
@@ -28,7 +29,7 @@ export class ClockifyTrigger implements INodeType {
 			name: 'Clockify Trigger',
 		},
 		inputs: [],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'clockifyApi',
@@ -57,11 +58,11 @@ export class ClockifyTrigger implements INodeType {
 				options: [
 					{
 						name: 'New Time Entry',
-						value: EntryTypes.NEW_TIME_ENTRY,
+						value: EntryTypeEnum.NEW_TIME_ENTRY,
 					},
 				],
 				required: true,
-				default: EntryTypes.NEW_TIME_ENTRY,
+				default: EntryTypeEnum.NEW_TIME_ENTRY,
 			},
 		],
 	};
@@ -90,7 +91,7 @@ export class ClockifyTrigger implements INodeType {
 
 	async poll(this: IPollFunctions): Promise<INodeExecutionData[][] | null> {
 		const webhookData = this.getWorkflowStaticData('node');
-		const triggerField = this.getNodeParameter('watchField') as EntryType;
+		const triggerField = this.getNodeParameter('watchField') as EntryTypeEnum;
 		const workspaceId = this.getNodeParameter('workspaceId');
 
 		if (!webhookData.userId) {
@@ -104,7 +105,7 @@ export class ClockifyTrigger implements INodeType {
 		let result = null;
 
 		switch (triggerField) {
-			case EntryTypes.NEW_TIME_ENTRY:
+			case EntryTypeEnum.NEW_TIME_ENTRY:
 			default:
 				const workflowTimezone = this.getTimezone();
 				resource = `workspaces/${workspaceId}/user/${webhookData.userId}/time-entries`;

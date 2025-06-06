@@ -26,18 +26,6 @@
               "type": "string"
             },
             {
-              "id": "85095836-4e94-442f-9270-e1a89008c125",
-              "name": "test",
-              "value": "test",
-              "type": "string"
-            },
-            {
-              "id": "85095836-4e94-442f-9270-e1a89008c121",
-              "name": "test",
-              "value": "test",
-              "type": "string"
-            },
-            {
               "id": "b6163f8a-bca6-4364-8b38-182df37c55cd",
               "name": "=should be visible!",
               "value": "=not visible",
@@ -62,10 +50,6 @@
         "blocksUi": "blocks",
         "text": "=should be visible",
         "otherOptions": {
-          "includeLinkToWorkflow": true,
-          "link_names": false,
-          "mrkdwn": true,
-          "unfurl_links": false,
           "sendAsUser": "=not visible"
         }
       },
@@ -83,7 +67,6 @@
       "parameters": {
         "rule": {
           "interval": [
-            {},
             {},
             {
               "field": "=should be visible"

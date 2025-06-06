@@ -1,5 +1,5 @@
-import { updateEmployeeSharedDescription } from './sharedDescription';
 import type { EmployeeProperties } from '../../Interfaces';
+import { updateEmployeeSharedDescription } from './sharedDescription';
 
 export const employeeUpdateDescription: EmployeeProperties = [
 	{

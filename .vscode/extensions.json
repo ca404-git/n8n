@@ -7,8 +7,6 @@
 		"EditorConfig.EditorConfig",
 		"esbenp.prettier-vscode",
 		"mjmlio.vscode-mjml",
-		"ryanluker.vscode-coverage-gutters",
-		"Vue.volar",
-		"vitest.explorer"
+		"Vue.volar"
 	]
 }

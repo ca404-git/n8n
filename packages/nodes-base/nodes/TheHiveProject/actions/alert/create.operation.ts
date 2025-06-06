@@ -1,5 +1,3 @@
-import FormData from 'form-data';
-import set from 'lodash/set';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -7,11 +5,13 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 
-import { updateDisplayOptions, wrapData } from '@utils/utilities';
+import set from 'lodash/set';
 
-import { observableTypeOptions } from '../../descriptions';
-import { fixFieldType, prepareInputItem, splitAndTrim } from '../../helpers/utils';
+import FormData from 'form-data';
 import { theHiveApiRequest } from '../../transport';
+import { fixFieldType, prepareInputItem, splitAndTrim } from '../../helpers/utils';
+import { observableTypeOptions } from '../../descriptions';
+import { updateDisplayOptions, wrapData } from '@utils/utilities';
 
 const properties: INodeProperties[] = [
 	{

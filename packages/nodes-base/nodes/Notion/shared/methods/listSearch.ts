@@ -4,7 +4,6 @@ import type {
 	INodeListSearchItems,
 	INodeListSearchResult,
 } from 'n8n-workflow';
-
 import { notionApiRequestAllItems } from '../GenericFunctions';
 
 export async function getDatabases(

@@ -1,5 +1,4 @@
 import type { INodeProperties } from 'n8n-workflow';
-
 import { BATCH_MODE, SINGLE } from '../helpers/interfaces';
 
 export const tableRLC: INodeProperties = {

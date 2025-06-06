@@ -1,9 +1,8 @@
 import type { INodeProperties, IExecuteFunctions, IDataObject } from 'n8n-workflow';
-
 import { updateDisplayOptions } from '../../../../../utils/utilities';
-import { userRLC } from '../../helpers/descriptions';
 import { formatFeed, populate } from '../../helpers/utils';
 import { splunkApiRequest } from '../../transport';
+import { userRLC } from '../../helpers/descriptions';
 
 const properties: INodeProperties[] = [
 	userRLC,

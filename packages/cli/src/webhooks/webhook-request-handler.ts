@@ -1,17 +1,12 @@
-import { Logger } from '@n8n/backend-common';
-import { Container } from '@n8n/di';
 import type express from 'express';
-import { ensureError, type IHttpRequestMethods } from 'n8n-workflow';
+import type { IHttpRequestMethods } from 'n8n-workflow';
 
-import { WebhookNotFoundError } from '@/errors/response-errors/webhook-not-found.error';
 import * as ResponseHelper from '@/response-helper';
 import type {
 	IWebhookManager,
 	WebhookOptionsRequest,
 	WebhookRequest,
 } from '@/webhooks/webhook.types';
-
-import { WebhookService } from './webhook.service';
 
 const WEBHOOK_METHODS: IHttpRequestMethods[] = ['DELETE', 'GET', 'HEAD', 'PATCH', 'POST', 'PUT'];
 
@@ -57,24 +52,8 @@ class WebhookRequestHandler {
 					response.headers,
 				);
 			}
-		} catch (e) {
-			const error = ensureError(e);
-
-			const logger = Container.get(Logger);
-
-			if (e instanceof WebhookNotFoundError) {
-				const currentlyRegistered = await Container.get(WebhookService).findAll();
-				logger.error(`Received request for unknown webhook: ${e.message}`, {
-					currentlyRegistered: currentlyRegistered.map((w) => w.display()),
-				});
-			} else {
-				logger.error(
-					`Error in handling webhook request ${req.method} ${req.path}: ${error.message}`,
-					{ stacktrace: error.stack },
-				);
-			}
-
-			return ResponseHelper.sendErrorResponse(res, error);
+		} catch (error) {
+			return ResponseHelper.sendErrorResponse(res, error as Error);
 		}
 	}
 
@@ -136,10 +115,6 @@ export function createWebhookHandlerFor(webhookManager: IWebhookManager) {
 	const handler = new WebhookRequestHandler(webhookManager);
 
 	return async (req: WebhookRequest | WebhookOptionsRequest, res: express.Response) => {
-		const { params } = req;
-		if (Array.isArray(params.path)) {
-			params.path = params.path.join('/');
-		}
 		await handler.handleRequest(req, res);
 	};
 }

@@ -1,3 +1,6 @@
+import type { ContainerOptions, EventContext, Message, ReceiverOptions } from 'rhea';
+import { create_container } from 'rhea';
+
 import type {
 	ITriggerFunctions,
 	IDataObject,
@@ -7,9 +10,7 @@ import type {
 	IDeferredPromise,
 	IRun,
 } from 'n8n-workflow';
-import { deepCopy, jsonParse, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
-import type { ContainerOptions, EventContext, Message, ReceiverOptions } from 'rhea';
-import { create_container } from 'rhea';
+import { deepCopy, jsonParse, NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
 export class AmqpTrigger implements INodeType {
 	description: INodeTypeDescription = {
@@ -23,7 +24,7 @@ export class AmqpTrigger implements INodeType {
 			name: 'AMQP Trigger',
 		},
 		inputs: [],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'amqp',

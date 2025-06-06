@@ -1,3 +1,4 @@
+import { NodeConnectionType } from 'n8n-workflow';
 import type {
 	INodeTypeBaseDescription,
 	IExecuteFunctions,
@@ -5,24 +6,29 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 	IDataObject,
-	INodeInputConfiguration,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, sleep } from 'n8n-workflow';
 
-import { getBatchingOptionFields, getTemplateNoticeField } from '@utils/sharedFields';
-
-import { processItem } from './processItem';
+import { loadSummarizationChain } from 'langchain/chains';
+import type { BaseLanguageModel } from '@langchain/core/language_models/base';
+import type { Document } from '@langchain/core/documents';
+import type { TextSplitter } from '@langchain/textsplitters';
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+import { N8nJsonLoader } from '../../../../utils/N8nJsonLoader';
+import { N8nBinaryLoader } from '../../../../utils/N8nBinaryLoader';
+import { getTemplateNoticeField } from '../../../../utils/sharedFields';
 import { REFINE_PROMPT_TEMPLATE, DEFAULT_PROMPT_TEMPLATE } from '../prompt';
+import { getChainPromptsArgs } from '../helpers';
+import { getTracingConfig } from '../../../../utils/tracing';
 
 function getInputs(parameters: IDataObject) {
 	const chunkingMode = parameters?.chunkingMode;
 	const operationMode = parameters?.operationMode;
-	const inputs: INodeInputConfiguration[] = [
-		{ displayName: '', type: 'main' },
+	const inputs = [
+		{ displayName: '', type: NodeConnectionType.Main },
 		{
 			displayName: 'Model',
 			maxConnections: 1,
-			type: 'ai_languageModel',
+			type: NodeConnectionType.AiLanguageModel,
 			required: true,
 		},
 	];
@@ -30,7 +36,7 @@ function getInputs(parameters: IDataObject) {
 	if (operationMode === 'documentLoader') {
 		inputs.push({
 			displayName: 'Document',
-			type: 'ai_document',
+			type: NodeConnectionType.AiDocument,
 			required: true,
 			maxConnections: 1,
 		});
@@ -40,7 +46,7 @@ function getInputs(parameters: IDataObject) {
 	if (chunkingMode === 'advanced') {
 		inputs.push({
 			displayName: 'Text Splitter',
-			type: 'ai_textSplitter',
+			type: NodeConnectionType.AiTextSplitter,
 			required: false,
 			maxConnections: 1,
 		});
@@ -55,14 +61,14 @@ export class ChainSummarizationV2 implements INodeType {
 	constructor(baseDescription: INodeTypeBaseDescription) {
 		this.description = {
 			...baseDescription,
-			version: [2, 2.1],
+			version: [2],
 			defaults: {
 				name: 'Summarization Chain',
 				color: '#909298',
 			},
 			// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 			inputs: `={{ ((parameter) => { ${getInputs.toString()}; return getInputs(parameter) })($parameter) }}`,
-			outputs: [NodeConnectionTypes.Main],
+			outputs: [NodeConnectionType.Main],
 			credentials: [],
 			properties: [
 				getTemplateNoticeField(1951),
@@ -298,11 +304,6 @@ export class ChainSummarizationV2 implements INodeType {
 								},
 							],
 						},
-						getBatchingOptionFields({
-							show: {
-								'@version': [{ _cnd: { gte: 2.1 } }],
-							},
-						}),
 					],
 				},
 			],
@@ -319,67 +320,108 @@ export class ChainSummarizationV2 implements INodeType {
 			| 'simple'
 			| 'advanced';
 
+		const model = (await this.getInputConnectionData(
+			NodeConnectionType.AiLanguageModel,
+			0,
+		)) as BaseLanguageModel;
+
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 
-		const batchSize = this.getNodeParameter('options.batching.batchSize', 0, 5) as number;
-		const delayBetweenBatches = this.getNodeParameter(
-			'options.batching.delayBetweenBatches',
-			0,
-			0,
-		) as number;
+		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
+			try {
+				const summarizationMethodAndPrompts = this.getNodeParameter(
+					'options.summarizationMethodAndPrompts.values',
+					itemIndex,
+					{},
+				) as {
+					prompt?: string;
+					refineQuestionPrompt?: string;
+					refinePrompt?: string;
+					summarizationMethod: 'map_reduce' | 'stuff' | 'refine';
+					combineMapPrompt?: string;
+				};
 
-		if (this.getNode().typeVersion >= 2.1 && batchSize > 1) {
-			// Batch processing
-			for (let i = 0; i < items.length; i += batchSize) {
-				const batch = items.slice(i, i + batchSize);
-				const batchPromises = batch.map(async (item, batchItemIndex) => {
-					const itemIndex = i + batchItemIndex;
-					return await processItem(this, itemIndex, item, operationMode, chunkingMode);
-				});
+				const chainArgs = getChainPromptsArgs(
+					summarizationMethodAndPrompts.summarizationMethod ?? 'map_reduce',
+					summarizationMethodAndPrompts,
+				);
 
-				const batchResults = await Promise.allSettled(batchPromises);
-				batchResults.forEach((response, index) => {
-					if (response.status === 'rejected') {
-						const error = response.reason as Error;
-						if (this.continueOnFail()) {
-							returnData.push({
-								json: { error: error.message },
-								pairedItem: { item: i + index },
-							});
-						} else {
-							throw error;
-						}
-					} else {
-						const output = response.value;
-						returnData.push({ json: { output } });
-					}
-				});
+				const chain = loadSummarizationChain(model, chainArgs);
+				const item = items[itemIndex];
 
-				// Add delay between batches if not the last batch
-				if (i + batchSize < items.length && delayBetweenBatches > 0) {
-					await sleep(delayBetweenBatches);
-				}
-			}
-		} else {
-			for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
-				try {
-					const response = await processItem(
-						this,
-						itemIndex,
-						items[itemIndex],
-						operationMode,
-						chunkingMode,
-					);
+				let processedDocuments: Document[];
+
+				// Use dedicated document loader input to load documents
+				if (operationMode === 'documentLoader') {
+					const documentInput = (await this.getInputConnectionData(
+						NodeConnectionType.AiDocument,
+						0,
+					)) as N8nJsonLoader | Array<Document<Record<string, unknown>>>;
+
+					const isN8nLoader =
+						documentInput instanceof N8nJsonLoader || documentInput instanceof N8nBinaryLoader;
+
+					processedDocuments = isN8nLoader
+						? await documentInput.processItem(item, itemIndex)
+						: documentInput;
+
+					const response = await chain.withConfig(getTracingConfig(this)).invoke({
+						input_documents: processedDocuments,
+					});
+
 					returnData.push({ json: { response } });
-				} catch (error) {
-					if (this.continueOnFail()) {
-						returnData.push({ json: { error: error.message }, pairedItem: { item: itemIndex } });
-						continue;
+				}
+
+				// Take the input and use binary or json loader
+				if (['nodeInputJson', 'nodeInputBinary'].includes(operationMode)) {
+					let textSplitter: TextSplitter | undefined;
+
+					switch (chunkingMode) {
+						// In simple mode we use recursive character splitter with default settings
+						case 'simple':
+							const chunkSize = this.getNodeParameter('chunkSize', itemIndex, 1000) as number;
+							const chunkOverlap = this.getNodeParameter('chunkOverlap', itemIndex, 200) as number;
+
+							textSplitter = new RecursiveCharacterTextSplitter({ chunkOverlap, chunkSize });
+							break;
+
+						// In advanced mode user can connect text splitter node so we just retrieve it
+						case 'advanced':
+							textSplitter = (await this.getInputConnectionData(
+								NodeConnectionType.AiTextSplitter,
+								0,
+							)) as TextSplitter | undefined;
+							break;
+						default:
+							break;
 					}
 
-					throw error;
+					let processor: N8nJsonLoader | N8nBinaryLoader;
+					if (operationMode === 'nodeInputBinary') {
+						const binaryDataKey = this.getNodeParameter(
+							'options.binaryDataKey',
+							itemIndex,
+							'data',
+						) as string;
+						processor = new N8nBinaryLoader(this, 'options.', binaryDataKey, textSplitter);
+					} else {
+						processor = new N8nJsonLoader(this, 'options.', textSplitter);
+					}
+
+					const processedItem = await processor.processItem(item, itemIndex);
+					const response = await chain.call({
+						input_documents: processedItem,
+					});
+					returnData.push({ json: { response } });
 				}
+			} catch (error) {
+				if (this.continueOnFail()) {
+					returnData.push({ json: { error: error.message }, pairedItem: { item: itemIndex } });
+					continue;
+				}
+
+				throw error;
 			}
 		}
 

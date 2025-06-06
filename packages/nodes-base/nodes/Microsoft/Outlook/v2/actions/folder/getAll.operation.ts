@@ -1,9 +1,7 @@
 import type { IDataObject, IExecuteFunctions, INodeProperties } from 'n8n-workflow';
-
-import { updateDisplayOptions } from '@utils/utilities';
-
-import { folderFields, folderRLC, returnAllOrLimit } from '../../descriptions';
 import { getSubfolders, microsoftApiRequest, microsoftApiRequestAllItems } from '../../transport';
+import { folderFields, folderRLC, returnAllOrLimit } from '../../descriptions';
+import { updateDisplayOptions } from '@utils/utilities';
 
 export const properties: INodeProperties[] = [
 	...returnAllOrLimit,

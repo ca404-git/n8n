@@ -1,19 +1,18 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
+import {
+	NodeConnectionType,
+	type IExecuteFunctions,
+	type INodeType,
+	type INodeTypeDescription,
+	type SupplyData,
+} from 'n8n-workflow';
 import type {
 	RecursiveCharacterTextSplitterParams,
 	SupportedTextSplitterLanguage,
 } from '@langchain/textsplitters';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
-import {
-	NodeConnectionTypes,
-	type INodeType,
-	type INodeTypeDescription,
-	type ISupplyDataFunctions,
-	type SupplyData,
-} from 'n8n-workflow';
-
-import { logWrapper } from '@utils/logWrapper';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
+import { logWrapper } from '../../../utils/logWrapper';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
 
 const supportedLanguages: SupportedTextSplitterLanguage[] = [
 	'cpp',
@@ -37,7 +36,6 @@ export class TextSplitterRecursiveCharacterTextSplitter implements INodeType {
 		displayName: 'Recursive Character Text Splitter',
 		name: 'textSplitterRecursiveCharacterTextSplitter',
 		icon: 'fa:grip-lines-vertical',
-		iconColor: 'black',
 		group: ['transform'],
 		version: 1,
 		description: 'Split text into chunks by characters recursively, recommended for most use cases',
@@ -60,10 +58,10 @@ export class TextSplitterRecursiveCharacterTextSplitter implements INodeType {
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiTextSplitter],
+		outputs: [NodeConnectionType.AiTextSplitter],
 		outputNames: ['Text Splitter'],
 		properties: [
-			getConnectionHintNoticeField([NodeConnectionTypes.AiDocument]),
+			getConnectionHintNoticeField([NodeConnectionType.AiDocument]),
 			{
 				displayName: 'Chunk Size',
 				name: 'chunkSize',
@@ -96,7 +94,7 @@ export class TextSplitterRecursiveCharacterTextSplitter implements INodeType {
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		this.logger.debug('Supply Data for Text Splitter');
 
 		const chunkSize = this.getNodeParameter('chunkSize', itemIndex) as number;

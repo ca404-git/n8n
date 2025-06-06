@@ -6,10 +6,12 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
 
 import { uprocApiRequest } from './GenericFunctions';
+
 import { groupOptions } from './GroupDescription';
+
 import { toolOperations, toolParameters } from './ToolDescription';
 
 export class UProc implements INodeType {
@@ -25,9 +27,8 @@ export class UProc implements INodeType {
 		defaults: {
 			name: 'uProc',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'uprocApi',

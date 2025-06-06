@@ -1,20 +1,23 @@
-import { GlobalConfig } from '@n8n/config';
-import { WorkflowEntity, ProjectRepository, TagRepository, WorkflowRepository } from '@n8n/db';
-import { Container } from '@n8n/di';
-// eslint-disable-next-line n8n-local-rules/misplaced-n8n-typeorm-import
-import { In, Like, QueryFailedError } from '@n8n/typeorm';
 // eslint-disable-next-line n8n-local-rules/misplaced-n8n-typeorm-import
 import type { FindOptionsWhere } from '@n8n/typeorm';
+// eslint-disable-next-line n8n-local-rules/misplaced-n8n-typeorm-import
+import { In, Like, QueryFailedError } from '@n8n/typeorm';
 import type express from 'express';
+import { Container } from 'typedi';
 import { v4 as uuid } from 'uuid';
 import { z } from 'zod';
 
 import { ActiveWorkflowManager } from '@/active-workflow-manager';
+import config from '@/config';
+import { WorkflowEntity } from '@/databases/entities/workflow-entity';
+import { ProjectRepository } from '@/databases/repositories/project.repository';
+import { SharedWorkflowRepository } from '@/databases/repositories/shared-workflow.repository';
+import { TagRepository } from '@/databases/repositories/tag.repository';
+import { WorkflowRepository } from '@/databases/repositories/workflow.repository';
 import { EventService } from '@/events/event.service';
 import { ExternalHooks } from '@/external-hooks';
 import { addNodeIds, replaceInvalidCredentials } from '@/workflow-helpers';
-import { WorkflowFinderService } from '@/workflows/workflow-finder.service';
-import { WorkflowHistoryService } from '@/workflows/workflow-history.ee/workflow-history.service.ee';
+import { WorkflowHistoryService } from '@/workflows/workflow-history/workflow-history.service.ee';
 import { WorkflowService } from '@/workflows/workflow.service';
 import { EnterpriseWorkflowService } from '@/workflows/workflow.service.ee';
 
@@ -29,16 +32,11 @@ import {
 	updateTags,
 } from './workflows.service';
 import type { WorkflowRequest } from '../../../types';
-import {
-	apiKeyHasScope,
-	projectScope,
-	validCursor,
-} from '../../shared/middlewares/global.middleware';
+import { projectScope, validCursor } from '../../shared/middlewares/global.middleware';
 import { encodeNextCursor } from '../../shared/services/pagination.service';
 
 export = {
 	createWorkflow: [
-		apiKeyHasScope('workflow:create'),
 		async (req: WorkflowRequest.Create, res: express.Response): Promise<express.Response> => {
 			const workflow = req.body;
 
@@ -73,14 +71,13 @@ export = {
 		},
 	],
 	transferWorkflow: [
-		apiKeyHasScope('workflow:move'),
 		projectScope('workflow:move', 'workflow'),
 		async (req: WorkflowRequest.Transfer, res: express.Response) => {
 			const { id: workflowId } = req.params;
 
 			const body = z.object({ destinationProjectId: z.string() }).parse(req.body);
 
-			await Container.get(EnterpriseWorkflowService).transferWorkflow(
+			await Container.get(EnterpriseWorkflowService).transferOne(
 				req.user,
 				workflowId,
 				body.destinationProjectId,
@@ -90,12 +87,11 @@ export = {
 		},
 	],
 	deleteWorkflow: [
-		apiKeyHasScope('workflow:delete'),
 		projectScope('workflow:delete', 'workflow'),
 		async (req: WorkflowRequest.Get, res: express.Response): Promise<express.Response> => {
 			const { id: workflowId } = req.params;
 
-			const workflow = await Container.get(WorkflowService).delete(req.user, workflowId, true);
+			const workflow = await Container.get(WorkflowService).delete(req.user, workflowId);
 			if (!workflow) {
 				// user trying to access a workflow they do not own
 				// or workflow does not exist
@@ -106,17 +102,15 @@ export = {
 		},
 	],
 	getWorkflow: [
-		apiKeyHasScope('workflow:read'),
 		projectScope('workflow:read', 'workflow'),
 		async (req: WorkflowRequest.Get, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
-			const { excludePinnedData = false } = req.query;
 
-			const workflow = await Container.get(WorkflowFinderService).findWorkflowForUser(
+			const workflow = await Container.get(SharedWorkflowRepository).findWorkflowForUser(
 				id,
 				req.user,
 				['workflow:read'],
-				{ includeTags: !Container.get(GlobalConfig).tags.disabled },
+				{ includeTags: !config.getEnv('workflowTagsDisabled') },
 			);
 
 			if (!workflow) {
@@ -124,10 +118,6 @@ export = {
 				// and was not shared to them
 				// Or does not exist.
 				return res.status(404).json({ message: 'Not Found' });
-			}
-
-			if (excludePinnedData) {
-				delete workflow.pinData;
 			}
 
 			Container.get(EventService).emit('user-retrieved-workflow', {
@@ -139,18 +129,9 @@ export = {
 		},
 	],
 	getWorkflows: [
-		apiKeyHasScope('workflow:list'),
 		validCursor,
 		async (req: WorkflowRequest.GetAll, res: express.Response): Promise<express.Response> => {
-			const {
-				offset = 0,
-				limit = 100,
-				excludePinnedData = false,
-				active,
-				tags,
-				name,
-				projectId,
-			} = req.query;
+			const { offset = 0, limit = 100, active, tags, name, projectId } = req.query;
 
 			const where: FindOptionsWhere<WorkflowEntity> = {
 				...(active !== undefined && { active }),
@@ -166,7 +147,7 @@ export = {
 				}
 
 				if (projectId) {
-					const workflows = await Container.get(WorkflowFinderService).findAllWorkflowsForUser(
+					const workflows = await Container.get(SharedWorkflowRepository).findAllWorkflowsForUser(
 						req.user,
 						['workflow:read'],
 					);
@@ -186,7 +167,7 @@ export = {
 					);
 				}
 
-				let workflows = await Container.get(WorkflowFinderService).findAllWorkflowsForUser(
+				let workflows = await Container.get(SharedWorkflowRepository).findAllWorkflowsForUser(
 					req.user,
 					['workflow:read'],
 				);
@@ -215,14 +196,8 @@ export = {
 				skip: offset,
 				take: limit,
 				where,
-				...(!Container.get(GlobalConfig).tags.disabled && { relations: ['tags'] }),
+				...(!config.getEnv('workflowTagsDisabled') && { relations: ['tags'] }),
 			});
-
-			if (excludePinnedData) {
-				workflows.forEach((workflow) => {
-					delete workflow.pinData;
-				});
-			}
 
 			Container.get(EventService).emit('user-retrieved-all-workflows', {
 				userId: req.user.id,
@@ -240,7 +215,6 @@ export = {
 		},
 	],
 	updateWorkflow: [
-		apiKeyHasScope('workflow:update'),
 		projectScope('workflow:update', 'workflow'),
 		async (req: WorkflowRequest.Update, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
@@ -249,7 +223,7 @@ export = {
 			updateData.id = id;
 			updateData.versionId = uuid();
 
-			const workflow = await Container.get(WorkflowFinderService).findWorkflowForUser(
+			const workflow = await Container.get(SharedWorkflowRepository).findWorkflowForUser(
 				id,
 				req.user,
 				['workflow:update'],
@@ -311,12 +285,11 @@ export = {
 		},
 	],
 	activateWorkflow: [
-		apiKeyHasScope('workflow:activate'),
 		projectScope('workflow:update', 'workflow'),
 		async (req: WorkflowRequest.Activate, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
 
-			const workflow = await Container.get(WorkflowFinderService).findWorkflowForUser(
+			const workflow = await Container.get(SharedWorkflowRepository).findWorkflowForUser(
 				id,
 				req.user,
 				['workflow:update'],
@@ -338,7 +311,7 @@ export = {
 				}
 
 				// change the status to active in the DB
-				await setWorkflowAsActive(workflow.id);
+				await setWorkflowAsActive(workflow);
 
 				workflow.active = true;
 
@@ -350,12 +323,11 @@ export = {
 		},
 	],
 	deactivateWorkflow: [
-		apiKeyHasScope('workflow:deactivate'),
 		projectScope('workflow:update', 'workflow'),
 		async (req: WorkflowRequest.Activate, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
 
-			const workflow = await Container.get(WorkflowFinderService).findWorkflowForUser(
+			const workflow = await Container.get(SharedWorkflowRepository).findWorkflowForUser(
 				id,
 				req.user,
 				['workflow:update'],
@@ -372,7 +344,7 @@ export = {
 			if (workflow.active) {
 				await activeWorkflowManager.remove(workflow.id);
 
-				await setWorkflowAsInactive(workflow.id);
+				await setWorkflowAsInactive(workflow);
 
 				workflow.active = false;
 
@@ -384,16 +356,15 @@ export = {
 		},
 	],
 	getWorkflowTags: [
-		apiKeyHasScope('workflowTags:list'),
 		projectScope('workflow:read', 'workflow'),
 		async (req: WorkflowRequest.GetTags, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
 
-			if (Container.get(GlobalConfig).tags.disabled) {
+			if (config.getEnv('workflowTagsDisabled')) {
 				return res.status(400).json({ message: 'Workflow Tags Disabled' });
 			}
 
-			const workflow = await Container.get(WorkflowFinderService).findWorkflowForUser(
+			const workflow = await Container.get(SharedWorkflowRepository).findWorkflowForUser(
 				id,
 				req.user,
 				['workflow:read'],
@@ -411,17 +382,16 @@ export = {
 		},
 	],
 	updateWorkflowTags: [
-		apiKeyHasScope('workflowTags:update'),
 		projectScope('workflow:update', 'workflow'),
 		async (req: WorkflowRequest.UpdateTags, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
 			const newTags = req.body.map((newTag) => newTag.id);
 
-			if (Container.get(GlobalConfig).tags.disabled) {
+			if (config.getEnv('workflowTagsDisabled')) {
 				return res.status(400).json({ message: 'Workflow Tags Disabled' });
 			}
 
-			const sharedWorkflow = await Container.get(WorkflowFinderService).findWorkflowForUser(
+			const sharedWorkflow = await Container.get(SharedWorkflowRepository).findWorkflowForUser(
 				id,
 				req.user,
 				['workflow:update'],

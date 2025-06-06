@@ -1,5 +1,4 @@
 import { z } from 'zod';
-
 import type { AttributeDefinition } from './types';
 
 function makeAttributeSchema(attributeDefinition: AttributeDefinition, required: boolean = true) {

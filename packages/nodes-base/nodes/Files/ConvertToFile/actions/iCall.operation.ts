@@ -1,8 +1,8 @@
 import type { IExecuteFunctions, INodeExecutionData, INodeProperties } from 'n8n-workflow';
 
-import { updateDisplayOptions } from '@utils/utilities';
-
 import * as createEvent from '../../../ICalendar/createEvent.operation';
+
+import { updateDisplayOptions } from '@utils/utilities';
 
 export const description: INodeProperties[] = updateDisplayOptions(
 	{

@@ -1,13 +1,15 @@
 import type { Event } from '@sentry/node';
 import callsites from 'callsites';
 
-import type { ErrorLevel, ReportingOptions } from '@/errors/error.types';
+export type Level = 'warning' | 'error' | 'fatal' | 'info';
 
-/**
- * @deprecated Use `UserError`, `OperationalError` or `UnexpectedError` instead.
- */
+export type ReportingOptions = {
+	level?: Level;
+	executionId?: string;
+} & Pick<Event, 'tags' | 'extra'>;
+
 export class ApplicationError extends Error {
-	level: ErrorLevel;
+	level: Level;
 
 	readonly tags: NonNullable<Event['tags']>;
 

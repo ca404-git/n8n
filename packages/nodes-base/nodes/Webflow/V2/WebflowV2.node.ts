@@ -4,10 +4,9 @@ import type {
 	INodeTypeBaseDescription,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-
-import { router } from './actions/router';
-import { versionDescription } from './actions/versionDescription';
 import { getSites, getCollections, getFields } from '../GenericFunctions';
+import { versionDescription } from './actions/versionDescription';
+import { router } from './actions/router';
 
 export class WebflowV2 implements INodeType {
 	description: INodeTypeDescription;
@@ -16,7 +15,6 @@ export class WebflowV2 implements INodeType {
 		this.description = {
 			...baseDescription,
 			...versionDescription,
-			usableAsTool: true,
 		};
 	}
 

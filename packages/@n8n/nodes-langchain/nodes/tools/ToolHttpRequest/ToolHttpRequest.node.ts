@@ -1,31 +1,18 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-import { DynamicTool } from '@langchain/core/tools';
 import type {
+	IExecuteFunctions,
 	INodeType,
 	INodeTypeDescription,
-	ISupplyDataFunctions,
 	SupplyData,
 	IHttpRequestMethods,
 	IHttpRequestOptions,
 } from 'n8n-workflow';
-import {
-	NodeConnectionTypes,
-	NodeOperationError,
-	tryToParseAlphanumericString,
-} from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError, tryToParseAlphanumericString } from 'n8n-workflow';
 
-import { N8nTool } from '@utils/N8nTool';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
+import { DynamicTool } from '@langchain/core/tools';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
 
-import {
-	authenticationProperties,
-	jsonInput,
-	optimizeResponseProperties,
-	parametersCollection,
-	placeholderDefinitionsCollection,
-	specifyBySelector,
-} from './descriptions';
-import type { PlaceholderDefinition, ToolParameter } from './interfaces';
+import { N8nTool } from '../../../utils/N8nTool';
 import {
 	configureHttpRequestFunction,
 	configureResponseOptimizer,
@@ -35,6 +22,17 @@ import {
 	updateParametersAndOptions,
 	makeToolInputSchema,
 } from './utils';
+
+import {
+	authenticationProperties,
+	jsonInput,
+	optimizeResponseProperties,
+	parametersCollection,
+	placeholderDefinitionsCollection,
+	specifyBySelector,
+} from './descriptions';
+
+import type { PlaceholderDefinition, ToolParameter } from './interfaces';
 
 export class ToolHttpRequest implements INodeType {
 	description: INodeTypeDescription = {
@@ -63,15 +61,13 @@ export class ToolHttpRequest implements INodeType {
 				],
 			},
 		},
-		// Replaced by a `usableAsTool` version of the standalone HttpRequest node
-		hidden: true,
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiTool],
+		outputs: [NodeConnectionType.AiTool],
 		outputNames: ['Tool'],
 		properties: [
-			getConnectionHintNoticeField([NodeConnectionTypes.AiAgent]),
+			getConnectionHintNoticeField([NodeConnectionType.AiAgent]),
 			{
 				displayName: 'Description',
 				name: 'toolDescription',
@@ -254,7 +250,7 @@ export class ToolHttpRequest implements INodeType {
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		const name = this.getNode().name.replace(/ /g, '_');
 		try {
 			tryToParseAlphanumericString(name);
@@ -285,7 +281,6 @@ export class ToolHttpRequest implements INodeType {
 				'User-Agent': undefined,
 			},
 			body: {},
-			// We will need a full response object later to extract the headers and check the response's content type.
 			returnFullResponse: true,
 		};
 

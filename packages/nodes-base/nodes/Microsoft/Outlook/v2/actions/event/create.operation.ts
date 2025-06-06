@@ -1,12 +1,10 @@
-import { DateTime } from 'luxon';
-import moment from 'moment-timezone';
 import type { IDataObject, IExecuteFunctions, INodeProperties } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-
-import { updateDisplayOptions } from '@utils/utilities';
-
-import { calendarRLC } from '../../descriptions';
+import { DateTime } from 'luxon';
+import moment from 'moment-timezone';
 import { microsoftApiRequest } from '../../transport';
+import { calendarRLC } from '../../descriptions';
+import { updateDisplayOptions } from '@utils/utilities';
 
 export const properties: INodeProperties[] = [
 	calendarRLC,

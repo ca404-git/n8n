@@ -8,7 +8,6 @@ import type {
 	IHttpRequestMethods,
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
-
 import { getGoogleAccessToken } from '../../../GenericFunctions';
 
 export async function googleApiRequest(

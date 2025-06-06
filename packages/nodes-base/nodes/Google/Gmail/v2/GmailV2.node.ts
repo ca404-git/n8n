@@ -1,26 +1,21 @@
 import type {
-	IDataObject,
 	IExecuteFunctions,
+	IDataObject,
+	ILoadOptionsFunctions,
 	INodeExecutionData,
+	INodePropertyOptions,
 	INodeType,
 	INodeTypeBaseDescription,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError, SEND_AND_WAIT_OPERATION } from 'n8n-workflow';
-
-import { draftFields, draftOperations } from './DraftDescription';
-import { labelFields, labelOperations } from './LabelDescription';
-import { getGmailAliases, getLabels, getThreadMessages } from './loadOptions';
-import { messageFields, messageOperations } from './MessageDescription';
-import { threadFields, threadOperations } from './ThreadDescription';
-import { configureWaitTillDate } from '../../../../utils/sendAndWait/configureWaitTillDate.util';
-import { sendAndWaitWebhooksDescription } from '../../../../utils/sendAndWait/descriptions';
-import type { IEmail } from '../../../../utils/sendAndWait/interfaces';
 import {
-	createEmail,
-	getSendAndWaitProperties,
-	sendAndWaitWebhook,
-} from '../../../../utils/sendAndWait/utils';
+	NodeConnectionType,
+	NodeOperationError,
+	SEND_AND_WAIT_OPERATION,
+	WAIT_TIME_UNLIMITED,
+} from 'n8n-workflow';
+
+import type { IEmail } from '../../../../utils/sendAndWait/interfaces';
 import {
 	encodeEmail,
 	googleApiRequest,
@@ -35,6 +30,20 @@ import {
 	unescapeSnippets,
 } from '../GenericFunctions';
 
+import { messageFields, messageOperations } from './MessageDescription';
+
+import { labelFields, labelOperations } from './LabelDescription';
+
+import { draftFields, draftOperations } from './DraftDescription';
+
+import { threadFields, threadOperations } from './ThreadDescription';
+
+import {
+	getSendAndWaitProperties,
+	createEmail,
+	sendAndWaitWebhook,
+} from '../../../../utils/sendAndWait/utils';
+
 const versionDescription: INodeTypeDescription = {
 	displayName: 'Gmail',
 	name: 'gmail',
@@ -46,8 +55,8 @@ const versionDescription: INodeTypeDescription = {
 	defaults: {
 		name: 'Gmail',
 	},
-	inputs: [NodeConnectionTypes.Main],
-	outputs: [NodeConnectionTypes.Main],
+	inputs: [NodeConnectionType.Main],
+	outputs: [NodeConnectionType.Main],
 	usableAsTool: true,
 	credentials: [
 		{
@@ -69,7 +78,17 @@ const versionDescription: INodeTypeDescription = {
 			},
 		},
 	],
-	webhooks: sendAndWaitWebhooksDescription,
+	webhooks: [
+		{
+			name: 'default',
+			httpMethod: 'GET',
+			responseMode: 'onReceived',
+			responseData: '',
+			path: '={{ $nodeId }}',
+			restartWebhook: true,
+			isFullPath: true,
+		},
+	],
 	properties: [
 		{
 			displayName: 'Authentication',
@@ -159,9 +178,78 @@ export class GmailV2 implements INodeType {
 
 	methods = {
 		loadOptions: {
-			getLabels,
-			getThreadMessages,
-			getGmailAliases,
+			// Get all the labels to display them to user so that they can
+			// select them easily
+			async getLabels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const returnData: INodePropertyOptions[] = [];
+
+				const labels = await googleApiRequestAllItems.call(
+					this,
+					'labels',
+					'GET',
+					'/gmail/v1/users/me/labels',
+				);
+
+				for (const label of labels) {
+					returnData.push({
+						name: label.name,
+						value: label.id,
+					});
+				}
+
+				return returnData.sort((a, b) => {
+					if (a.name < b.name) {
+						return -1;
+					}
+					if (a.name > b.name) {
+						return 1;
+					}
+					return 0;
+				});
+			},
+
+			async getThreadMessages(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const returnData: INodePropertyOptions[] = [];
+
+				const id = this.getNodeParameter('threadId', 0) as string;
+				const { messages } = await googleApiRequest.call(
+					this,
+					'GET',
+					`/gmail/v1/users/me/threads/${id}`,
+					{},
+					{ format: 'minimal' },
+				);
+
+				for (const message of messages || []) {
+					returnData.push({
+						name: message.snippet,
+						value: message.id,
+					});
+				}
+
+				return returnData;
+			},
+
+			async getGmailAliases(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const returnData: INodePropertyOptions[] = [];
+				const { sendAs } = await googleApiRequest.call(
+					this,
+					'GET',
+					'/gmail/v1/users/me/settings/sendAs',
+				);
+
+				for (const alias of sendAs || []) {
+					const displayName = alias.isDefault
+						? `${alias.sendAsEmail} (Default)`
+						: alias.sendAsEmail;
+					returnData.push({
+						name: displayName,
+						value: alias.sendAsEmail,
+					});
+				}
+
+				return returnData;
+			},
 		},
 	};
 
@@ -182,9 +270,7 @@ export class GmailV2 implements INodeType {
 				raw: await encodeEmail(email),
 			});
 
-			const waitTill = configureWaitTillDate(this);
-
-			await this.putExecutionToWait(waitTill);
+			await this.putExecutionToWait(new Date(WAIT_TIME_UNLIMITED));
 			return [this.getInputData()];
 		}
 

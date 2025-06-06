@@ -11,8 +11,6 @@ import type {
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
 
-import type { JiraServerInfo, JiraWebhook } from './types';
-
 export async function jiraSoftwareCloudApiRequest(
 	this: IHookFunctions | IExecuteFunctions | ILoadOptionsFunctions,
 	endpoint: string,
@@ -30,9 +28,6 @@ export async function jiraSoftwareCloudApiRequest(
 	if (jiraVersion === 'server') {
 		domain = (await this.getCredentials('jiraSoftwareServerApi')).domain as string;
 		credentialType = 'jiraSoftwareServerApi';
-	} else if (jiraVersion === 'serverPat') {
-		domain = (await this.getCredentials('jiraSoftwareServerPatApi')).domain as string;
-		credentialType = 'jiraSoftwareServerPatApi';
 	} else {
 		domain = (await this.getCredentials('jiraSoftwareCloudApi')).domain as string;
 		credentialType = 'jiraSoftwareCloudApi';
@@ -75,33 +70,6 @@ export async function jiraSoftwareCloudApiRequest(
 	}
 }
 
-export function handlePagination(
-	body: any,
-	query: IDataObject,
-	paginationType: 'offset' | 'token',
-	responseData?: any,
-): boolean {
-	if (!responseData) {
-		if (paginationType === 'offset') {
-			query.startAt = 0;
-			query.maxResults = 100;
-		} else {
-			body.maxResults = 100;
-		}
-
-		return true;
-	}
-
-	if (paginationType === 'offset') {
-		const nextStartAt = (responseData.startAt as number) + (responseData.maxResults as number);
-		query.startAt = nextStartAt;
-		return nextStartAt < responseData.total;
-	} else {
-		body.nextPageToken = responseData.nextPageToken as string;
-		return !!responseData.nextPageToken;
-	}
-}
-
 export async function jiraSoftwareCloudApiRequestAllItems(
 	this: IHookFunctions | IExecuteFunctions | ILoadOptionsFunctions,
 	propertyName: string,
@@ -109,17 +77,25 @@ export async function jiraSoftwareCloudApiRequestAllItems(
 	method: IHttpRequestMethods,
 	body: any = {},
 	query: IDataObject = {},
-	paginationType: 'offset' | 'token' = 'offset',
 ): Promise<any> {
 	const returnData: IDataObject[] = [];
 
 	let responseData;
-	let hasNextPage = handlePagination(body, query, paginationType);
+
+	query.startAt = 0;
+	body.startAt = 0;
+	query.maxResults = 100;
+	body.maxResults = 100;
+
 	do {
 		responseData = await jiraSoftwareCloudApiRequest.call(this, endpoint, method, body, query);
 		returnData.push.apply(returnData, responseData[propertyName] as IDataObject[]);
-		hasNextPage = handlePagination(body, query, paginationType, responseData);
-	} while (hasNextPage);
+		query.startAt = (responseData.startAt as number) + (responseData.maxResults as number);
+		body.startAt = (responseData.startAt as number) + (responseData.maxResults as number);
+	} while (
+		(responseData.startAt as number) + (responseData.maxResults as number) <
+		responseData.total
+	);
 
 	return returnData;
 }
@@ -143,9 +119,8 @@ export function eventExists(currentEvents: string[], webhookEvents: string[]) {
 	return true;
 }
 
-export function getWebhookId(webhook: JiraWebhook) {
-	if (webhook.id) return webhook.id.toString();
-	return webhook.self?.split('/').pop();
+export function getId(url: string) {
+	return url.split('/').pop();
 }
 
 export function simplifyIssueOutput(responseData: {
@@ -258,7 +233,7 @@ export async function getUsers(this: ILoadOptionsFunctions): Promise<INodeProper
 	const query: IDataObject = { maxResults };
 	let endpoint = '/api/2/users/search';
 
-	if (jiraVersion === 'server' || jiraVersion === 'serverPat') {
+	if (jiraVersion === 'server') {
 		endpoint = '/api/2/user/search';
 		query.username = "'";
 	}
@@ -287,23 +262,4 @@ export async function getUsers(this: ILoadOptionsFunctions): Promise<INodeProper
 		.sort((a: INodePropertyOptions, b: INodePropertyOptions) => {
 			return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1;
 		});
-}
-
-export async function getServerInfo(this: IHookFunctions) {
-	return await (jiraSoftwareCloudApiRequest.call(
-		this,
-		'/api/2/serverInfo',
-		'GET',
-	) as Promise<JiraServerInfo>);
-}
-
-export async function getWebhookEndpoint(this: IHookFunctions) {
-	const serverInfo = await getServerInfo.call(this).catch(() => null);
-
-	if (!serverInfo || serverInfo.deploymentType === 'Cloud') return '/webhooks/1.0/webhook';
-
-	// Assume old version when versionNumbers is not set
-	const majorVersion = serverInfo.versionNumbers?.[0] ?? 1;
-
-	return majorVersion >= 10 ? '/jira-webhook/1.0/webhooks' : '/webhooks/1.0/webhook';
 }

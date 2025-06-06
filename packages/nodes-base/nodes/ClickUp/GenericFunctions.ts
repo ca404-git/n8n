@@ -42,6 +42,7 @@ export async function clickupApiRequest(
 				keepBearer: false,
 				tokenType: 'Bearer',
 			};
+			// @ts-ignore
 			return await this.helpers.requestOAuth2.call(
 				this,
 				'clickUpOAuth2Api',

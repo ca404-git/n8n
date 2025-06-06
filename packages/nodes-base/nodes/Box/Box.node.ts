@@ -1,5 +1,3 @@
-import { noCase } from 'change-case';
-import moment from 'moment-timezone';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -7,11 +5,15 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+
+import moment from 'moment-timezone';
+import { noCase } from 'change-case';
+import { boxApiRequest, boxApiRequestAllItems } from './GenericFunctions';
 
 import { fileFields, fileOperations } from './FileDescription';
+
 import { folderFields, folderOperations } from './FolderDescription';
-import { boxApiRequest, boxApiRequestAllItems } from './GenericFunctions';
 
 export class Box implements INodeType {
 	description: INodeTypeDescription = {
@@ -26,8 +28,8 @@ export class Box implements INodeType {
 		defaults: {
 			name: 'Box',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'boxOAuth2Api',

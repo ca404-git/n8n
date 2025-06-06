@@ -25,7 +25,6 @@ export type GetAllAdditionalOptions = {
 export type LoadedResource = {
 	id: number;
 	name: string;
-	type?: string;
 };
 
 export type Accumulator = {

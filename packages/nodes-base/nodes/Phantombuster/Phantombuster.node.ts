@@ -6,11 +6,12 @@ import {
 	type INodePropertyOptions,
 	type INodeType,
 	type INodeTypeDescription,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
-import { agentFields, agentOperations } from './AgentDescription';
 import { phantombusterApiRequest, validateJSON } from './GenericFunctions';
+
+import { agentFields, agentOperations } from './AgentDescription';
 
 // import {
 // 	sentenceCase,
@@ -29,9 +30,8 @@ export class Phantombuster implements INodeType {
 		defaults: {
 			name: 'Phantombuster',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'phantombusterApi',

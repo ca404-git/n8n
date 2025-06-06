@@ -31,7 +31,7 @@ export class TheHiveProjectApi implements ICredentialType {
 			placeholder: 'https://localhost:9000',
 		},
 		{
-			displayName: 'Ignore SSL Issues (Insecure)',
+			displayName: 'Ignore SSL Issues',
 			name: 'allowUnauthorizedCerts',
 			type: 'boolean',
 			description: 'Whether to connect even if SSL certificate validation is not possible',

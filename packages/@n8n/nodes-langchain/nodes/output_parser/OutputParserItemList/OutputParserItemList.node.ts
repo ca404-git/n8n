@@ -1,21 +1,20 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
-
-import { N8nItemListOutputParser } from '@utils/output_parsers/N8nItemListOutputParser';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
+import { logWrapper } from '../../../utils/logWrapper';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
+import { ItemListOutputParser } from './ItemListOutputParser';
 
 export class OutputParserItemList implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Item List Output Parser',
 		name: 'outputParserItemList',
 		icon: 'fa:bars',
-		iconColor: 'black',
 		group: ['transform'],
 		version: 1,
 		description: 'Return the results as separate items',
@@ -39,10 +38,10 @@ export class OutputParserItemList implements INodeType {
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiOutputParser],
+		outputs: [NodeConnectionType.AiOutputParser],
 		outputNames: ['Output Parser'],
 		properties: [
-			getConnectionHintNoticeField([NodeConnectionTypes.AiChain, NodeConnectionTypes.AiAgent]),
+			getConnectionHintNoticeField([NodeConnectionType.AiChain, NodeConnectionType.AiAgent]),
 			{
 				displayName: 'Options',
 				name: 'options',
@@ -81,16 +80,16 @@ export class OutputParserItemList implements INodeType {
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		const options = this.getNodeParameter('options', itemIndex, {}) as {
 			numberOfItems?: number;
 			separator?: string;
 		};
 
-		const parser = new N8nItemListOutputParser(options);
+		const parser = new ItemListOutputParser(options);
 
 		return {
-			response: parser,
+			response: logWrapper(parser, this),
 		};
 	}
 }

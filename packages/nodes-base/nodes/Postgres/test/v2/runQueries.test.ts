@@ -1,7 +1,7 @@
-import { mock } from 'jest-mock-extended';
 import type { IDataObject, IExecuteFunctions, INode } from 'n8n-workflow';
-import pgPromise from 'pg-promise';
 
+import pgPromise from 'pg-promise';
+import { mock } from 'jest-mock-extended';
 import type { PgpDatabase } from '../../v2/helpers/interfaces';
 import { configureQueryRunner } from '../../v2/helpers/utils';
 

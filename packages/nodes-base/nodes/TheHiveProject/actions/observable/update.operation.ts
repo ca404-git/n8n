@@ -1,4 +1,3 @@
-import set from 'lodash/set';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -6,11 +5,10 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-
-import { updateDisplayOptions, wrapData } from '@utils/utilities';
-
-import { fixFieldType, prepareInputItem } from '../../helpers/utils';
+import set from 'lodash/set';
 import { theHiveApiRequest } from '../../transport';
+import { fixFieldType, prepareInputItem } from '../../helpers/utils';
+import { updateDisplayOptions, wrapData } from '@utils/utilities';
 
 const properties: INodeProperties[] = [
 	{

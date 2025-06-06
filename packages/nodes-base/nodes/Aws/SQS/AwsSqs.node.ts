@@ -1,4 +1,4 @@
-import { pascalCase } from 'change-case';
+import { URL } from 'url';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -10,9 +10,9 @@ import type {
 	INodeTypeDescription,
 	JsonObject,
 } from 'n8n-workflow';
-import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
-import { URL } from 'url';
+import { NodeApiError, NodeConnectionType } from 'n8n-workflow';
 
+import { pascalCase } from 'change-case';
 import { awsApiRequestSOAP } from '../GenericFunctions';
 
 export class AwsSqs implements INodeType {
@@ -27,8 +27,8 @@ export class AwsSqs implements INodeType {
 		defaults: {
 			name: 'AWS SQS',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'aws',

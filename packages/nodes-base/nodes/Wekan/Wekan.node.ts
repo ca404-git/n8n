@@ -8,16 +8,22 @@ import type {
 	INodeTypeDescription,
 	IHttpRequestMethods,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+
+import { wrapData } from '../../utils/utilities';
+import { apiRequest } from './GenericFunctions';
 
 import { boardFields, boardOperations } from './BoardDescription';
-import { cardCommentFields, cardCommentOperations } from './CardCommentDescription';
+
 import { cardFields, cardOperations } from './CardDescription';
+
+import { cardCommentFields, cardCommentOperations } from './CardCommentDescription';
+
 import { checklistFields, checklistOperations } from './ChecklistDescription';
+
 import { checklistItemFields, checklistItemOperations } from './ChecklistItemDescription';
-import { apiRequest } from './GenericFunctions';
+
 import { listFields, listOperations } from './ListDescription';
-import { wrapData } from '../../utils/utilities';
 
 // https://wekan.github.io/api/v4.41/
 
@@ -34,9 +40,8 @@ export class Wekan implements INodeType {
 		defaults: {
 			name: 'Wekan',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'wekanApi',

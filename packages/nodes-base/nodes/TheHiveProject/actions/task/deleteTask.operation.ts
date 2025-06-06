@@ -1,9 +1,7 @@
 import type { IExecuteFunctions, INodeExecutionData, INodeProperties } from 'n8n-workflow';
-
-import { updateDisplayOptions, wrapData } from '@utils/utilities';
-
-import { taskRLC } from '../../descriptions';
 import { theHiveApiRequest } from '../../transport';
+import { taskRLC } from '../../descriptions';
+import { updateDisplayOptions, wrapData } from '@utils/utilities';
 
 const properties: INodeProperties[] = [taskRLC];
 

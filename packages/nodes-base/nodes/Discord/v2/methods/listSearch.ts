@@ -3,9 +3,8 @@ import {
 	type ILoadOptionsFunctions,
 	type INodeListSearchResult,
 } from 'n8n-workflow';
-
-import { checkAccessToGuild } from '../helpers/utils';
 import { discordApiRequest } from '../transport';
+import { checkAccessToGuild } from '../helpers/utils';
 
 async function getGuildId(this: ILoadOptionsFunctions) {
 	const guildId = this.getNodeParameter('guildId', undefined, {

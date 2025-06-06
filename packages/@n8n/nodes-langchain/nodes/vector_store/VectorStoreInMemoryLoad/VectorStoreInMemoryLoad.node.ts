@@ -1,16 +1,14 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-import type { Embeddings } from '@langchain/core/embeddings';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type SupplyData,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
-	type SupplyData,
 } from 'n8n-workflow';
-
-import { logWrapper } from '@utils/logWrapper';
-
-import { MemoryVectorStoreManager } from '../shared/MemoryManager/MemoryVectorStoreManager';
+import type { Embeddings } from '@langchain/core/embeddings';
+import { MemoryVectorStoreManager } from '../shared/MemoryVectorStoreManager';
+import { logWrapper } from '../../../utils/logWrapper';
 
 // This node is deprecated. Use VectorStoreInMemory instead.
 export class VectorStoreInMemoryLoad implements INodeType {
@@ -43,11 +41,11 @@ export class VectorStoreInMemoryLoad implements INodeType {
 			{
 				displayName: 'Embedding',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiEmbedding,
+				type: NodeConnectionType.AiEmbedding,
 				required: true,
 			},
 		],
-		outputs: [NodeConnectionTypes.AiVectorStore],
+		outputs: [NodeConnectionType.AiVectorStore],
 		outputNames: ['Vector Store'],
 		properties: [
 			{
@@ -61,16 +59,16 @@ export class VectorStoreInMemoryLoad implements INodeType {
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		const embeddings = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiEmbedding,
+			NodeConnectionType.AiEmbedding,
 			itemIndex,
 		)) as Embeddings;
 
 		const workflowId = this.getWorkflow().id;
 		const memoryKey = this.getNodeParameter('memoryKey', 0) as string;
 
-		const vectorStoreSingleton = MemoryVectorStoreManager.getInstance(embeddings, this.logger);
+		const vectorStoreSingleton = MemoryVectorStoreManager.getInstance(embeddings);
 		const vectorStoreInstance = await vectorStoreSingleton.getVectorStore(
 			`${workflowId}__${memoryKey}`,
 		);

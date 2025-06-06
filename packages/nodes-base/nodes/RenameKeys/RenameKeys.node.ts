@@ -1,7 +1,3 @@
-import get from 'lodash/get';
-import set from 'lodash/set';
-import unset from 'lodash/unset';
-import { NodeConnectionTypes, deepCopy } from 'n8n-workflow';
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -9,6 +5,11 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
+import { NodeConnectionType, deepCopy } from 'n8n-workflow';
+
+import get from 'lodash/get';
+import set from 'lodash/set';
+import unset from 'lodash/unset';
 
 interface IRenameKey {
 	currentKey: string;
@@ -28,8 +29,8 @@ export class RenameKeys implements INodeType {
 			name: 'Rename Keys',
 			color: '#772244',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
 				displayName: 'Keys',

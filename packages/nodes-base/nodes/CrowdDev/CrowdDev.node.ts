@@ -1,6 +1,5 @@
 import type { INodeType, INodeTypeDescription } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
-
+import { NodeConnectionType } from 'n8n-workflow';
 import { allProperties } from './descriptions';
 
 export class CrowdDev implements INodeType {
@@ -16,9 +15,8 @@ export class CrowdDev implements INodeType {
 		defaults: {
 			name: 'crowd.dev',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'crowdDevApi',

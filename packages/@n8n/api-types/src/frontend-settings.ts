@@ -1,6 +1,4 @@
-import type { LogLevel, WorkflowSettings } from 'n8n-workflow';
-
-import { type InsightsDateRange } from './schemas/insights.schema';
+import type { ExpressionEvaluatorType, LogLevel, WorkflowSettings } from 'n8n-workflow';
 
 export interface IVersionNotificationSettings {
 	enabled: boolean;
@@ -28,14 +26,11 @@ export interface IUserManagementSettings {
 }
 
 export interface FrontendSettings {
-	inE2ETests: boolean;
-	isDocker: boolean;
+	isDocker?: boolean;
 	databaseType: 'sqlite' | 'mariadb' | 'mysqldb' | 'postgresdb';
 	endpointForm: string;
 	endpointFormTest: string;
 	endpointFormWaiting: string;
-	endpointMcp: string;
-	endpointMcpTest: string;
 	endpointWebhook: string;
 	endpointWebhookTest: string;
 	endpointWebhookWaiting: string;
@@ -107,11 +102,8 @@ export interface FrontendSettings {
 	};
 	missingPackages?: boolean;
 	executionMode: 'regular' | 'queue';
-	/** Whether multi-main mode is enabled and licensed for this main instance. */
-	isMultiMain: boolean;
 	pushBackend: 'sse' | 'websocket';
 	communityNodesEnabled: boolean;
-	unverifiedCommunityNodesEnabled: boolean;
 	aiAssistant: {
 		enabled: boolean;
 	};
@@ -141,7 +133,6 @@ export interface FrontendSettings {
 		workflowHistory: boolean;
 		workerView: boolean;
 		advancedPermissions: boolean;
-		apiKeyScopes: boolean;
 		projects: {
 			team: {
 				limit: number;
@@ -157,13 +148,10 @@ export interface FrontendSettings {
 	variables: {
 		limit: number;
 	};
+	expressions: {
+		evaluator: ExpressionEvaluatorType;
+	};
 	mfa: {
-		enabled: boolean;
-	};
-	folders: {
-		enabled: boolean;
-	};
-	logsView: {
 		enabled: boolean;
 	};
 	banners: {
@@ -173,29 +161,12 @@ export interface FrontendSettings {
 		pruneTime: number;
 		licensePruneTime: number;
 	};
-	aiCredits: {
-		enabled: boolean;
-		credits: number;
-	};
-	pruning?: {
+	pruning: {
 		isEnabled: boolean;
 		maxAge: number;
 		maxCount: number;
 	};
 	security: {
 		blockFileAccessToN8nFiles: boolean;
-	};
-	easyAIWorkflowOnboarded: boolean;
-	partialExecution: {
-		version: 1 | 2;
-	};
-	insights: {
-		enabled: boolean;
-		summary: boolean;
-		dashboard: boolean;
-		dateRanges: InsightsDateRange[];
-	};
-	evaluation: {
-		quota: number;
 	};
 }

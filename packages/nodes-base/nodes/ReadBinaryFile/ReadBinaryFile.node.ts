@@ -1,5 +1,5 @@
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type IExecuteFunctions,
 	type INodeExecutionData,
 	type INodeType,
@@ -19,8 +19,8 @@ export class ReadBinaryFile implements INodeType {
 			name: 'Read Binary File',
 			color: '#449922',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
 				displayName: 'File Path',

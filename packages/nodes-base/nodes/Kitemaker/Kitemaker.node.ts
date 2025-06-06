@@ -6,7 +6,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
 import {
 	organizationOperations,
@@ -17,9 +17,10 @@ import {
 	workItemFields,
 	workItemOperations,
 } from './descriptions';
+
 import type { LoadOptions } from './GenericFunctions';
 import { createLoadOptions, kitemakerRequest, kitemakerRequestAllItems } from './GenericFunctions';
-import { createWorkItem, editWorkItem } from './mutations';
+
 import {
 	getAllSpaces,
 	getAllUsers,
@@ -33,6 +34,8 @@ import {
 	getWorkItems,
 } from './queries';
 
+import { createWorkItem, editWorkItem } from './mutations';
+
 export class Kitemaker implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Kitemaker',
@@ -45,9 +48,8 @@ export class Kitemaker implements INodeType {
 		defaults: {
 			name: 'Kitemaker',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'kitemakerApi',

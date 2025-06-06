@@ -1,30 +1,25 @@
-import type { BaseLanguageModel } from '@langchain/core/language_models/base';
-import { PromptTemplate } from '@langchain/core/prompts';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
-import type {
-	ISupplyDataFunctions,
-	INodeType,
-	INodeTypeDescription,
-	SupplyData,
-} from 'n8n-workflow';
-
+/* eslint-disable n8n-nodes-base/node-dirname-against-convention */
 import {
-	N8nOutputFixingParser,
-	type N8nStructuredOutputParser,
-} from '@utils/output_parsers/N8nOutputParser';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
-
-import { NAIVE_FIX_PROMPT } from './prompt';
+	NodeConnectionType,
+	type IExecuteFunctions,
+	type INodeType,
+	type INodeTypeDescription,
+	type SupplyData,
+} from 'n8n-workflow';
+import { OutputFixingParser } from 'langchain/output_parsers';
+import type { BaseOutputParser } from '@langchain/core/output_parsers';
+import type { BaseLanguageModel } from '@langchain/core/language_models/base';
+import { logWrapper } from '../../../utils/logWrapper';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
 
 export class OutputParserAutofixing implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Auto-fixing Output Parser',
 		name: 'outputParserAutofixing',
 		icon: 'fa:tools',
-		iconColor: 'black',
 		group: ['transform'],
 		version: 1,
-		description: 'Deprecated, use structured output parser',
+		description: 'Automatically fix the output if it is not in the correct format',
 		defaults: {
 			name: 'Auto-fixing Output Parser',
 		},
@@ -47,18 +42,18 @@ export class OutputParserAutofixing implements INodeType {
 			{
 				displayName: 'Model',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiLanguageModel,
+				type: NodeConnectionType.AiLanguageModel,
 				required: true,
 			},
 			{
 				displayName: 'Output Parser',
 				maxConnections: 1,
 				required: true,
-				type: NodeConnectionTypes.AiOutputParser,
+				type: NodeConnectionType.AiOutputParser,
 			},
 		],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiOutputParser],
+		outputs: [NodeConnectionType.AiOutputParser],
 		outputNames: ['Output Parser'],
 		properties: [
 			{
@@ -68,57 +63,24 @@ export class OutputParserAutofixing implements INodeType {
 				type: 'notice',
 				default: '',
 			},
-			getConnectionHintNoticeField([NodeConnectionTypes.AiChain, NodeConnectionTypes.AiAgent]),
-			{
-				displayName: 'Options',
-				name: 'options',
-				type: 'collection',
-				placeholder: 'Add Option',
-				default: {},
-				options: [
-					{
-						displayName: 'Retry Prompt',
-						name: 'prompt',
-						type: 'string',
-						default: NAIVE_FIX_PROMPT,
-						typeOptions: {
-							rows: 10,
-						},
-						hint: 'Should include "{error}", "{instructions}", and "{completion}" placeholders',
-						description:
-							'Prompt template used for fixing the output. Uses placeholders: "{instructions}" for parsing rules, "{completion}" for the failed attempt, and "{error}" for the validation error message.',
-					},
-				],
-			},
+			getConnectionHintNoticeField([NodeConnectionType.AiChain, NodeConnectionType.AiAgent]),
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		const model = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiLanguageModel,
+			NodeConnectionType.AiLanguageModel,
 			itemIndex,
 		)) as BaseLanguageModel;
 		const outputParser = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiOutputParser,
+			NodeConnectionType.AiOutputParser,
 			itemIndex,
-		)) as N8nStructuredOutputParser;
-		const prompt = this.getNodeParameter('options.prompt', itemIndex, NAIVE_FIX_PROMPT) as string;
+		)) as BaseOutputParser;
 
-		if (prompt.length === 0 || !prompt.includes('{error}')) {
-			throw new NodeOperationError(
-				this.getNode(),
-				'Auto-fixing parser prompt has to contain {error} placeholder',
-			);
-		}
-		const parser = new N8nOutputFixingParser(
-			this,
-			model,
-			outputParser,
-			PromptTemplate.fromTemplate(prompt),
-		);
+		const parser = OutputFixingParser.fromLLM(model, outputParser);
 
 		return {
-			response: parser,
+			response: logWrapper(parser, this),
 		};
 	}
 }

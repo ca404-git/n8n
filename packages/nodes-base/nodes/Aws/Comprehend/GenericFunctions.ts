@@ -1,3 +1,5 @@
+import { parseString } from 'xml2js';
+
 import type {
 	IExecuteFunctions,
 	IHookFunctions,
@@ -6,7 +8,6 @@ import type {
 	IHttpRequestOptions,
 	IHttpRequestMethods,
 } from 'n8n-workflow';
-import { parseString } from 'xml2js';
 
 export async function awsApiRequest(
 	this: IHookFunctions | IExecuteFunctions | ILoadOptionsFunctions | IWebhookFunctions,

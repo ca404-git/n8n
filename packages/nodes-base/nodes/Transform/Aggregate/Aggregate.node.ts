@@ -1,6 +1,7 @@
 import get from 'lodash/get';
 import isEmpty from 'lodash/isEmpty';
 import set from 'lodash/set';
+
 import {
 	NodeOperationError,
 	type IDataObject,
@@ -9,12 +10,12 @@ import {
 	type INodeType,
 	type INodeTypeDescription,
 	type IPairedItemData,
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type NodeExecutionHint,
+	NodeExecutionOutput,
 } from 'n8n-workflow';
-
-import { addBinariesToItem } from './utils';
 import { prepareFieldsArray } from '../utils/utils';
+import { addBinariesToItem } from './utils';
 
 export class Aggregate implements INodeType {
 	description: INodeTypeDescription = {
@@ -28,8 +29,8 @@ export class Aggregate implements INodeType {
 		defaults: {
 			name: 'Aggregate',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
 				displayName: 'Aggregate',
@@ -431,9 +432,7 @@ export class Aggregate implements INodeType {
 				}
 			}
 
-			if (hints.length) {
-				this.addExecutionHints(...hints);
-			}
+			if (hints.length) return new NodeExecutionOutput([[returnData]], hints);
 		}
 
 		return [[returnData]];

@@ -16,7 +16,7 @@ export const teamOperations: INodeProperties[] = [
 			{
 				name: 'Get Credits',
 				value: 'getCredits',
-				action: 'Get team credits',
+				action: 'Get a team',
 			},
 		],
 		displayOptions: {

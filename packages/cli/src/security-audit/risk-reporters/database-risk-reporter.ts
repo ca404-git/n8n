@@ -1,6 +1,6 @@
-import { Service } from '@n8n/di';
-import type { IWorkflowBase } from 'n8n-workflow';
+import { Service } from 'typedi';
 
+import type { WorkflowEntity as Workflow } from '@/databases/entities/workflow-entity';
 import {
 	SQL_NODE_TYPES,
 	DATABASE_REPORT,
@@ -12,7 +12,7 @@ import { toFlaggedNode } from '@/security-audit/utils';
 
 @Service()
 export class DatabaseRiskReporter implements RiskReporter {
-	async report(workflows: IWorkflowBase[]) {
+	async report(workflows: Workflow[]) {
 		const { expressionsInQueries, expressionsInQueryParams, unusedQueryParams } =
 			this.getIssues(workflows);
 
@@ -69,7 +69,7 @@ export class DatabaseRiskReporter implements RiskReporter {
 		return report;
 	}
 
-	private getIssues(workflows: IWorkflowBase[]) {
+	private getIssues(workflows: Workflow[]) {
 		return workflows.reduce<{ [sectionTitle: string]: Risk.NodeLocation[] }>(
 			(acc, workflow) => {
 				workflow.nodes.forEach((node) => {

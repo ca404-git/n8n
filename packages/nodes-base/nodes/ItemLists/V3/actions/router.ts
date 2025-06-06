@@ -1,8 +1,8 @@
 import type { IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
+import type { ItemListsType } from './node.type';
 
 import * as itemList from './itemList';
-import type { ItemListsType } from './node.type';
 
 export async function router(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 	let returnData: INodeExecutionData[] = [];
@@ -16,15 +16,19 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 		operation,
 	} as ItemListsType;
 
-	switch (itemListsNodeData.resource) {
-		case 'itemList':
-			returnData = await itemList[itemListsNodeData.operation].execute.call(this, items);
-			break;
-		default:
-			throw new NodeOperationError(
-				this.getNode(),
-				`The operation "${operation}" is not supported!`,
-			);
+	try {
+		switch (itemListsNodeData.resource) {
+			case 'itemList':
+				returnData = await itemList[itemListsNodeData.operation].execute.call(this, items);
+				break;
+			default:
+				throw new NodeOperationError(
+					this.getNode(),
+					`The operation "${operation}" is not supported!`,
+				);
+		}
+	} catch (error) {
+		throw error;
 	}
 
 	return [returnData];

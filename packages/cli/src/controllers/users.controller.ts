@@ -1,38 +1,27 @@
 import { RoleChangeRequestDto, SettingsUpdateRequestDto } from '@n8n/api-types';
-import { Logger } from '@n8n/backend-common';
-import type { PublicUser } from '@n8n/db';
-import {
-	Project,
-	User,
-	AuthIdentity,
-	ProjectRepository,
-	SharedCredentialsRepository,
-	SharedWorkflowRepository,
-	UserRepository,
-} from '@n8n/db';
-import {
-	GlobalScope,
-	Delete,
-	Get,
-	RestController,
-	Patch,
-	Licensed,
-	Body,
-	Param,
-} from '@n8n/decorators';
 import { Response } from 'express';
 
 import { AuthService } from '@/auth/auth.service';
 import { CredentialsService } from '@/credentials/credentials.service';
+import { AuthIdentity } from '@/databases/entities/auth-identity';
+import { Project } from '@/databases/entities/project';
+import { User } from '@/databases/entities/user';
+import { ProjectRepository } from '@/databases/repositories/project.repository';
+import { SharedCredentialsRepository } from '@/databases/repositories/shared-credentials.repository';
+import { SharedWorkflowRepository } from '@/databases/repositories/shared-workflow.repository';
+import { UserRepository } from '@/databases/repositories/user.repository';
+import { GlobalScope, Delete, Get, RestController, Patch, Licensed, Body } from '@/decorators';
+import { Param } from '@/decorators/args';
 import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 import { ForbiddenError } from '@/errors/response-errors/forbidden.error';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import { EventService } from '@/events/event.service';
 import { ExternalHooks } from '@/external-hooks';
+import type { PublicUser } from '@/interfaces';
+import { Logger } from '@/logging/logger.service';
 import { listQueryMiddleware } from '@/middlewares';
-import { ListQuery, AuthenticatedRequest, UserRequest } from '@/requests';
-import { FolderService } from '@/services/folder.service';
-import { ProjectService } from '@/services/project.service.ee';
+import { AuthenticatedRequest, ListQuery, UserRequest } from '@/requests';
+import { ProjectService } from '@/services/project.service';
 import { UserService } from '@/services/user.service';
 import { WorkflowService } from '@/workflows/workflow.service';
 
@@ -51,7 +40,6 @@ export class UsersController {
 		private readonly credentialsService: CredentialsService,
 		private readonly projectService: ProjectService,
 		private readonly eventService: EventService,
-		private readonly folderService: FolderService,
 	) {}
 
 	static ERROR_MESSAGES = {
@@ -191,9 +179,9 @@ export class UsersController {
 		let transfereeId;
 
 		if (transferId) {
-			const transfereeProject = await this.projectRepository.findOneBy({ id: transferId });
+			const transfereePersonalProject = await this.projectRepository.findOneBy({ id: transferId });
 
-			if (!transfereeProject) {
+			if (!transfereePersonalProject) {
 				throw new NotFoundError(
 					'Request to delete a user failed because the transferee project was not found in DB',
 				);
@@ -201,7 +189,8 @@ export class UsersController {
 
 			const transferee = await this.userRepository.findOneByOrFail({
 				projectRelations: {
-					projectId: transfereeProject.id,
+					projectId: transfereePersonalProject.id,
+					role: 'project:personalOwner',
 				},
 			});
 
@@ -210,23 +199,19 @@ export class UsersController {
 			await this.userService.getManager().transaction(async (trx) => {
 				await this.workflowService.transferAll(
 					personalProjectToDelete.id,
-					transfereeProject.id,
+					transfereePersonalProject.id,
 					trx,
 				);
 				await this.credentialsService.transferAll(
 					personalProjectToDelete.id,
-					transfereeProject.id,
-					trx,
-				);
-
-				await this.folderService.transferAllFoldersToProject(
-					personalProjectToDelete.id,
-					transfereeProject.id,
+					transfereePersonalProject.id,
 					trx,
 				);
 			});
 
-			await this.projectService.clearCredentialCanUseExternalSecretsCache(transfereeProject.id);
+			await this.projectService.clearCredentialCanUseExternalSecretsCache(
+				transfereePersonalProject.id,
+			);
 		}
 
 		const [ownedSharedWorkflows, ownedSharedCredentials] = await Promise.all([
@@ -243,11 +228,11 @@ export class UsersController {
 		const ownedCredentials = ownedSharedCredentials.map(({ credentials }) => credentials);
 
 		for (const { workflowId } of ownedSharedWorkflows) {
-			await this.workflowService.delete(userToDelete, workflowId, true);
+			await this.workflowService.delete(userToDelete, workflowId);
 		}
 
 		for (const credential of ownedCredentials) {
-			await this.credentialsService.delete(userToDelete, credential.id);
+			await this.credentialsService.delete(credential);
 		}
 
 		await this.userService.getManager().transaction(async (trx) => {
@@ -295,7 +280,7 @@ export class UsersController {
 			throw new ForbiddenError(NO_OWNER_ON_OWNER);
 		}
 
-		await this.userService.changeUserRole(req.user, targetUser, payload);
+		await this.userService.update(targetUser.id, { role: payload.newRoleName });
 
 		this.eventService.emit('user-changed-role', {
 			userId: req.user.id,

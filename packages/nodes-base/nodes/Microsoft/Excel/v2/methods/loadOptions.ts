@@ -1,5 +1,4 @@
 import type { IDataObject, ILoadOptionsFunctions, INodePropertyOptions } from 'n8n-workflow';
-
 import { microsoftApiRequest } from '../transport';
 
 export async function getWorksheetColumnRow(

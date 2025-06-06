@@ -42,7 +42,7 @@ export class S3 implements ICredentialType {
 			default: false,
 		},
 		{
-			displayName: 'Ignore SSL Issues (Insecure)',
+			displayName: 'Ignore SSL Issues',
 			name: 'ignoreSSLIssues',
 			type: 'boolean',
 			default: false,

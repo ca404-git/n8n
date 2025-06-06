@@ -1,7 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
-
-import { mapWith, showFor } from './utils';
 import { automationPresend } from '../GenericFunctions';
+import { mapWith, showFor } from './utils';
 
 const displayOpts = showFor(['automation']);
 

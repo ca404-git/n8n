@@ -1,4 +1,4 @@
-import type { DisplayCondition, INodeProperties, NodeParameterValue } from 'n8n-workflow';
+import type { INodeProperties } from 'n8n-workflow';
 
 export const schemaTypeField: INodeProperties = {
 	displayName: 'Schema Type',
@@ -12,7 +12,7 @@ export const schemaTypeField: INodeProperties = {
 			description: 'Generate a schema from an example JSON object',
 		},
 		{
-			name: 'Define using JSON Schema',
+			name: 'Define Below',
 			value: 'manual',
 			description: 'Define the JSON schema manually',
 		},
@@ -21,13 +21,7 @@ export const schemaTypeField: INodeProperties = {
 	description: 'How to specify the schema for the function',
 };
 
-/**
- * Returns a field for inputting a JSON example that can be used to generate the schema.
- * @param props
- */
-export const buildJsonSchemaExampleField = (props?: {
-	showExtraProps?: Record<string, Array<NodeParameterValue | DisplayCondition> | undefined>;
-}): INodeProperties => ({
+export const jsonSchemaExampleField: INodeProperties = {
 	displayName: 'JSON Example',
 	name: 'jsonSchemaExample',
 	type: 'json',
@@ -40,38 +34,13 @@ export const buildJsonSchemaExampleField = (props?: {
 	},
 	displayOptions: {
 		show: {
-			...props?.showExtraProps,
 			schemaType: ['fromJson'],
 		},
 	},
 	description: 'Example JSON object to use to generate the schema',
-});
+};
 
-/**
- * Returns a notice field about the generated schema properties being required by default.
- * @param props
- */
-export const buildJsonSchemaExampleNotice = (props?: {
-	showExtraProps?: Record<string, Array<NodeParameterValue | DisplayCondition> | undefined>;
-}): INodeProperties => ({
-	displayName:
-		"All properties will be required. To make them optional, use the 'JSON Schema' schema type instead",
-	name: 'notice',
-	type: 'notice',
-	default: '',
-	displayOptions: {
-		show: {
-			...props?.showExtraProps,
-			schemaType: ['fromJson'],
-		},
-	},
-});
-
-export const jsonSchemaExampleField = buildJsonSchemaExampleField();
-
-export const buildInputSchemaField = (props?: {
-	showExtraProps?: Record<string, Array<NodeParameterValue | DisplayCondition> | undefined>;
-}): INodeProperties => ({
+export const inputSchemaField: INodeProperties = {
 	displayName: 'Input Schema',
 	name: 'inputSchema',
 	type: 'json',
@@ -90,28 +59,25 @@ export const buildInputSchemaField = (props?: {
 	},
 	displayOptions: {
 		show: {
-			...props?.showExtraProps,
 			schemaType: ['manual'],
 		},
 	},
 	description: 'Schema to use for the function',
-	hint: 'Use <a target="_blank" href="https://json-schema.org/">JSON Schema</a> format (<a target="_blank" href="https://json-schema.org/learn/miscellaneous-examples.html">examples</a>). $refs syntax is currently not supported.',
-});
-
-export const inputSchemaField = buildInputSchemaField();
+};
 
 export const promptTypeOptions: INodeProperties = {
-	displayName: 'Source for Prompt (User Message)',
+	displayName: 'Prompt',
 	name: 'promptType',
 	type: 'options',
 	options: [
 		{
-			name: 'Connected Chat Trigger Node',
+			// eslint-disable-next-line n8n-nodes-base/node-param-display-name-miscased
+			name: 'Take from previous node automatically',
 			value: 'auto',
-			description:
-				"Looks for an input field called 'chatInput' that is coming from a directly connected Chat Trigger",
+			description: 'Looks for an input field called chatInput',
 		},
 		{
+			// eslint-disable-next-line n8n-nodes-base/node-param-display-name-miscased
 			name: 'Define below',
 			value: 'define',
 			description: 'Use an expression to reference data in previous nodes or enter static text',
@@ -121,7 +87,7 @@ export const promptTypeOptions: INodeProperties = {
 };
 
 export const textInput: INodeProperties = {
-	displayName: 'Prompt (User Message)',
+	displayName: 'Text',
 	name: 'text',
 	type: 'string',
 	required: true,
@@ -130,16 +96,4 @@ export const textInput: INodeProperties = {
 	typeOptions: {
 		rows: 2,
 	},
-};
-
-export const textFromPreviousNode: INodeProperties = {
-	displayName: 'Prompt (User Message)',
-	name: 'text',
-	type: 'string',
-	required: true,
-	default: '={{ $json.chatInput }}',
-	typeOptions: {
-		rows: 2,
-	},
-	disabledOptions: { show: { promptType: ['auto'] } },
 };

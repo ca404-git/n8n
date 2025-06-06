@@ -1,5 +1,3 @@
-import flow from 'lodash/flow';
-import omit from 'lodash/omit';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -7,6 +5,9 @@ import type {
 	ILoadOptionsFunctions,
 	IRequestOptions,
 } from 'n8n-workflow';
+
+import flow from 'lodash/flow';
+import omit from 'lodash/omit';
 
 import type {
 	AllFieldsUi,

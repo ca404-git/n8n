@@ -2,10 +2,7 @@
 	"node": "n8n-nodes-base.gmail",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
-	"categories": ["Communication", "HITL"],
-	"subcategories": {
-		"HITL": ["Human in the Loop"]
-	},
+	"categories": ["Communication"],
 	"resources": {
 		"credentialDocumentation": [
 			{
@@ -55,5 +52,5 @@
 			}
 		]
 	},
-	"alias": ["email", "human", "form", "wait", "hitl", "approval"]
+	"alias": ["email"]
 }

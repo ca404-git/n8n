@@ -40,7 +40,7 @@ export class DfirIrisApi implements ICredentialType {
 			default: '',
 		},
 		{
-			displayName: 'Ignore SSL Issues (Insecure)',
+			displayName: 'Ignore SSL Issues',
 			name: 'skipSslCertificateValidation',
 			type: 'boolean',
 			default: false,

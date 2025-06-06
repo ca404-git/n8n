@@ -1,20 +1,16 @@
+import { pipeline } from 'stream/promises';
+import { createWriteStream } from 'fs';
+import type { IBinaryData, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
+import { NodeOperationError, BINARY_ENCODING } from 'n8n-workflow';
+
+import type { TextSplitter } from '@langchain/textsplitters';
+import type { Document } from '@langchain/core/documents';
 import { CSVLoader } from '@langchain/community/document_loaders/fs/csv';
 import { DocxLoader } from '@langchain/community/document_loaders/fs/docx';
-import { EPubLoader } from '@langchain/community/document_loaders/fs/epub';
-import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
-import type { Document } from '@langchain/core/documents';
-import type { TextSplitter } from '@langchain/textsplitters';
-import { createWriteStream } from 'fs';
 import { JSONLoader } from 'langchain/document_loaders/fs/json';
+import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 import { TextLoader } from 'langchain/document_loaders/fs/text';
-import type {
-	IBinaryData,
-	IExecuteFunctions,
-	INodeExecutionData,
-	ISupplyDataFunctions,
-} from 'n8n-workflow';
-import { NodeOperationError, BINARY_ENCODING } from 'n8n-workflow';
-import { pipeline } from 'stream/promises';
+import { EPubLoader } from '@langchain/community/document_loaders/fs/epub';
 import { file as tmpFile, type DirectoryResult } from 'tmp-promise';
 
 import { getMetadataFiltersValues } from './helpers';
@@ -30,12 +26,25 @@ const SUPPORTED_MIME_TYPES = {
 };
 
 export class N8nBinaryLoader {
+	private context: IExecuteFunctions;
+
+	private optionsPrefix: string;
+
+	private binaryDataKey: string;
+
+	private textSplitter?: TextSplitter;
+
 	constructor(
-		private context: IExecuteFunctions | ISupplyDataFunctions,
-		private optionsPrefix = '',
-		private binaryDataKey = '',
-		private textSplitter?: TextSplitter,
-	) {}
+		context: IExecuteFunctions,
+		optionsPrefix = '',
+		binaryDataKey = '',
+		textSplitter?: TextSplitter,
+	) {
+		this.context = context;
+		this.textSplitter = textSplitter;
+		this.optionsPrefix = optionsPrefix;
+		this.binaryDataKey = binaryDataKey;
+	}
 
 	async processAll(items?: INodeExecutionData[]): Promise<Document[]> {
 		const docs: Document[] = [];

@@ -1,4 +1,3 @@
-import { snakeCase } from 'change-case';
 import type {
 	IExecuteFunctions,
 	ILoadOptionsFunctions,
@@ -10,6 +9,8 @@ import type {
 	IRequestOptions,
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
+
+import { snakeCase } from 'change-case';
 
 export async function bannerbearApiRequest(
 	this: IExecuteFunctions | IWebhookFunctions | IHookFunctions | ILoadOptionsFunctions,

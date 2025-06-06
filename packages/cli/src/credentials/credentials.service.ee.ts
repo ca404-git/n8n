@@ -1,17 +1,19 @@
-import type { CredentialsEntity, User } from '@n8n/db';
-import { Project, SharedCredentials, SharedCredentialsRepository } from '@n8n/db';
-import { Service } from '@n8n/di';
-import { hasGlobalScope, rolesWithScope } from '@n8n/permissions';
 // eslint-disable-next-line n8n-local-rules/misplaced-n8n-typeorm-import
 import { In, type EntityManager } from '@n8n/typeorm';
 import type { ICredentialDataDecryptedObject } from 'n8n-workflow';
+import { Service } from 'typedi';
 
+import type { CredentialsEntity } from '@/databases/entities/credentials-entity';
+import { Project } from '@/databases/entities/project';
+import { SharedCredentials } from '@/databases/entities/shared-credentials';
+import type { User } from '@/databases/entities/user';
+import { SharedCredentialsRepository } from '@/databases/repositories/shared-credentials.repository';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import { TransferCredentialError } from '@/errors/response-errors/transfer-credential.error';
 import { OwnershipService } from '@/services/ownership.service';
-import { ProjectService } from '@/services/project.service.ee';
+import { ProjectService } from '@/services/project.service';
+import { RoleService } from '@/services/role.service';
 
-import { CredentialsFinderService } from './credentials-finder.service';
 import { CredentialsService } from './credentials.service';
 
 @Service()
@@ -21,30 +23,30 @@ export class EnterpriseCredentialsService {
 		private readonly ownershipService: OwnershipService,
 		private readonly credentialsService: CredentialsService,
 		private readonly projectService: ProjectService,
-		private readonly credentialsFinderService: CredentialsFinderService,
+		private readonly roleService: RoleService,
 	) {}
 
 	async shareWithProjects(
 		user: User,
-		credentialId: string,
+		credential: CredentialsEntity,
 		shareWithIds: string[],
 		entityManager?: EntityManager,
 	) {
 		const em = entityManager ?? this.sharedCredentialsRepository.manager;
 
-		let projects = await em.find(Project, {
+		const projects = await em.find(Project, {
 			where: [
 				{
 					id: In(shareWithIds),
 					type: 'team',
 					// if user can see all projects, don't check project access
 					// if they can't, find projects they can list
-					...(hasGlobalScope(user, 'project:list')
+					...(user.hasGlobalScope('project:list')
 						? {}
 						: {
 								projectRelations: {
 									userId: user.id,
-									role: In(rolesWithScope('project', 'project:list')),
+									role: In(this.roleService.rolesWithScope('project', 'project:list')),
 								},
 							}),
 				},
@@ -53,19 +55,11 @@ export class EnterpriseCredentialsService {
 					type: 'personal',
 				},
 			],
-			relations: { sharedCredentials: true },
 		});
-		// filter out all projects that already own the credential
-		projects = projects.filter(
-			(p) =>
-				!p.sharedCredentials.some(
-					(psc) => psc.credentialsId === credentialId && psc.role === 'credential:owner',
-				),
-		);
 
 		const newSharedCredentials = projects.map((project) =>
 			this.sharedCredentialsRepository.create({
-				credentialsId: credentialId,
+				credentialsId: credential.id,
 				role: 'credential:user',
 				projectId: project.id,
 			}),
@@ -81,7 +75,7 @@ export class EnterpriseCredentialsService {
 		credential = includeDecryptedData
 			? // Try to get the credential with `credential:update` scope, which
 				// are required for decrypting the data.
-				await this.credentialsFinderService.findCredentialForUser(
+				await this.sharedCredentialsRepository.findCredentialForUser(
 					credentialId,
 					user,
 					// TODO: replace credential:update with credential:decrypt once it lands
@@ -93,13 +87,18 @@ export class EnterpriseCredentialsService {
 		if (credential) {
 			// Decrypt the data if we found the credential with the `credential:update`
 			// scope.
-			decryptedData = this.credentialsService.decrypt(credential);
+			decryptedData = this.credentialsService.redact(
+				this.credentialsService.decrypt(credential),
+				credential,
+			);
 		} else {
 			// Otherwise try to find them with only the `credential:read` scope. In
 			// that case we return them without the decrypted data.
-			credential = await this.credentialsFinderService.findCredentialForUser(credentialId, user, [
-				'credential:read',
-			]);
+			credential = await this.sharedCredentialsRepository.findCredentialForUser(
+				credentialId,
+				user,
+				['credential:read'],
+			);
 		}
 
 		if (!credential) {
@@ -113,11 +112,6 @@ export class EnterpriseCredentialsService {
 		const { data: _, ...rest } = credential;
 
 		if (decryptedData) {
-			// We never want to expose the oauthTokenData to the frontend, but it
-			// expects it to check if the credential is already connected.
-			if (decryptedData?.oauthTokenData) {
-				decryptedData.oauthTokenData = true;
-			}
 			return { data: decryptedData, ...rest };
 		}
 
@@ -126,7 +120,7 @@ export class EnterpriseCredentialsService {
 
 	async transferOne(user: User, credentialId: string, destinationProjectId: string) {
 		// 1. get credential
-		const credential = await this.credentialsFinderService.findCredentialForUser(
+		const credential = await this.sharedCredentialsRepository.findCredentialForUser(
 			credentialId,
 			user,
 			['credential:move'],

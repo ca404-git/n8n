@@ -4,9 +4,9 @@ import type {
 	INodeListSearchItems,
 	INodeListSearchResult,
 } from 'n8n-workflow';
-import type { Assistant } from 'openai/resources/beta/assistants';
-import type { Model } from 'openai/resources/models';
 
+import type { Model } from 'openai/resources/models';
+import type { Assistant } from 'openai/resources/beta/assistants';
 import { apiRequest } from '../transport';
 
 export async function fileSearch(
@@ -66,6 +66,7 @@ const getModelSearch =
 		}
 
 		results = results.sort((a, b) => a.name.localeCompare(b.name));
+
 		return {
 			results,
 		};
@@ -75,23 +76,9 @@ export async function modelSearch(
 	this: ILoadOptionsFunctions,
 	filter?: string,
 ): Promise<INodeListSearchResult> {
-	const credentials = await this.getCredentials<{ url: string }>('openAiApi');
-	const url = credentials.url && new URL(credentials.url);
-	const isCustomAPI = url && !['api.openai.com', 'ai-assistant.n8n.io'].includes(url.hostname);
 	return await getModelSearch(
 		(model) =>
-			!isCustomAPI &&
-			!(
-				model.id.startsWith('babbage') ||
-				model.id.startsWith('davinci') ||
-				model.id.startsWith('computer-use') ||
-				model.id.startsWith('dall-e') ||
-				model.id.startsWith('text-embedding') ||
-				model.id.startsWith('tts') ||
-				model.id.startsWith('whisper') ||
-				model.id.startsWith('omni-moderation') ||
-				(model.id.startsWith('gpt-') && model.id.includes('instruct'))
-			),
+			model.id.startsWith('gpt-') || model.id.startsWith('ft:') || model.id.startsWith('o1'),
 	)(this, filter);
 }
 

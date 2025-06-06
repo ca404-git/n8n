@@ -47,7 +47,9 @@
 			"request": "launch",
 			"skipFiles": ["<node_internals>/**"],
 			"type": "node",
-			"envFile": "${workspaceFolder}/.env",
+			"env": {
+				// "N8N_PORT": "5679",
+			},
 			"outputCapture": "std",
 			"killBehavior": "polite"
 		},

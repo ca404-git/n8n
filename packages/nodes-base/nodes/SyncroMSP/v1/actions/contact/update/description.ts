@@ -1,5 +1,6 @@
-import { addressFixedCollection } from '../../../methods/sharedFields';
 import type { ContactProperties } from '../../Interfaces';
+
+import { addressFixedCollection } from '../../../methods/sharedFields';
 
 export const contactUpdateDescription: ContactProperties = [
 	{

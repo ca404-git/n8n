@@ -19,10 +19,7 @@ export class AuthenticatedN8nApiClient extends N8nApiClient {
 	): Promise<AuthenticatedN8nApiClient> {
 		const response = await apiClient.restApiRequest('/login', {
 			method: 'POST',
-			data: {
-				emailOrLdapLoginId: loginDetails.email,
-				password: loginDetails.password,
-			},
+			data: loginDetails,
 		});
 
 		if (response.data === 'n8n is starting up. Please wait') {

@@ -1,4 +1,3 @@
-import moment from 'moment-timezone';
 import type {
 	IDataObject,
 	INodeExecutionData,
@@ -6,7 +5,9 @@ import type {
 	INodeTypeDescription,
 	IPollFunctions,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeApiError, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeApiError, NodeOperationError } from 'n8n-workflow';
+
+import moment from 'moment-timezone';
 
 import {
 	encodeURIComponentOnce,
@@ -28,7 +29,7 @@ export class GoogleCalendarTrigger implements INodeType {
 			name: 'Google Calendar Trigger',
 		},
 		inputs: [],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'googleCalendarOAuth2Api',

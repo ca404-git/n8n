@@ -108,7 +108,7 @@ export class OAuth2Api implements ICredentialType {
 			default: 'header',
 		},
 		{
-			displayName: 'Ignore SSL Issues (Insecure)',
+			displayName: 'Ignore SSL Issues',
 			name: 'ignoreSSLIssues',
 			type: 'boolean',
 			default: false,

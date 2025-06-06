@@ -5,7 +5,6 @@ import type {
 	IDataObject,
 } from 'n8n-workflow';
 import { NodeOperationError, updateDisplayOptions } from 'n8n-workflow';
-
 import { apiRequest } from '../../transport';
 import { modelRLC } from '../descriptions';
 

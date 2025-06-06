@@ -1,16 +1,16 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-import type { TextSplitter } from '@langchain/textsplitters';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
 
-import { logWrapper } from '@utils/logWrapper';
-import { N8nJsonLoader } from '@utils/N8nJsonLoader';
-import { getConnectionHintNoticeField, metadataFilterField } from '@utils/sharedFields';
+import type { TextSplitter } from '@langchain/textsplitters';
+import { logWrapper } from '../../../utils/logWrapper';
+import { N8nJsonLoader } from '../../../utils/N8nJsonLoader';
+import { getConnectionHintNoticeField, metadataFilterField } from '../../../utils/sharedFields';
 
 export class DocumentJsonInputLoader implements INodeType {
 	description: INodeTypeDescription = {
@@ -44,15 +44,15 @@ export class DocumentJsonInputLoader implements INodeType {
 			{
 				displayName: 'Text Splitter',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiTextSplitter,
+				type: NodeConnectionType.AiTextSplitter,
 			},
 		],
 		inputNames: ['Text Splitter'],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiDocument],
+		outputs: [NodeConnectionType.AiDocument],
 		outputNames: ['Document'],
 		properties: [
-			getConnectionHintNoticeField([NodeConnectionTypes.AiVectorStore]),
+			getConnectionHintNoticeField([NodeConnectionType.AiVectorStore]),
 			{
 				displayName: 'Pointers',
 				name: 'pointers',
@@ -79,10 +79,10 @@ export class DocumentJsonInputLoader implements INodeType {
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions): Promise<SupplyData> {
 		this.logger.debug('Supply Data for JSON Input Loader');
 		const textSplitter = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiTextSplitter,
+			NodeConnectionType.AiTextSplitter,
 			0,
 		)) as TextSplitter | undefined;
 

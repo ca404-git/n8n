@@ -1,13 +1,13 @@
-import set from 'lodash/set';
 import type {
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
 
-import type { RedisCredential } from './types';
+import set from 'lodash/set';
+
 import {
 	setupRedisClient,
 	redisConnectionTest,
@@ -27,8 +27,8 @@ export class Redis implements INodeType {
 		defaults: {
 			name: 'Redis',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		usableAsTool: true,
 		credentials: [
 			{
@@ -512,7 +512,7 @@ export class Redis implements INodeType {
 		//       have a parameter field for a path. Because it is not possible to set
 		//       array, object via parameter directly (should maybe be possible?!?!)
 		//       Should maybe have a parameter which is JSON.
-		const credentials = await this.getCredentials<RedisCredential>('redis');
+		const credentials = await this.getCredentials('redis');
 
 		const client = setupRedisClient(credentials);
 		await client.connect();
@@ -521,30 +521,17 @@ export class Redis implements INodeType {
 		const operation = this.getNodeParameter('operation', 0);
 		const returnItems: INodeExecutionData[] = [];
 
-		if (operation === 'info') {
-			try {
+		try {
+			if (operation === 'info') {
 				const result = await client.info();
 				returnItems.push({ json: convertInfoToObject(result) });
-			} catch (error) {
-				if (this.continueOnFail()) {
-					returnItems.push({
-						json: {
-							error: error.message,
-						},
-					});
-				} else {
-					await client.quit();
-					throw new NodeOperationError(this.getNode(), error);
-				}
-			}
-		} else if (
-			['delete', 'get', 'keys', 'set', 'incr', 'publish', 'push', 'pop'].includes(operation)
-		) {
-			const items = this.getInputData();
+			} else if (
+				['delete', 'get', 'keys', 'set', 'incr', 'publish', 'push', 'pop'].includes(operation)
+			) {
+				const items = this.getInputData();
 
-			let item: INodeExecutionData;
-			for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
-				try {
+				let item: INodeExecutionData;
+				for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
 					item = { json: {}, pairedItem: { item: itemIndex } };
 
 					if (operation === 'delete') {
@@ -638,24 +625,14 @@ export class Redis implements INodeType {
 						}
 						returnItems.push(item);
 					}
-				} catch (error) {
-					if (this.continueOnFail()) {
-						returnItems.push({
-							json: {
-								error: error.message,
-							},
-							pairedItem: {
-								item: itemIndex,
-							},
-						});
-						continue;
-					}
-					await client.quit();
-					throw new NodeOperationError(this.getNode(), error, { itemIndex });
 				}
 			}
+		} catch (error) {
+			throw error;
+		} finally {
+			await client.quit();
 		}
-		await client.quit();
+
 		return [returnItems];
 	}
 }

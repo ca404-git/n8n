@@ -8,7 +8,6 @@ import {
 	type IWebhookFunctions,
 	type IRequestOptions,
 } from 'n8n-workflow';
-
 import { BASE_URL } from './constants';
 
 export async function lonescaleApiRequest(

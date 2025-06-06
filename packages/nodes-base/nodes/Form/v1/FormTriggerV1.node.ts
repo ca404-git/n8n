@@ -1,6 +1,6 @@
 import {
 	FORM_TRIGGER_PATH_IDENTIFIER,
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type INodeType,
 	type INodeTypeBaseDescription,
 	type INodeTypeDescription,
@@ -29,7 +29,7 @@ const descriptionV1: INodeTypeDescription = {
 	},
 
 	inputs: [],
-	outputs: [NodeConnectionTypes.Main],
+	outputs: [NodeConnectionType.Main],
 	webhooks: [
 		{
 			name: 'setup',

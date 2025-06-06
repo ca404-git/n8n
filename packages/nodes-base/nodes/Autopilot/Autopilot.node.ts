@@ -7,13 +7,17 @@ import {
 	type INodeType,
 	type INodeTypeDescription,
 	type IHttpRequestMethods,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
-import { contactFields, contactOperations } from './ContactDescription';
-import { contactJourneyFields, contactJourneyOperations } from './ContactJourneyDescription';
-import { contactListFields, contactListOperations } from './ContactListDescription';
 import { autopilotApiRequest, autopilotApiRequestAllItems } from './GenericFunctions';
+
+import { contactFields, contactOperations } from './ContactDescription';
+
+import { contactJourneyFields, contactJourneyOperations } from './ContactJourneyDescription';
+
+import { contactListFields, contactListOperations } from './ContactListDescription';
+
 import { listFields, listOperations } from './ListDescription';
 
 export class Autopilot implements INodeType {
@@ -28,9 +32,8 @@ export class Autopilot implements INodeType {
 		defaults: {
 			name: 'Autopilot',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'autopilotApi',

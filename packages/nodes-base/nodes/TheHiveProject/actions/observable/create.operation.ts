@@ -1,4 +1,3 @@
-import FormData from 'form-data';
 import {
 	NodeOperationError,
 	type IDataObject,
@@ -6,12 +5,12 @@ import {
 	type INodeExecutionData,
 	type INodeProperties,
 } from 'n8n-workflow';
-
-import { updateDisplayOptions, wrapData } from '@utils/utilities';
-
-import { alertRLC, attachmentsUi, caseRLC } from '../../descriptions';
-import { fixFieldType, prepareInputItem } from '../../helpers/utils';
+import FormData from 'form-data';
 import { theHiveApiRequest } from '../../transport';
+
+import { fixFieldType, prepareInputItem } from '../../helpers/utils';
+import { alertRLC, attachmentsUi, caseRLC } from '../../descriptions';
+import { updateDisplayOptions, wrapData } from '@utils/utilities';
 
 const properties: INodeProperties[] = [
 	{

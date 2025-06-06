@@ -5,11 +5,9 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-
-import { updateDisplayOptions } from '@utils/utilities';
-
 import { createMessage } from '../../helpers/utils';
 import { microsoftApiRequest } from '../../transport';
+import { updateDisplayOptions } from '@utils/utilities';
 
 export const properties: INodeProperties[] = [
 	{

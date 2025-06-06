@@ -1,3 +1,4 @@
+import { URL } from 'url';
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -5,10 +6,9 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
-import Parser from 'rss-parser';
-import { URL } from 'url';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
+import Parser from 'rss-parser';
 import { generatePairedItemData } from '../../utils/utilities';
 
 // Utility function
@@ -35,9 +35,8 @@ export class RssFeedRead implements INodeType {
 			name: 'RSS Read',
 			color: '#b02020',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
 				displayName: 'URL',
@@ -55,7 +54,7 @@ export class RssFeedRead implements INodeType {
 				default: {},
 				options: [
 					{
-						displayName: 'Ignore SSL Issues (Insecure)',
+						displayName: 'Ignore SSL Issues',
 						name: 'ignoreSSL',
 						type: 'boolean',
 						default: false,

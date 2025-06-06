@@ -1,25 +1,24 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-
-import type { BaseLanguageModel } from '@langchain/core/language_models/base';
-import type { BaseRetriever } from '@langchain/core/retrievers';
-import { ContextualCompressionRetriever } from 'langchain/retrievers/contextual_compression';
-import { LLMChainExtractor } from 'langchain/retrievers/document_compressors/chain_extract';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
 
-import { logWrapper } from '@utils/logWrapper';
+import { ContextualCompressionRetriever } from 'langchain/retrievers/contextual_compression';
+import { LLMChainExtractor } from 'langchain/retrievers/document_compressors/chain_extract';
+import type { BaseLanguageModel } from '@langchain/core/language_models/base';
+import type { BaseRetriever } from '@langchain/core/retrievers';
+
+import { logWrapper } from '../../../utils/logWrapper';
 
 export class RetrieverContextualCompression implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Contextual Compression Retriever',
 		name: 'retrieverContextualCompression',
 		icon: 'fa:box-open',
-		iconColor: 'black',
 		group: ['transform'],
 		version: 1,
 		description: 'Enhances document similarity search by contextual compression.',
@@ -44,13 +43,13 @@ export class RetrieverContextualCompression implements INodeType {
 			{
 				displayName: 'Model',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiLanguageModel,
+				type: NodeConnectionType.AiLanguageModel,
 				required: true,
 			},
 			{
 				displayName: 'Retriever',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiRetriever,
+				type: NodeConnectionType.AiRetriever,
 				required: true,
 			},
 		],
@@ -58,22 +57,22 @@ export class RetrieverContextualCompression implements INodeType {
 			{
 				displayName: 'Retriever',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiRetriever,
+				type: NodeConnectionType.AiRetriever,
 			},
 		],
 		properties: [],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		this.logger.debug('Supplying data for Contextual Compression Retriever');
 
 		const model = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiLanguageModel,
+			NodeConnectionType.AiLanguageModel,
 			itemIndex,
 		)) as BaseLanguageModel;
 
 		const baseRetriever = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiRetriever,
+			NodeConnectionType.AiRetriever,
 			itemIndex,
 		)) as BaseRetriever;
 

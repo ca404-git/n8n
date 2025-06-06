@@ -7,7 +7,7 @@ export const runGarbageCollector = () => {
 		const gc = runInNewContext('gc'); // nocommit
 		gc();
 	} catch (error) {
-		console.error(error);
+		console.log(error);
 	}
 };
 
@@ -23,5 +23,8 @@ export const generateGarbageMemory = (sizeInMB: number, onHeap = true) => {
 		const array = new Uint8Array(size);
 		array.fill(0);
 	}
+	// const used = process.memoryUsage().heapUsed / 1024 / 1024;
+	// const external = process.memoryUsage().external / 1024 / 1024;
+	// console.log(`heap: ${used} MB / external: ${external} MB`);
 	return { ...process.memoryUsage() };
 };

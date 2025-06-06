@@ -1,14 +1,12 @@
-import type { Callbacks } from '@langchain/core/callbacks/manager';
-import type { Embeddings } from '@langchain/core/embeddings';
+import type { IDataObject, INodeProperties } from 'n8n-workflow';
 import type { QdrantLibArgs } from '@langchain/qdrant';
 import { QdrantVectorStore } from '@langchain/qdrant';
-import { type Schemas as QdrantSchemas } from '@qdrant/js-client-rest';
-import type { IDataObject, INodeProperties } from 'n8n-workflow';
-
-import { createQdrantClient, type QdrantCredential } from './Qdrant.utils';
-import { createVectorStoreNode } from '../shared/createVectorStoreNode/createVectorStoreNode';
-import { qdrantCollectionsSearch } from '../shared/createVectorStoreNode/methods/listSearch';
+import type { Schemas as QdrantSchemas } from '@qdrant/js-client-rest';
+import { createVectorStoreNode } from '../shared/createVectorStoreNode';
 import { qdrantCollectionRLC } from '../shared/descriptions';
+import { qdrantCollectionsSearch } from '../shared/methods/listSearch';
+import type { Embeddings } from '@langchain/core/embeddings';
+import type { Callbacks } from '@langchain/core/callbacks/manager';
 
 class ExtendedQdrantVectorStore extends QdrantVectorStore {
 	private static defaultFilter: IDataObject = {};
@@ -80,7 +78,7 @@ const retrieveFields: INodeProperties[] = [
 	},
 ];
 
-export class VectorStoreQdrant extends createVectorStoreNode<ExtendedQdrantVectorStore>({
+export const VectorStoreQdrant = createVectorStoreNode({
 	meta: {
 		displayName: 'Qdrant Vector Store',
 		name: 'vectorStoreQdrant',
@@ -107,10 +105,9 @@ export class VectorStoreQdrant extends createVectorStoreNode<ExtendedQdrantVecto
 
 		const credentials = await context.getCredentials('qdrantApi');
 
-		const client = createQdrantClient(credentials as QdrantCredential);
-
 		const config: QdrantLibArgs = {
-			client,
+			url: credentials.qdrantUrl as string,
+			apiKey: credentials.apiKey as string,
 			collectionName: collection,
 		};
 
@@ -128,14 +125,13 @@ export class VectorStoreQdrant extends createVectorStoreNode<ExtendedQdrantVecto
 		};
 		const credentials = await context.getCredentials('qdrantApi');
 
-		const client = createQdrantClient(credentials as QdrantCredential);
-
 		const config: QdrantLibArgs = {
-			client,
+			url: credentials.qdrantUrl as string,
+			apiKey: credentials.apiKey as string,
 			collectionName,
 			collectionConfig,
 		};
 
 		await QdrantVectorStore.fromDocuments(documents, embeddings, config);
 	},
-}) {}
+});

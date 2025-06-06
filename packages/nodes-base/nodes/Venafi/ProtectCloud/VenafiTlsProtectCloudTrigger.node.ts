@@ -1,5 +1,5 @@
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type IHookFunctions,
 	type ILoadOptionsFunctions,
 	type INodePropertyOptions,
@@ -37,7 +37,7 @@ export class VenafiTlsProtectCloudTrigger implements INodeType {
 			},
 		],
 		inputs: [],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
 				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options

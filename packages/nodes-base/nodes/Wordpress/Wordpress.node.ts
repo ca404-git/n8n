@@ -7,14 +7,14 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
-
+import { NodeConnectionType } from 'n8n-workflow';
 import { wordpressApiRequest, wordpressApiRequestAllItems } from './GenericFunctions';
-import { pageFields, pageOperations } from './PageDescription';
-import type { IPage } from './PageInterface';
 import { postFields, postOperations } from './PostDescription';
-import type { IPost } from './PostInterface';
+import { pageFields, pageOperations } from './PageDescription';
 import { userFields, userOperations } from './UserDescription';
+
+import type { IPost } from './PostInterface';
+import type { IPage } from './PageInterface';
 import type { IUser } from './UserInterface';
 
 export class Wordpress implements INodeType {
@@ -29,9 +29,8 @@ export class Wordpress implements INodeType {
 		defaults: {
 			name: 'Wordpress',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'wordpressApi',

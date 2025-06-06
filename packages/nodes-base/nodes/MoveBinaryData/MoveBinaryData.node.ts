@@ -1,7 +1,7 @@
-import iconv from 'iconv-lite';
 import get from 'lodash/get';
 import set from 'lodash/set';
 import unset from 'lodash/unset';
+
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -14,9 +14,11 @@ import {
 	BINARY_ENCODING,
 	deepCopy,
 	jsonParse,
-	NodeConnectionTypes,
+	NodeConnectionType,
 	NodeOperationError,
 } from 'n8n-workflow';
+
+import iconv from 'iconv-lite';
 
 iconv.encodingExists('utf8');
 
@@ -58,8 +60,8 @@ export class MoveBinaryData implements INodeType {
 			name: 'Convert to/from binary data',
 			color: '#7722CC',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
 				displayName: 'Mode',

@@ -1,10 +1,9 @@
 import { type IExecuteFunctions, type IDataObject, type INodeExecutionData } from 'n8n-workflow';
-
-import * as sheet from './sheet/Sheet.resource';
-import * as spreadsheet from './spreadsheet/SpreadSheet.resource';
 import { GoogleSheet } from '../helpers/GoogleSheet';
-import type { GoogleSheets, ResourceLocator } from '../helpers/GoogleSheets.types';
 import { getSpreadsheetId } from '../helpers/GoogleSheets.utils';
+import type { GoogleSheets, ResourceLocator } from '../helpers/GoogleSheets.types';
+import * as spreadsheet from './spreadsheet/SpreadSheet.resource';
+import * as sheet from './sheet/Sheet.resource';
 
 export async function router(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 	let operationResult: INodeExecutionData[] = [];

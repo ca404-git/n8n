@@ -5,8 +5,8 @@ import type {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 
-import { router } from './actions/router';
 import { versionDescription } from './actions/versionDescription';
+import { router } from './actions/router';
 
 export class ItemListsV3 implements INodeType {
 	description: INodeTypeDescription;

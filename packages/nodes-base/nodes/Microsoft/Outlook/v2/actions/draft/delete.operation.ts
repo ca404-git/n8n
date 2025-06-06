@@ -1,9 +1,7 @@
 import type { IExecuteFunctions, INodeProperties } from 'n8n-workflow';
-
-import { updateDisplayOptions } from '@utils/utilities';
-
-import { draftRLC } from '../../descriptions';
 import { microsoftApiRequest } from '../../transport';
+import { draftRLC } from '../../descriptions';
+import { updateDisplayOptions } from '@utils/utilities';
 
 export const properties: INodeProperties[] = [draftRLC];
 

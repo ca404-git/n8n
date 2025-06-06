@@ -1,16 +1,14 @@
 import { GlobalConfig } from '@n8n/config';
-import { WorkflowRepository } from '@n8n/db';
-import { Service } from '@n8n/di';
 import type express from 'express';
 import promBundle from 'express-prom-bundle';
-import { DateTime } from 'luxon';
 import { InstanceSettings } from 'n8n-core';
 import { EventMessageTypeNames } from 'n8n-workflow';
 import promClient, { type Counter, type Gauge } from 'prom-client';
 import semverParse from 'semver/functions/parse';
+import { Service } from 'typedi';
 
 import config from '@/config';
-import { N8N_VERSION, Time } from '@/constants';
+import { N8N_VERSION } from '@/constants';
 import type { EventMessageTypes } from '@/eventbus';
 import { MessageEventBus } from '@/eventbus/message-event-bus/message-event-bus';
 import { EventService } from '@/events/event.service';
@@ -26,7 +24,6 @@ export class PrometheusMetricsService {
 		private readonly globalConfig: GlobalConfig,
 		private readonly eventService: EventService,
 		private readonly instanceSettings: InstanceSettings,
-		private readonly workflowRepository: WorkflowRepository,
 	) {}
 
 	private readonly counters: { [key: string]: Counter<string> | null } = {};
@@ -61,7 +58,6 @@ export class PrometheusMetricsService {
 		this.initEventBusMetrics();
 		this.initRouteMetrics(app);
 		this.initQueueMetrics();
-		this.initActiveWorkflowCountMetric();
 		this.mountMetricsEndpoint(app);
 	}
 
@@ -117,12 +113,11 @@ export class PrometheusMetricsService {
 	private initDefaultMetrics() {
 		if (!this.includes.metrics.default) return;
 
-		promClient.collectDefaultMetrics({ prefix: this.globalConfig.endpoints.metrics.prefix });
+		promClient.collectDefaultMetrics();
 	}
 
 	/**
-	 * Set up metrics for server routes with `express-prom-bundle`. The same
-	 * middleware is also utilized for an instance activity metric
+	 * Set up metrics for server routes with `express-prom-bundle`
 	 */
 	private initRouteMetrics(app: express.Application) {
 		if (!this.includes.metrics.routes) return;
@@ -133,41 +128,43 @@ export class PrometheusMetricsService {
 			includePath: this.includes.labels.apiPath,
 			includeMethod: this.includes.labels.apiMethod,
 			includeStatusCode: this.includes.labels.apiStatusCode,
-			httpDurationMetricName: this.prefix + 'http_request_duration_seconds',
 		});
-
-		const activityGauge = new promClient.Gauge({
-			name: this.prefix + 'last_activity',
-			help: 'last instance activity (backend request) in Unix time (seconds).',
-		});
-
-		activityGauge.set(DateTime.now().toUnixInteger());
 
 		app.use(
 			[
+				'/rest/',
 				'/api/',
-				`/${this.globalConfig.endpoints.rest}/`,
-				`/${this.globalConfig.endpoints.webhook}/`,
-				`/${this.globalConfig.endpoints.webhookWaiting}/`,
-				`/${this.globalConfig.endpoints.webhookTest}/`,
-				`/${this.globalConfig.endpoints.form}/`,
-				`/${this.globalConfig.endpoints.formWaiting}/`,
-				`/${this.globalConfig.endpoints.formTest}/`,
+				'/webhook/',
+				'/webhook-waiting/',
+				'/webhook-test/',
+				'/form/',
+				'/form-waiting/',
+				'/form-test/',
 			],
-			async (req, res, next) => {
-				activityGauge.set(DateTime.now().toUnixInteger());
-
-				await metricsMiddleware(req, res, next);
-			},
+			metricsMiddleware,
 		);
 	}
 
 	private mountMetricsEndpoint(app: express.Application) {
 		app.get('/metrics', async (_req: express.Request, res: express.Response) => {
 			const metrics = await promClient.register.metrics();
+			const prefixedMetrics = this.addPrefixToMetrics(metrics);
 			res.setHeader('Content-Type', promClient.register.contentType);
-			res.send(metrics).end();
+			res.send(prefixedMetrics).end();
 		});
+	}
+
+	private addPrefixToMetrics(metrics: string) {
+		return metrics
+			.split('\n')
+			.map((rawLine) => {
+				const line = rawLine.trim();
+
+				if (!line || line.startsWith('#') || line.startsWith(this.prefix)) return rawLine;
+
+				return this.prefix + line;
+			})
+			.join('\n');
 	}
 
 	/**
@@ -214,6 +211,7 @@ export class PrometheusMetricsService {
 				help: `Total number of ${eventName} events.`,
 				labelNames: Object.keys(labels),
 			});
+			counter.labels(labels).inc(0);
 			this.counters[eventName] = counter;
 		}
 
@@ -226,9 +224,7 @@ export class PrometheusMetricsService {
 		this.eventBus.on('metrics.eventBus.event', (event: EventMessageTypes) => {
 			const counter = this.toCounter(event);
 			if (!counter) return;
-
-			const labels = this.toLabels(event);
-			counter.inc(labels, 1);
+			counter.inc(1);
 		});
 	}
 
@@ -271,41 +267,6 @@ export class PrometheusMetricsService {
 			this.gauges.active.set(jobCounts.active);
 			this.counters.completed?.inc(jobCounts.completed);
 			this.counters.failed?.inc(jobCounts.failed);
-		});
-	}
-
-	/**
-	 * Setup active workflow count metric
-	 *
-	 * This metric is updated every time metrics are collected.
-	 * We also cache the value of active workflow counts so we
-	 * don't hit the database on every metrics query. Both the
-	 * metric being enabled and the TTL of the cached value is
-	 * configurable.
-	 */
-	private initActiveWorkflowCountMetric() {
-		const workflowRepository = this.workflowRepository;
-		const cacheService = this.cacheService;
-		const cacheKey = 'metrics:active-workflow-count';
-		const cacheTtl =
-			this.globalConfig.endpoints.metrics.activeWorkflowCountInterval * Time.seconds.toMilliseconds;
-
-		new promClient.Gauge({
-			name: this.prefix + 'active_workflow_count',
-			help: 'Total number of active workflows.',
-			async collect() {
-				const value = await cacheService.get<string>(cacheKey);
-				const numericValue = value !== undefined ? parseInt(value, 10) : undefined;
-
-				if (numericValue !== undefined && Number.isFinite(numericValue)) {
-					this.set(numericValue);
-				} else {
-					const activeWorkflowCount = await workflowRepository.getActiveCount();
-					await cacheService.set(cacheKey, activeWorkflowCount.toString(), cacheTtl);
-
-					this.set(activeWorkflowCount);
-				}
-			},
 		});
 	}
 

@@ -5,10 +5,12 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
+
+import { venafiApiRequest, venafiApiRequestAllItems } from './GenericFunctions';
 
 import { certificateFields, certificateOperations } from './CertificateDescription';
-import { venafiApiRequest, venafiApiRequestAllItems } from './GenericFunctions';
+
 import { policyFields, policyOperations } from './PolicyDescription';
 
 export class VenafiTlsProtectDatacenter implements INodeType {
@@ -23,9 +25,8 @@ export class VenafiTlsProtectDatacenter implements INodeType {
 		defaults: {
 			name: 'Venafi TLS Protect Datacenter',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'venafiTlsProtectDatacenterApi',

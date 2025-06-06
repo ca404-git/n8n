@@ -151,7 +151,7 @@ export const leadFields: INodeProperties[] = [
 				description: 'Last name of the lead to create',
 			},
 			{
-				displayName: 'LinkedIn Enrichment',
+				displayName: 'Linkedin Enrichment',
 				name: 'linkedinEnrichment',
 				type: 'boolean',
 				default: false,

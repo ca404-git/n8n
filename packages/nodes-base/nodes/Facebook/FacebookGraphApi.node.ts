@@ -8,7 +8,7 @@ import type {
 	IRequestOptions,
 	JsonObject,
 } from 'n8n-workflow';
-import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
 export class FacebookGraphApi implements INodeType {
 	description: INodeTypeDescription = {
@@ -21,9 +21,8 @@ export class FacebookGraphApi implements INodeType {
 		defaults: {
 			name: 'Facebook Graph API',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'facebookGraphApi',
@@ -80,14 +79,6 @@ export class FacebookGraphApi implements INodeType {
 					{
 						name: 'Default',
 						value: '',
-					},
-					{
-						name: 'v22.0',
-						value: 'v22.0',
-					},
-					{
-						name: 'v21.0',
-						value: 'v21.0',
 					},
 					{
 						name: 'v20.0',
@@ -198,7 +189,7 @@ export class FacebookGraphApi implements INodeType {
 				placeholder: 'videos',
 			},
 			{
-				displayName: 'Ignore SSL Issues (Insecure)',
+				displayName: 'Ignore SSL Issues',
 				name: 'allowUnauthorizedCerts',
 				type: 'boolean',
 				default: false,

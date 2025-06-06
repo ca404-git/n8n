@@ -1,22 +1,20 @@
-import { LDAP_FEATURE_NAME, LDAP_DEFAULT_CONFIGURATION } from '@n8n/constants';
-import {
-	AuthIdentityRepository,
-	AuthProviderSyncHistoryRepository,
-	ProjectRelationRepository,
-	ProjectRepository,
-	SettingsRepository,
-	SharedCredentialsRepository,
-	SharedWorkflowRepository,
-	UserRepository,
-} from '@n8n/db';
-import { Container } from '@n8n/di';
 // eslint-disable-next-line n8n-local-rules/misplaced-n8n-typeorm-import
 import { In } from '@n8n/typeorm';
 import { Flags } from '@oclif/core';
-import { UserError } from 'n8n-workflow';
+import { ApplicationError } from 'n8n-workflow';
+import Container from 'typedi';
 
 import { UM_FIX_INSTRUCTION } from '@/constants';
 import { CredentialsService } from '@/credentials/credentials.service';
+import { AuthIdentityRepository } from '@/databases/repositories/auth-identity.repository';
+import { AuthProviderSyncHistoryRepository } from '@/databases/repositories/auth-provider-sync-history.repository';
+import { ProjectRelationRepository } from '@/databases/repositories/project-relation.repository';
+import { ProjectRepository } from '@/databases/repositories/project.repository';
+import { SettingsRepository } from '@/databases/repositories/settings.repository';
+import { SharedCredentialsRepository } from '@/databases/repositories/shared-credentials.repository';
+import { SharedWorkflowRepository } from '@/databases/repositories/shared-workflow.repository';
+import { UserRepository } from '@/databases/repositories/user.repository';
+import { LDAP_DEFAULT_CONFIGURATION, LDAP_FEATURE_NAME } from '@/ldap/constants';
 import { WorkflowService } from '@/workflows/workflow.service';
 
 import { BaseCommand } from '../base-command';
@@ -58,7 +56,7 @@ export class Reset extends BaseCommand {
 			Number(!!flags.deleteWorkflowsAndCredentials);
 
 		if (numberOfOptions !== 1) {
-			throw new UserError(wrongFlagsError);
+			throw new ApplicationError(wrongFlagsError);
 		}
 
 		const owner = await this.getOwner();
@@ -73,13 +71,13 @@ export class Reset extends BaseCommand {
 		// Migrate all workflows and credentials to another project.
 		if (flags.projectId ?? flags.userId) {
 			if (flags.userId && ldapIdentities.some((i) => i.userId === flags.userId)) {
-				throw new UserError(
+				throw new ApplicationError(
 					`Can't migrate workflows and credentials to the user with the ID ${flags.userId}. That user was created via LDAP and will be deleted as well.`,
 				);
 			}
 
 			if (flags.projectId && personalProjectIds.includes(flags.projectId)) {
-				throw new UserError(
+				throw new ApplicationError(
 					`Can't migrate workflows and credentials to the project with the ID ${flags.projectId}. That project is a personal project belonging to a user that was created via LDAP and will be deleted as well.`,
 				);
 			}
@@ -108,11 +106,11 @@ export class Reset extends BaseCommand {
 		const ownedCredentials = ownedSharedCredentials.map(({ credentials }) => credentials);
 
 		for (const { workflowId } of ownedSharedWorkflows) {
-			await Container.get(WorkflowService).delete(owner, workflowId, true);
+			await Container.get(WorkflowService).delete(owner, workflowId);
 		}
 
 		for (const credential of ownedCredentials) {
-			await Container.get(CredentialsService).delete(owner, credential.id);
+			await Container.get(CredentialsService).delete(credential);
 		}
 
 		await Container.get(AuthProviderSyncHistoryRepository).delete({ providerType: 'ldap' });
@@ -134,7 +132,7 @@ export class Reset extends BaseCommand {
 			const project = await Container.get(ProjectRepository).findOneBy({ id: projectId });
 
 			if (project === null) {
-				throw new UserError(`Could not find the project with the ID ${projectId}.`);
+				throw new ApplicationError(`Could not find the project with the ID ${projectId}.`);
 			}
 
 			return project;
@@ -144,7 +142,7 @@ export class Reset extends BaseCommand {
 			const project = await Container.get(ProjectRepository).getPersonalProjectForUser(userId);
 
 			if (project === null) {
-				throw new UserError(
+				throw new ApplicationError(
 					`Could not find the user with the ID ${userId} or their personalProject.`,
 				);
 			}
@@ -152,7 +150,7 @@ export class Reset extends BaseCommand {
 			return project;
 		}
 
-		throw new UserError(wrongFlagsError);
+		throw new ApplicationError(wrongFlagsError);
 	}
 
 	async catch(error: Error): Promise<void> {
@@ -163,7 +161,7 @@ export class Reset extends BaseCommand {
 	private async getOwner() {
 		const owner = await Container.get(UserRepository).findOneBy({ role: 'global:owner' });
 		if (!owner) {
-			throw new UserError(`Failed to find owner. ${UM_FIX_INSTRUCTION}`);
+			throw new ApplicationError(`Failed to find owner. ${UM_FIX_INSTRUCTION}`);
 		}
 
 		return owner;

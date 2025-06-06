@@ -1,12 +1,10 @@
-import jwt from 'jsonwebtoken';
-import set from 'lodash/set';
+import type { Readable } from 'stream';
 import type {
 	IDataObject,
 	IExecuteFunctions,
 	IN8nHttpFullResponse,
 	IN8nHttpResponse,
 	INodeExecutionData,
-	INodeProperties,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
@@ -14,66 +12,15 @@ import {
 	jsonParse,
 	BINARY_ENCODING,
 	NodeOperationError,
-	NodeConnectionTypes,
+	NodeConnectionType,
 	WEBHOOK_NODE_TYPE,
 	FORM_TRIGGER_NODE_TYPE,
 	CHAT_TRIGGER_NODE_TYPE,
 	WAIT_NODE_TYPE,
 } from 'n8n-workflow';
-import type { Readable } from 'stream';
-
-import { configuredOutputs } from './utils';
+import set from 'lodash/set';
+import jwt from 'jsonwebtoken';
 import { formatPrivateKey, generatePairedItemData } from '../../utils/utilities';
-
-const respondWithProperty: INodeProperties = {
-	displayName: 'Respond With',
-	name: 'respondWith',
-	type: 'options',
-	options: [
-		{
-			name: 'All Incoming Items',
-			value: 'allIncomingItems',
-			description: 'Respond with all input JSON items',
-		},
-		{
-			name: 'Binary File',
-			value: 'binary',
-			description: 'Respond with incoming file binary data',
-		},
-		{
-			name: 'First Incoming Item',
-			value: 'firstIncomingItem',
-			description: 'Respond with the first input JSON item',
-		},
-		{
-			name: 'JSON',
-			value: 'json',
-			description: 'Respond with a custom JSON body',
-		},
-		{
-			name: 'JWT Token',
-			value: 'jwt',
-			description: 'Respond with a JWT token',
-		},
-		{
-			name: 'No Data',
-			value: 'noData',
-			description: 'Respond with an empty body',
-		},
-		{
-			name: 'Redirect',
-			value: 'redirect',
-			description: 'Respond with a redirect to a given URL',
-		},
-		{
-			name: 'Text',
-			value: 'text',
-			description: 'Respond with a simple text message body',
-		},
-	],
-	default: 'firstIncomingItem',
-	description: 'The data that should be returned',
-};
 
 export class RespondToWebhook implements INodeType {
 	description: INodeTypeDescription = {
@@ -81,13 +28,13 @@ export class RespondToWebhook implements INodeType {
 		icon: { light: 'file:webhook.svg', dark: 'file:webhook.dark.svg' },
 		name: 'respondToWebhook',
 		group: ['transform'],
-		version: [1, 1.1, 1.2, 1.3, 1.4],
+		version: [1, 1.1],
 		description: 'Returns data for Webhook',
 		defaults: {
 			name: 'Respond to Webhook',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: `={{(${configuredOutputs})($nodeVersion, $parameter)}}`,
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'jwtAuth',
@@ -101,16 +48,6 @@ export class RespondToWebhook implements INodeType {
 		],
 		properties: [
 			{
-				displayName: 'Enable Response Output Branch',
-				name: 'enableResponseOutput',
-				type: 'boolean',
-				default: false,
-				description:
-					'Whether to provide an additional output branch with the response sent to the webhook',
-				isNodeSetting: true,
-				displayOptions: { show: { '@version': [{ _cnd: { gte: 1.4 } }] } },
-			},
-			{
 				displayName:
 					'Verify that the "Webhook" node\'s "Respond" parameter is set to "Using Respond to Webhook Node". <a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.respondtowebhook/" target="_blank">More details',
 				name: 'generalNotice',
@@ -118,13 +55,53 @@ export class RespondToWebhook implements INodeType {
 				default: '',
 			},
 			{
-				...respondWithProperty,
-				displayOptions: { show: { '@version': [1, 1.1] } },
-			},
-			{
-				...respondWithProperty,
-				noDataExpression: true,
-				displayOptions: { show: { '@version': [{ _cnd: { gte: 1.2 } }] } },
+				displayName: 'Respond With',
+				name: 'respondWith',
+				type: 'options',
+				options: [
+					{
+						name: 'All Incoming Items',
+						value: 'allIncomingItems',
+						description: 'Respond with all input JSON items',
+					},
+					{
+						name: 'Binary File',
+						value: 'binary',
+						description: 'Respond with incoming file binary data',
+					},
+					{
+						name: 'First Incoming Item',
+						value: 'firstIncomingItem',
+						description: 'Respond with the first input JSON item',
+					},
+					{
+						name: 'JSON',
+						value: 'json',
+						description: 'Respond with a custom JSON body',
+					},
+					{
+						name: 'JWT Token',
+						value: 'jwt',
+						description: 'Respond with a JWT token',
+					},
+					{
+						name: 'No Data',
+						value: 'noData',
+						description: 'Respond with an empty body',
+					},
+					{
+						name: 'Redirect',
+						value: 'redirect',
+						description: 'Respond with a redirect to a given URL',
+					},
+					{
+						name: 'Text',
+						value: 'text',
+						description: 'Respond with a simple text message body',
+					},
+				],
+				default: 'firstIncomingItem',
+				description: 'The data that should be returned',
 			},
 			{
 				displayName: 'Credentials',
@@ -329,8 +306,6 @@ export class RespondToWebhook implements INodeType {
 			WAIT_NODE_TYPE,
 		];
 
-		let response: IN8nHttpFullResponse;
-
 		try {
 			if (nodeVersion >= 1.1) {
 				const connectedNodes = this.getParentNodes(this.getNode().name);
@@ -380,12 +355,14 @@ export class RespondToWebhook implements INodeType {
 				}
 			} else if (respondWith === 'jwt') {
 				try {
-					const { keyType, secret, algorithm, privateKey } = await this.getCredentials<{
+					const { keyType, secret, algorithm, privateKey } = (await this.getCredentials(
+						'jwtAuth',
+					)) as {
 						keyType: 'passphrase' | 'pemKey';
 						privateKey: string;
 						secret: string;
 						algorithm: jwt.Algorithm;
-					}>('jwtAuth');
+					};
 
 					let secretOrPrivateKey;
 
@@ -458,7 +435,7 @@ export class RespondToWebhook implements INodeType {
 				);
 			}
 
-			response = {
+			const response: IN8nHttpFullResponse = {
 				body: responseBody,
 				headers,
 				statusCode,
@@ -476,12 +453,6 @@ export class RespondToWebhook implements INodeType {
 			}
 
 			throw error;
-		}
-
-		if (nodeVersion === 1.3) {
-			return [items, [{ json: { response } }]];
-		} else if (nodeVersion >= 1.4 && this.getNodeParameter('enableResponseOutput', 0, false)) {
-			return [items, [{ json: { response } }]];
 		}
 
 		return [items];

@@ -1,25 +1,13 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+import type { IExecuteFunctions, INodeType, INodeTypeDescription, SupplyData } from 'n8n-workflow';
 import { XataChatMessageHistory } from '@langchain/community/stores/message/xata';
-import { BaseClient } from '@xata.io/client';
 import { BufferMemory, BufferWindowMemory } from 'langchain/memory';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
-import type {
-	ISupplyDataFunctions,
-	INodeType,
-	INodeTypeDescription,
-	SupplyData,
-} from 'n8n-workflow';
-
-import { getSessionId } from '@utils/helpers';
-import { logWrapper } from '@utils/logWrapper';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
-
-import {
-	sessionIdOption,
-	sessionKeyProperty,
-	contextWindowLengthProperty,
-	expressionSessionKeyProperty,
-} from '../descriptions';
+import { BaseClient } from '@xata.io/client';
+import { logWrapper } from '../../../utils/logWrapper';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
+import { sessionIdOption, sessionKeyProperty, contextWindowLengthProperty } from '../descriptions';
+import { getSessionId } from '../../../utils/helpers';
 
 export class MemoryXata implements INodeType {
 	description: INodeTypeDescription = {
@@ -27,7 +15,7 @@ export class MemoryXata implements INodeType {
 		name: 'memoryXata',
 		icon: 'file:xata.svg',
 		group: ['transform'],
-		version: [1, 1.1, 1.2, 1.3, 1.4],
+		version: [1, 1.1, 1.2, 1.3],
 		description: 'Use Xata Memory',
 		defaults: {
 			name: 'Xata',
@@ -38,7 +26,6 @@ export class MemoryXata implements INodeType {
 			categories: ['AI'],
 			subcategories: {
 				AI: ['Memory'],
-				Memory: ['Other memories'],
 			},
 			resources: {
 				primaryDocumentation: [
@@ -51,7 +38,7 @@ export class MemoryXata implements INodeType {
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiMemory],
+		outputs: [NodeConnectionType.AiMemory],
 		outputNames: ['Memory'],
 		credentials: [
 			{
@@ -60,7 +47,7 @@ export class MemoryXata implements INodeType {
 			},
 		],
 		properties: [
-			getConnectionHintNoticeField([NodeConnectionTypes.AiAgent]),
+			getConnectionHintNoticeField([NodeConnectionType.AiAgent]),
 			{
 				displayName: 'Session ID',
 				name: 'sessionId',
@@ -94,7 +81,6 @@ export class MemoryXata implements INodeType {
 				},
 			},
 			sessionKeyProperty,
-			expressionSessionKeyProperty(1.4),
 			{
 				...contextWindowLengthProperty,
 				displayOptions: { hide: { '@version': [{ _cnd: { lt: 1.3 } }] } },
@@ -102,7 +88,7 @@ export class MemoryXata implements INodeType {
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		const credentials = await this.getCredentials('xataApi');
 		const nodeVersion = this.getNode().typeVersion;
 

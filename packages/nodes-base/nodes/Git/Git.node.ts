@@ -1,15 +1,15 @@
 import { access, mkdir } from 'fs/promises';
+import { URL } from 'url';
 import type {
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
+
 import type { LogOptions, SimpleGit, SimpleGitOptions } from 'simple-git';
 import simpleGit from 'simple-git';
-import { URL } from 'url';
-
 import {
 	addConfigFields,
 	addFields,
@@ -31,9 +31,8 @@ export class Git implements INodeType {
 		defaults: {
 			name: 'Git',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'gitPassword',
@@ -440,6 +439,7 @@ export class Git implements INodeType {
 						});
 					}
 
+					// @ts-ignore
 					returnItems.push(
 						...this.helpers.returnJsonArray(data).map((item) => {
 							return {

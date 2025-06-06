@@ -4,7 +4,6 @@ import type {
 	INodeProperties,
 	JsonObject,
 } from 'n8n-workflow';
-
 import { BrevoNode } from './GenericFunctions';
 
 export const attributeOperations: INodeProperties[] = [

@@ -11,7 +11,7 @@ import {
 	type INodeType,
 	type INodeTypeDescription,
 	type JsonObject,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
 import {
@@ -24,6 +24,7 @@ import {
 	userFields,
 	userOperations,
 } from './descriptions';
+
 import {
 	getAccessTokens,
 	haloPSAApiRequest,
@@ -46,9 +47,8 @@ export class HaloPSA implements INodeType {
 		defaults: {
 			name: 'HaloPSA',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'haloPSAApi',

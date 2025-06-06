@@ -4,9 +4,7 @@ export type Message = {
 	labelIds: string[];
 	snippet: string;
 	historyId: string;
-	date?: string;
-	headers?: Record<string, string>;
-	internalDate?: string;
+	internalDate: string;
 	sizeEstimate: number;
 	raw: string;
 	payload: MessagePart;
@@ -15,7 +13,7 @@ export type Message = {
 export type ListMessage = Pick<Message, 'id' | 'threadId'>;
 
 export type MessageListResponse = {
-	messages?: ListMessage[];
+	messages: ListMessage[];
 	nextPageToken?: string;
 	resultSizeEstimate: number;
 };
@@ -39,32 +37,3 @@ type MessagePartBody = {
 	size: number;
 	data: string;
 };
-
-export type Label = {
-	id: string;
-	name: string;
-	messageListVisibility?: 'hide';
-	labelListVisibility?: 'labelHide';
-	type?: 'system';
-};
-
-export type GmailWorkflowStaticData = {
-	lastTimeChecked?: number;
-	possibleDuplicates?: string[];
-};
-export type GmailWorkflowStaticDataDictionary = Record<string, GmailWorkflowStaticData>;
-
-export type GmailTriggerOptions = Partial<{
-	dataPropertyAttachmentsPrefixName: string;
-	downloadAttachments: boolean;
-}>;
-
-export type GmailTriggerFilters = Partial<{
-	sender: string;
-	q: string;
-	includeSpamTrash: boolean;
-	includeDrafts: boolean;
-	readStatus: 'read' | 'unread' | 'both';
-	labelIds: string[];
-	receivedAfter: number;
-}>;

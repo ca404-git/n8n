@@ -35,5 +35,3 @@ export interface IWebhookResponseCallbackData {
 	noWebhookResponse?: boolean;
 	responseCode?: number;
 }
-
-export type Method = NonNullable<IHttpRequestMethods>;

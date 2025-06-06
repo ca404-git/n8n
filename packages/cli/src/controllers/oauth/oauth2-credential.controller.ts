@@ -1,18 +1,18 @@
 import type { ClientOAuth2Options, OAuth2CredentialData } from '@n8n/client-oauth2';
 import { ClientOAuth2 } from '@n8n/client-oauth2';
-import { Get, RestController } from '@n8n/decorators';
 import { Response } from 'express';
 import omit from 'lodash/omit';
 import set from 'lodash/set';
 import split from 'lodash/split';
-import { type ICredentialDataDecryptedObject, jsonParse, jsonStringify } from 'n8n-workflow';
+import { jsonStringify } from 'n8n-workflow';
 import pkceChallenge from 'pkce-challenge';
 import * as qs from 'querystring';
 
-import { GENERIC_OAUTH2_CREDENTIALS_WITH_EDITABLE_SCOPE as GENERIC_OAUTH2_CREDENTIALS_WITH_EDITABLE_SCOPE } from '@/constants';
+import { Get, RestController } from '@/decorators';
 import { OAuthRequest } from '@/requests';
 
-import { AbstractOAuthController, skipAuthOnOAuthCallback } from './abstract-oauth.controller';
+import { AbstractOAuthController, type CsrfStateParam } from './abstract-oauth.controller';
+import { GENERIC_OAUTH2_CREDENTIALS_WITH_EDITABLE_SCOPE as GENERIC_OAUTH2_CREDENTIALS_WITH_EDITABLE_SCOPE } from '../../constants';
 
 @RestController('/oauth2-credential')
 export class OAuth2CredentialController extends AbstractOAuthController {
@@ -23,7 +23,7 @@ export class OAuth2CredentialController extends AbstractOAuthController {
 	async getAuthUri(req: OAuthRequest.OAuth2Credential.Auth): Promise<string> {
 		const credential = await this.getCredential(req);
 		const additionalData = await this.getAdditionalData();
-		const decryptedDataOriginal = await this.getDecryptedDataForAuthUri(credential, additionalData);
+		const decryptedDataOriginal = await this.getDecryptedData(credential, additionalData);
 
 		// At some point in the past we saved hidden scopes to credentials (but shouldn't)
 		// Delete scope before applying defaults to make sure new scopes are present on reconnect
@@ -37,17 +37,14 @@ export class OAuth2CredentialController extends AbstractOAuthController {
 			delete decryptedDataOriginal.scope;
 		}
 
-		const oauthCredentials = await this.applyDefaultsAndOverwrites<OAuth2CredentialData>(
+		const oauthCredentials = this.applyDefaultsAndOverwrites<OAuth2CredentialData>(
 			credential,
 			decryptedDataOriginal,
 			additionalData,
 		);
 
 		// Generate a CSRF prevention token and send it as an OAuth2 state string
-		const [csrfSecret, state] = this.createCsrfState(
-			credential.id,
-			skipAuthOnOAuthCallback ? undefined : req.user.id,
-		);
+		const [csrfSecret, state] = this.createCsrfState(credential.id);
 
 		const oAuthOptions = {
 			...this.convertCredentialToOptions(oauthCredentials),
@@ -60,18 +57,18 @@ export class OAuth2CredentialController extends AbstractOAuthController {
 
 		await this.externalHooks.run('oauth2.authenticate', [oAuthOptions]);
 
-		const toUpdate: ICredentialDataDecryptedObject = { csrfSecret };
+		decryptedDataOriginal.csrfSecret = csrfSecret;
 		if (oauthCredentials.grantType === 'pkce') {
-			const { code_verifier, code_challenge } = await pkceChallenge();
+			const { code_verifier, code_challenge } = pkceChallenge();
 			oAuthOptions.query = {
 				...oAuthOptions.query,
 				code_challenge,
 				code_challenge_method: 'S256',
 			};
-			toUpdate.codeVerifier = code_verifier;
+			decryptedDataOriginal.codeVerifier = code_verifier;
 		}
 
-		await this.encryptAndSaveData(credential, toUpdate);
+		await this.encryptAndSaveData(credential, decryptedDataOriginal);
 
 		const oAuthObj = new ClientOAuth2(oAuthOptions);
 		const returnUri = oAuthObj.code.getUri();
@@ -85,7 +82,7 @@ export class OAuth2CredentialController extends AbstractOAuthController {
 	}
 
 	/** Verify and store app code. Generate access tokens and store for respective credential */
-	@Get('/callback', { usesTemplates: true, skipAuth: skipAuthOnOAuthCallback })
+	@Get('/callback', { usesTemplates: true, skipAuth: true })
 	async handleCallback(req: OAuthRequest.OAuth2Credential.Callback, res: Response) {
 		try {
 			const { code, state: encodedState } = req.query;
@@ -97,8 +94,34 @@ export class OAuth2CredentialController extends AbstractOAuthController {
 				);
 			}
 
-			const [credential, decryptedDataOriginal, oauthCredentials] =
-				await this.resolveCredential<OAuth2CredentialData>(req);
+			let state: CsrfStateParam;
+			try {
+				state = this.decodeCsrfState(encodedState);
+			} catch (error) {
+				return this.renderCallbackError(res, (error as Error).message);
+			}
+
+			const credentialId = state.cid;
+			const credential = await this.getCredentialWithoutUser(credentialId);
+			if (!credential) {
+				const errorMessage = 'OAuth2 callback failed because of insufficient permissions';
+				this.logger.error(errorMessage, { credentialId });
+				return this.renderCallbackError(res, errorMessage);
+			}
+
+			const additionalData = await this.getAdditionalData();
+			const decryptedDataOriginal = await this.getDecryptedData(credential, additionalData);
+			const oauthCredentials = this.applyDefaultsAndOverwrites<OAuth2CredentialData>(
+				credential,
+				decryptedDataOriginal,
+				additionalData,
+			);
+
+			if (this.verifyCsrfState(decryptedDataOriginal, state)) {
+				const errorMessage = 'The OAuth2 callback state is invalid!';
+				this.logger.debug(errorMessage, { credentialId });
+				return this.renderCallbackError(res, errorMessage);
+			}
 
 			let options: Partial<ClientOAuth2Options> = {};
 
@@ -111,7 +134,6 @@ export class OAuth2CredentialController extends AbstractOAuthController {
 			} else if (oauthCredentials.authentication === 'body') {
 				options = {
 					body: {
-						...(oAuthOptions.body ?? {}),
 						client_id: oAuthOptions.clientId,
 						client_secret: oAuthOptions.clientSecret,
 					},
@@ -134,18 +156,26 @@ export class OAuth2CredentialController extends AbstractOAuthController {
 				set(oauthToken.data, 'callbackQueryString', omit(req.query, 'state', 'code'));
 			}
 
-			// Only overwrite supplied data as some providers do for example just return the
-			// refresh_token on the very first request and not on subsequent ones.
-			let { oauthTokenData } = decryptedDataOriginal;
-			oauthTokenData = {
-				...(typeof oauthTokenData === 'object' ? oauthTokenData : {}),
-				...oauthToken.data,
-			};
+			if (oauthToken === undefined) {
+				const errorMessage = 'Unable to get OAuth2 access tokens!';
+				this.logger.error(errorMessage, { credentialId });
+				return this.renderCallbackError(res, errorMessage);
+			}
 
-			await this.encryptAndSaveData(credential, { oauthTokenData }, ['csrfSecret']);
+			if (decryptedDataOriginal.oauthTokenData) {
+				// Only overwrite supplied data as some providers do for example just return the
+				// refresh_token on the very first request and not on subsequent ones.
+				Object.assign(decryptedDataOriginal.oauthTokenData, oauthToken.data);
+			} else {
+				// No data exists so simply set
+				decryptedDataOriginal.oauthTokenData = oauthToken.data;
+			}
+
+			delete decryptedDataOriginal.csrfSecret;
+			await this.encryptAndSaveData(credential, decryptedDataOriginal);
 
 			this.logger.debug('OAuth2 callback successful for credential', {
-				credentialId: credential.id,
+				credentialId,
 			});
 
 			return res.render('oauth-callback');
@@ -160,7 +190,7 @@ export class OAuth2CredentialController extends AbstractOAuthController {
 	}
 
 	private convertCredentialToOptions(credential: OAuth2CredentialData): ClientOAuth2Options {
-		const options: ClientOAuth2Options = {
+		return {
 			clientId: credential.clientId,
 			clientSecret: credential.clientSecret ?? '',
 			accessTokenUri: credential.accessTokenUrl ?? '',
@@ -171,18 +201,5 @@ export class OAuth2CredentialController extends AbstractOAuthController {
 			scopesSeparator: credential.scope?.includes(',') ? ',' : ' ',
 			ignoreSSLIssues: credential.ignoreSSLIssues ?? false,
 		};
-
-		if (
-			credential.additionalBodyProperties &&
-			typeof credential.additionalBodyProperties === 'string'
-		) {
-			const parsedBody = jsonParse<Record<string, string>>(credential.additionalBodyProperties);
-
-			if (parsedBody) {
-				options.body = parsedBody;
-			}
-		}
-
-		return options;
 	}
 }

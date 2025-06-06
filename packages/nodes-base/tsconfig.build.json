@@ -1,17 +1,14 @@
 {
-	"extends": ["./tsconfig.json", "@n8n/typescript-config/tsconfig.build.json"],
+	"extends": ["./tsconfig.json", "../../tsconfig.build.json"],
 	"compilerOptions": {
 		"outDir": "dist",
-		"composite": true,
 		"tsBuildInfoFile": "dist/build.tsbuildinfo"
 	},
 	"include": [
 		"credentials/**/*.ts",
-		"credentials/translations/**/*.json",
 		"nodes/**/*.ts",
 		"nodes/**/*.json",
-		"types/**/*.ts",
-		"utils/**/*.ts"
+		"credentials/translations/**/*.json"
 	],
-	"exclude": ["nodes/**/*.test.ts", "credentials/**/*.test.ts", "utils/**/*.test.ts", "test/**"]
+	"exclude": ["nodes/**/*.test.ts", "credentials/**/*.test.ts", "test/**"]
 }

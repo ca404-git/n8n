@@ -14,11 +14,6 @@ export class WorkflowFilter extends BaseFilter {
 	@Expose()
 	active?: boolean;
 
-	@IsBoolean()
-	@IsOptional()
-	@Expose()
-	isArchived?: boolean;
-
 	@IsArray()
 	@IsString({ each: true })
 	@IsOptional()
@@ -29,11 +24,6 @@ export class WorkflowFilter extends BaseFilter {
 	@IsOptional()
 	@Expose()
 	projectId?: string;
-
-	@IsString()
-	@IsOptional()
-	@Expose()
-	parentFolderId?: string;
 
 	static async fromString(rawFilter: string) {
 		return await this.toFilter(rawFilter, WorkflowFilter);

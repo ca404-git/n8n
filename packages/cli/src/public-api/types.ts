@@ -1,6 +1,7 @@
-import type { TagEntity, WorkflowEntity } from '@n8n/db';
 import type { ExecutionStatus, ICredentialDataDecryptedObject } from 'n8n-workflow';
 
+import type { TagEntity } from '@/databases/entities/tag-entity';
+import type { WorkflowEntity } from '@/databases/entities/workflow-entity';
 import type { AuthlessRequest, AuthenticatedRequest } from '@/requests';
 import type { Risk } from '@/security-audit/types';
 
@@ -73,12 +74,11 @@ export declare namespace WorkflowRequest {
 			active: boolean;
 			name?: string;
 			projectId?: string;
-			excludePinnedData?: boolean;
 		}
 	>;
 
 	type Create = AuthenticatedRequest<{}, {}, WorkflowEntity, {}>;
-	type Get = AuthenticatedRequest<{ id: string }, {}, {}, { excludePinnedData?: boolean }>;
+	type Get = AuthenticatedRequest<{ id: string }, {}, {}, {}>;
 	type Delete = Get;
 	type Update = AuthenticatedRequest<{ id: string }, {}, WorkflowEntity, {}>;
 	type Activate = Get;
@@ -140,7 +140,11 @@ export declare namespace CredentialRequest {
 
 	type Delete = AuthenticatedRequest<{ id: string }, {}, {}, Record<string, string>>;
 
-	type Transfer = AuthenticatedRequest<{ id: string }, {}, { destinationProjectId: string }>;
+	type Transfer = AuthenticatedRequest<
+		{ workflowId: string },
+		{},
+		{ destinationProjectId: string }
+	>;
 }
 
 export type OperationID = 'getUsers' | 'getUser';
@@ -170,6 +174,16 @@ export interface IJsonSchema {
 	properties: { [key: string]: { type: string } };
 	allOf?: IDependency[];
 	required: string[];
+}
+
+export class SourceControlPull {
+	force?: boolean;
+
+	variables?: { [key: string]: string };
+}
+
+export declare namespace PublicSourceControlRequest {
+	type Pull = AuthenticatedRequest<{}, {}, SourceControlPull, {}>;
 }
 
 // ----------------------------------

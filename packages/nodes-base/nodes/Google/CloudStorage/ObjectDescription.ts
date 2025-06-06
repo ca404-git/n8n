@@ -1,3 +1,4 @@
+import type { Readable } from 'stream';
 import FormData from 'form-data';
 import {
 	BINARY_ENCODING,
@@ -5,7 +6,6 @@ import {
 	type INodeExecutionData,
 	type INodeProperties,
 } from 'n8n-workflow';
-import type { Readable } from 'stream';
 
 // Define these because we'll be using them in two separate places
 const metagenerationFilters: INodeProperties[] = [

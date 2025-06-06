@@ -1,22 +1,20 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-import { TokenTextSplitter } from '@langchain/textsplitters';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
-
-import { logWrapper } from '@utils/logWrapper';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
+import { TokenTextSplitter } from '@langchain/textsplitters';
+import { logWrapper } from '../../../utils/logWrapper';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
 
 export class TextSplitterTokenSplitter implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Token Splitter',
 		name: 'textSplitterTokenSplitter',
 		icon: 'fa:grip-lines-vertical',
-		iconColor: 'black',
 		group: ['transform'],
 		version: 1,
 		description: 'Split text into chunks by tokens',
@@ -39,10 +37,10 @@ export class TextSplitterTokenSplitter implements INodeType {
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiTextSplitter],
+		outputs: [NodeConnectionType.AiTextSplitter],
 		outputNames: ['Text Splitter'],
 		properties: [
-			getConnectionHintNoticeField([NodeConnectionTypes.AiDocument]),
+			getConnectionHintNoticeField([NodeConnectionType.AiDocument]),
 			{
 				displayName: 'Chunk Size',
 				name: 'chunkSize',
@@ -58,7 +56,7 @@ export class TextSplitterTokenSplitter implements INodeType {
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		this.logger.debug('Supply Data for Text Splitter');
 
 		const chunkSize = this.getNodeParameter('chunkSize', itemIndex) as number;

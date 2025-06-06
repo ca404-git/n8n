@@ -1,6 +1,5 @@
-import { ApplicationError, type IExecuteFunctions, type INodeExecutionData } from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 import type { PyDict } from 'pyodide/ffi';
-
 import { LoadPyodide } from './Pyodide';
 import type { SandboxContext } from './Sandbox';
 import { Sandbox } from './Sandbox';
@@ -98,9 +97,7 @@ await __main()`;
 	private getPrettyError(error: PyodideError): Error {
 		const errorTypeIndex = error.message.indexOf(error.type);
 		if (errorTypeIndex !== -1) {
-			return new ApplicationError(error.message.slice(errorTypeIndex), {
-				level: ['TypeError', 'AttributeError'].includes(error.type) ? 'warning' : 'error',
-			});
+			return new Error(error.message.slice(errorTypeIndex));
 		}
 
 		return error;

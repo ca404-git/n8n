@@ -61,9 +61,6 @@ export const tableRLC: INodeProperties = {
 	type: 'resourceLocator',
 	default: { mode: 'list', value: '' },
 	required: true,
-	typeOptions: {
-		loadOptionsDependsOn: ['base.value'],
-	},
 	modes: [
 		{
 			displayName: 'From List',

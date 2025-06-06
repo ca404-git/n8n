@@ -1,4 +1,4 @@
-import type { CronExpression } from './interfaces';
+import type { CronExpression } from './Interfaces';
 import { randomInt } from './utils';
 
 interface BaseTriggerTime<T extends string> {

@@ -1,4 +1,4 @@
-import { Container } from '@n8n/di';
+import { Container } from 'typedi';
 
 import { License } from '@/license';
 
@@ -11,7 +11,7 @@ export class LicenseInfoCommand extends BaseCommand {
 
 	async run() {
 		const license = Container.get(License);
-		await license.init({ isCli: true });
+		await license.init();
 
 		this.logger.info('Printing license information:\n' + license.getInfo());
 	}

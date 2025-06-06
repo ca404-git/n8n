@@ -1,24 +1,23 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-
-import type { BaseLanguageModel } from '@langchain/core/language_models/base';
-import type { BaseRetriever } from '@langchain/core/retrievers';
-import { MultiQueryRetriever } from 'langchain/retrievers/multi_query';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
 
-import { logWrapper } from '@utils/logWrapper';
+import { MultiQueryRetriever } from 'langchain/retrievers/multi_query';
+import type { BaseLanguageModel } from '@langchain/core/language_models/base';
+import type { BaseRetriever } from '@langchain/core/retrievers';
+
+import { logWrapper } from '../../../utils/logWrapper';
 
 export class RetrieverMultiQuery implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'MultiQuery Retriever',
 		name: 'retrieverMultiQuery',
 		icon: 'fa:box-open',
-		iconColor: 'black',
 		group: ['transform'],
 		version: 1,
 		description:
@@ -44,13 +43,13 @@ export class RetrieverMultiQuery implements INodeType {
 			{
 				displayName: 'Model',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiLanguageModel,
+				type: NodeConnectionType.AiLanguageModel,
 				required: true,
 			},
 			{
 				displayName: 'Retriever',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiRetriever,
+				type: NodeConnectionType.AiRetriever,
 				required: true,
 			},
 		],
@@ -58,7 +57,7 @@ export class RetrieverMultiQuery implements INodeType {
 			{
 				displayName: 'Retriever',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiRetriever,
+				type: NodeConnectionType.AiRetriever,
 			},
 		],
 		properties: [
@@ -83,18 +82,18 @@ export class RetrieverMultiQuery implements INodeType {
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		this.logger.debug('Supplying data for MultiQuery Retriever');
 
 		const options = this.getNodeParameter('options', itemIndex, {}) as { queryCount?: number };
 
 		const model = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiLanguageModel,
+			NodeConnectionType.AiLanguageModel,
 			itemIndex,
 		)) as BaseLanguageModel;
 
 		const baseRetriever = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiRetriever,
+			NodeConnectionType.AiRetriever,
 			itemIndex,
 		)) as BaseRetriever;
 

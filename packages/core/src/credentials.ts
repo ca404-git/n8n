@@ -1,20 +1,8 @@
-import { isObjectLiteral } from '@n8n/backend-common';
-import { Container } from '@n8n/di';
 import type { ICredentialDataDecryptedObject, ICredentialsEncrypted } from 'n8n-workflow';
 import { ApplicationError, ICredentials, jsonParse } from 'n8n-workflow';
-import * as a from 'node:assert';
+import { Container } from 'typedi';
 
-import { CREDENTIAL_ERRORS } from '@/constants';
-import { Cipher } from '@/encryption/cipher';
-
-export class CredentialDataError extends ApplicationError {
-	constructor({ name, type, id }: Credentials<object>, message: string, cause?: unknown) {
-		super(message, {
-			extra: { name, type, id },
-			cause,
-		});
-	}
-}
+import { Cipher } from './Cipher';
 
 export class Credentials<
 	T extends object = ICredentialDataDecryptedObject,
@@ -25,21 +13,7 @@ export class Credentials<
 	 * Sets new credential object
 	 */
 	setData(data: T): void {
-		a.ok(isObjectLiteral(data));
-
 		this.data = this.cipher.encrypt(data);
-	}
-
-	/**
-	 * Update parts of the credential data.
-	 * This decrypts the data, modifies it, and then re-encrypts the updated data back to a string.
-	 */
-	updateData(toUpdate: Partial<T>, toDelete: Array<keyof T> = []) {
-		const updatedData: T = { ...this.getData(), ...toUpdate };
-		for (const key of toDelete) {
-			delete updatedData[key];
-		}
-		this.setData(updatedData);
 	}
 
 	/**
@@ -47,20 +21,17 @@ export class Credentials<
 	 */
 	getData(): T {
 		if (this.data === undefined) {
-			throw new CredentialDataError(this, CREDENTIAL_ERRORS.NO_DATA);
-		}
-
-		let decryptedData: string;
-		try {
-			decryptedData = this.cipher.decrypt(this.data);
-		} catch (cause) {
-			throw new CredentialDataError(this, CREDENTIAL_ERRORS.DECRYPTION_FAILED, cause);
+			throw new ApplicationError('No data is set so nothing can be returned.');
 		}
 
 		try {
+			const decryptedData = this.cipher.decrypt(this.data);
+
 			return jsonParse(decryptedData);
-		} catch (cause) {
-			throw new CredentialDataError(this, CREDENTIAL_ERRORS.INVALID_JSON, cause);
+		} catch (e) {
+			throw new ApplicationError(
+				'Credentials could not be decrypted. The likely reason is that a different "encryptionKey" was used to encrypt the data.',
+			);
 		}
 	}
 

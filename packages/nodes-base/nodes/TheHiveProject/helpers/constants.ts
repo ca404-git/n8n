@@ -1,4 +1,4 @@
-import { TLPs } from './interfaces';
+import { TLP } from './interfaces';
 
 export const alertCommonFields = [
 	{
@@ -98,19 +98,19 @@ export const alertCommonFields = [
 		options: [
 			{
 				name: 'White',
-				value: TLPs.white,
+				value: TLP.white,
 			},
 			{
 				name: 'Green',
-				value: TLPs.green,
+				value: TLP.green,
 			},
 			{
 				name: 'Amber',
-				value: TLPs.amber,
+				value: TLP.amber,
 			},
 			{
 				name: 'Red',
-				value: TLPs.red,
+				value: TLP.red,
 			},
 		],
 		removed: true,
@@ -122,19 +122,19 @@ export const alertCommonFields = [
 		options: [
 			{
 				name: 'White',
-				value: TLPs.white,
+				value: TLP.white,
 			},
 			{
 				name: 'Green',
-				value: TLPs.green,
+				value: TLP.green,
 			},
 			{
 				name: 'Amber',
-				value: TLPs.amber,
+				value: TLP.amber,
 			},
 			{
 				name: 'Red',
-				value: TLPs.red,
+				value: TLP.red,
 			},
 		],
 		removed: true,
@@ -241,19 +241,19 @@ export const caseCommonFields = [
 		options: [
 			{
 				name: 'White',
-				value: TLPs.white,
+				value: TLP.white,
 			},
 			{
 				name: 'Green',
-				value: TLPs.green,
+				value: TLP.green,
 			},
 			{
 				name: 'Amber',
-				value: TLPs.amber,
+				value: TLP.amber,
 			},
 			{
 				name: 'Red',
-				value: TLPs.red,
+				value: TLP.red,
 			},
 		],
 		removed: false,
@@ -265,19 +265,19 @@ export const caseCommonFields = [
 		options: [
 			{
 				name: 'White',
-				value: TLPs.white,
+				value: TLP.white,
 			},
 			{
 				name: 'Green',
-				value: TLPs.green,
+				value: TLP.green,
 			},
 			{
 				name: 'Amber',
-				value: TLPs.amber,
+				value: TLP.amber,
 			},
 			{
 				name: 'Red',
-				value: TLPs.red,
+				value: TLP.red,
 			},
 		],
 		removed: false,
@@ -451,19 +451,19 @@ export const observableCommonFields = [
 		options: [
 			{
 				name: 'White',
-				value: TLPs.white,
+				value: TLP.white,
 			},
 			{
 				name: 'Green',
-				value: TLPs.green,
+				value: TLP.green,
 			},
 			{
 				name: 'Amber',
-				value: TLPs.amber,
+				value: TLP.amber,
 			},
 			{
 				name: 'Red',
-				value: TLPs.red,
+				value: TLP.red,
 			},
 		],
 		removed: false,
@@ -475,19 +475,19 @@ export const observableCommonFields = [
 		options: [
 			{
 				name: 'White',
-				value: TLPs.white,
+				value: TLP.white,
 			},
 			{
 				name: 'Green',
-				value: TLPs.green,
+				value: TLP.green,
 			},
 			{
 				name: 'Amber',
-				value: TLPs.amber,
+				value: TLP.amber,
 			},
 			{
 				name: 'Red',
-				value: TLPs.red,
+				value: TLP.red,
 			},
 		],
 		removed: false,

@@ -1,5 +1,4 @@
-const { pathsToModuleNameMapper } = require('ts-jest');
-const { compilerOptions } = require('get-tsconfig').getTsconfig().config;
+const { compilerOptions } = require('./tsconfig.json');
 
 /** @type {import('ts-jest').TsJestGlobalOptions} */
 const tsJestOptions = {
@@ -11,7 +10,7 @@ const tsJestOptions = {
 	},
 };
 
-const isCoverageEnabled = process.env.COVERAGE_ENABLED === 'true';
+const { baseUrl, paths } = require('get-tsconfig').getTsconfig().config?.compilerOptions;
 
 /** @type {import('jest').Config} */
 const config = {
@@ -21,30 +20,25 @@ const config = {
 	testPathIgnorePatterns: ['/dist/', '/node_modules/'],
 	transform: {
 		'^.+\\.ts$': ['ts-jest', tsJestOptions],
-		'node_modules/pdfjs-dist/.+\\.mjs$': [
-			'babel-jest',
-			{
-				presets: ['@babel/preset-env'],
-				plugins: ['babel-plugin-transform-import-meta'],
-			},
-		],
 	},
-	transformIgnorePatterns: ['/dist/', '/node_modules/(?!.*pdfjs-dist/)'],
 	// This resolve the path mappings from the tsconfig relative to each jest.config.js
-	moduleNameMapper: compilerOptions?.paths
-		? pathsToModuleNameMapper(compilerOptions.paths, {
-				prefix: `<rootDir>${compilerOptions.baseUrl ? `/${compilerOptions.baseUrl.replace(/^\.\//, '')}` : ''}`,
-			})
-		: {},
+	moduleNameMapper: Object.entries(paths || {}).reduce((acc, [path, [mapping]]) => {
+		path = `^${path.replace(/\/\*$/, '/(.*)$')}`;
+		mapping = mapping.replace(/^\.?\.\/(?:(.*)\/)?\*$/, '$1');
+		mapping = mapping ? `/${mapping}` : '';
+		acc[path] = mapping.startsWith('/test')
+			? '<rootDir>' + mapping + '/$1'
+			: '<rootDir>' + (baseUrl ? `/${baseUrl.replace(/^\.\//, '')}` : '') + mapping + '/$1';
+		return acc;
+	}, {}),
 	setupFilesAfterEnv: ['jest-expect-message'],
-	collectCoverage: isCoverageEnabled,
-	coverageReporters: ['text-summary', 'lcov', 'html-spa'],
-	workerIdleMemoryLimit: '1MB',
+	collectCoverage: process.env.COVERAGE_ENABLED === 'true',
+	coverageReporters: ['text-summary'],
+	collectCoverageFrom: ['src/**/*.ts'],
 };
 
 if (process.env.CI === 'true') {
-	config.collectCoverageFrom = ['src/**/*.ts'];
-	config.reporters = ['default', 'jest-junit'];
+	config.workerIdleMemoryLimit = 1024;
 	config.coverageReporters = ['cobertura'];
 }
 

@@ -1,42 +1,36 @@
-import type { DismissBannerRequestDto, OwnerSetupRequestDto } from '@n8n/api-types';
-import type { Logger } from '@n8n/backend-common';
-import type { User } from '@n8n/db';
-import type { PublicUser, SettingsRepository } from '@n8n/db';
-import type { UserRepository } from '@n8n/db';
 import type { Response } from 'express';
-import { mock } from 'jest-mock-extended';
+import { anyObject, mock } from 'jest-mock-extended';
+import jwt from 'jsonwebtoken';
+import Container from 'typedi';
 
 import type { AuthService } from '@/auth/auth.service';
 import config from '@/config';
 import { OwnerController } from '@/controllers/owner.controller';
+import type { User } from '@/databases/entities/user';
+import type { SettingsRepository } from '@/databases/repositories/settings.repository';
+import type { UserRepository } from '@/databases/repositories/user.repository';
 import { BadRequestError } from '@/errors/response-errors/bad-request.error';
-import type { EventService } from '@/events/event.service';
-import type { AuthenticatedRequest } from '@/requests';
-import type { BannerService } from '@/services/banner.service';
-import type { PasswordUtility } from '@/services/password.utility';
+import { License } from '@/license';
+import type { OwnerRequest } from '@/requests';
+import { PasswordUtility } from '@/services/password.utility';
 import type { UserService } from '@/services/user.service';
+import { mockInstance } from '@test/mocking';
+import { badPasswords } from '@test/test-data';
 
 describe('OwnerController', () => {
 	const configGetSpy = jest.spyOn(config, 'getEnv');
-	const configSetSpy = jest.spyOn(config, 'set');
-
-	const logger = mock<Logger>();
-	const eventService = mock<EventService>();
 	const authService = mock<AuthService>();
-	const bannerService = mock<BannerService>();
 	const userService = mock<UserService>();
 	const userRepository = mock<UserRepository>();
 	const settingsRepository = mock<SettingsRepository>();
-	const passwordUtility = mock<PasswordUtility>();
-
+	mockInstance(License).isWithinUsersLimit.mockReturnValue(true);
 	const controller = new OwnerController(
-		logger,
-		eventService,
+		mock(),
+		mock(),
 		settingsRepository,
 		authService,
-		bannerService,
 		userService,
-		passwordUtility,
+		Container.get(PasswordUtility),
 		mock(),
 		userRepository,
 	);
@@ -44,18 +38,38 @@ describe('OwnerController', () => {
 	describe('setupOwner', () => {
 		it('should throw a BadRequestError if the instance owner is already setup', async () => {
 			configGetSpy.mockReturnValue(true);
-			await expect(controller.setupOwner(mock(), mock(), mock())).rejects.toThrowError(
+			await expect(controller.setupOwner(mock(), mock())).rejects.toThrowError(
 				new BadRequestError('Instance owner already setup'),
 			);
+		});
 
-			expect(userRepository.findOneOrFail).not.toHaveBeenCalled();
-			expect(userRepository.save).not.toHaveBeenCalled();
-			expect(authService.issueCookie).not.toHaveBeenCalled();
-			expect(settingsRepository.update).not.toHaveBeenCalled();
-			expect(configSetSpy).not.toHaveBeenCalled();
-			expect(eventService.emit).not.toHaveBeenCalled();
-			expect(logger.debug).toHaveBeenCalledWith(
-				'Request to claim instance ownership failed because instance owner already exists',
+		it('should throw a BadRequestError if the email is invalid', async () => {
+			configGetSpy.mockReturnValue(false);
+			const req = mock<OwnerRequest.Post>({ body: { email: 'invalid email' } });
+			await expect(controller.setupOwner(req, mock())).rejects.toThrowError(
+				new BadRequestError('Invalid email address'),
+			);
+		});
+
+		describe('should throw if the password is invalid', () => {
+			Object.entries(badPasswords).forEach(([password, errorMessage]) => {
+				it(password, async () => {
+					configGetSpy.mockReturnValue(false);
+					const req = mock<OwnerRequest.Post>({ body: { email: 'valid@email.com', password } });
+					await expect(controller.setupOwner(req, mock())).rejects.toThrowError(
+						new BadRequestError(errorMessage),
+					);
+				});
+			});
+		});
+
+		it('should throw a BadRequestError if firstName & lastName are missing ', async () => {
+			configGetSpy.mockReturnValue(false);
+			const req = mock<OwnerRequest.Post>({
+				body: { email: 'valid@email.com', password: 'NewPassword123', firstName: '', lastName: '' },
+			});
+			await expect(controller.setupOwner(req, mock())).rejects.toThrowError(
+				new BadRequestError('First and last names are mandatory'),
 			);
 		});
 
@@ -66,52 +80,29 @@ describe('OwnerController', () => {
 				authIdentities: [],
 			});
 			const browserId = 'test-browser-id';
-			const req = mock<AuthenticatedRequest>({ user, browserId });
-			const res = mock<Response>();
-			const payload = mock<OwnerSetupRequestDto>({
-				email: 'valid@email.com',
-				password: 'NewPassword123',
-				firstName: 'Jane',
-				lastName: 'Doe',
+			const req = mock<OwnerRequest.Post>({
+				body: {
+					email: 'valid@email.com',
+					password: 'NewPassword123',
+					firstName: 'Jane',
+					lastName: 'Doe',
+				},
+				user,
+				browserId,
 			});
+			const res = mock<Response>();
 			configGetSpy.mockReturnValue(false);
-			userRepository.findOneOrFail.mockResolvedValue(user);
-			userRepository.save.mockResolvedValue(user);
-			userService.toPublic.mockResolvedValue(mock<PublicUser>({ id: 'newUserId' }));
+			userRepository.findOneOrFail.calledWith(anyObject()).mockResolvedValue(user);
+			userRepository.save.calledWith(anyObject()).mockResolvedValue(user);
+			jest.spyOn(jwt, 'sign').mockImplementation(() => 'signed-token');
 
-			const result = await controller.setupOwner(req, res, payload);
+			await controller.setupOwner(req, res);
 
 			expect(userRepository.findOneOrFail).toHaveBeenCalledWith({
 				where: { role: 'global:owner' },
 			});
 			expect(userRepository.save).toHaveBeenCalledWith(user, { transaction: false });
 			expect(authService.issueCookie).toHaveBeenCalledWith(res, user, browserId);
-			expect(settingsRepository.update).toHaveBeenCalledWith(
-				{ key: 'userManagement.isInstanceOwnerSetUp' },
-				{ value: JSON.stringify(true) },
-			);
-			expect(configSetSpy).toHaveBeenCalledWith('userManagement.isInstanceOwnerSetUp', true);
-			expect(eventService.emit).toHaveBeenCalledWith('instance-owner-setup', { userId: 'userId' });
-			expect(result.id).toEqual('newUserId');
-		});
-	});
-
-	describe('dismissBanner', () => {
-		it('should not call dismissBanner if no banner is provided', async () => {
-			const payload = mock<DismissBannerRequestDto>({ banner: undefined });
-
-			const result = await controller.dismissBanner(mock(), mock(), payload);
-
-			expect(bannerService.dismissBanner).not.toHaveBeenCalled();
-			expect(result).toBeUndefined();
-		});
-
-		it('should call dismissBanner with the correct banner name', async () => {
-			const payload = mock<DismissBannerRequestDto>({ banner: 'TRIAL' });
-
-			await controller.dismissBanner(mock(), mock(), payload);
-
-			expect(bannerService.dismissBanner).toHaveBeenCalledWith('TRIAL');
 		});
 	});
 });

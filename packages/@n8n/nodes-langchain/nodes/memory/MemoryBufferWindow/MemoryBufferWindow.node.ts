@@ -1,24 +1,17 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-import type { BufferWindowMemoryInput } from 'langchain/memory';
-import { BufferWindowMemory } from 'langchain/memory';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
-
-import { getSessionId } from '@utils/helpers';
-import { logWrapper } from '@utils/logWrapper';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
-
-import {
-	sessionIdOption,
-	sessionKeyProperty,
-	contextWindowLengthProperty,
-	expressionSessionKeyProperty,
-} from '../descriptions';
+import type { BufferWindowMemoryInput } from 'langchain/memory';
+import { BufferWindowMemory } from 'langchain/memory';
+import { logWrapper } from '../../../utils/logWrapper';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
+import { sessionIdOption, sessionKeyProperty, contextWindowLengthProperty } from '../descriptions';
+import { getSessionId } from '../../../utils/helpers';
 
 class MemoryChatBufferSingleton {
 	private static instance: MemoryChatBufferSingleton;
@@ -32,14 +25,14 @@ class MemoryChatBufferSingleton {
 		this.memoryBuffer = new Map();
 	}
 
-	static getInstance(): MemoryChatBufferSingleton {
+	public static getInstance(): MemoryChatBufferSingleton {
 		if (!MemoryChatBufferSingleton.instance) {
 			MemoryChatBufferSingleton.instance = new MemoryChatBufferSingleton();
 		}
 		return MemoryChatBufferSingleton.instance;
 	}
 
-	async getMemory(
+	public async getMemory(
 		sessionKey: string,
 		memoryParams: BufferWindowMemoryInput,
 	): Promise<BufferWindowMemory> {
@@ -75,21 +68,19 @@ class MemoryChatBufferSingleton {
 
 export class MemoryBufferWindow implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Simple Memory',
+		displayName: 'Window Buffer Memory (easiest)',
 		name: 'memoryBufferWindow',
 		icon: 'fa:database',
-		iconColor: 'black',
 		group: ['transform'],
-		version: [1, 1.1, 1.2, 1.3],
+		version: [1, 1.1, 1.2],
 		description: 'Stores in n8n memory, so no credentials required',
 		defaults: {
-			name: 'Simple Memory',
+			name: 'Window Buffer Memory',
 		},
 		codex: {
 			categories: ['AI'],
 			subcategories: {
 				AI: ['Memory'],
-				Memory: ['For beginners'],
 			},
 			resources: {
 				primaryDocumentation: [
@@ -102,10 +93,10 @@ export class MemoryBufferWindow implements INodeType {
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiMemory],
+		outputs: [NodeConnectionType.AiMemory],
 		outputNames: ['Memory'],
 		properties: [
-			getConnectionHintNoticeField([NodeConnectionTypes.AiAgent]),
+			getConnectionHintNoticeField([NodeConnectionType.AiAgent]),
 			{
 				displayName: 'Session Key',
 				name: 'sessionKey',
@@ -138,13 +129,12 @@ export class MemoryBufferWindow implements INodeType {
 					},
 				},
 			},
-			expressionSessionKeyProperty(1.3),
 			sessionKeyProperty,
 			contextWindowLengthProperty,
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		const contextWindowLength = this.getNodeParameter('contextWindowLength', itemIndex) as number;
 		const workflowId = this.getWorkflow().id;
 		const memoryInstance = MemoryChatBufferSingleton.getInstance();

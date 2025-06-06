@@ -1,6 +1,5 @@
 import { createHash } from 'crypto';
-import flow from 'lodash/flow';
-import omit from 'lodash/omit';
+
 import type {
 	ICredentialDataDecryptedObject,
 	IDataObject,
@@ -13,6 +12,9 @@ import type {
 	JsonObject,
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
+
+import flow from 'lodash/flow';
+import omit from 'lodash/omit';
 
 import type {
 	AddressFixedCollection,

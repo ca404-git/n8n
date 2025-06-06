@@ -1,4 +1,3 @@
-import set from 'lodash/set';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -10,34 +9,33 @@ import type {
 	INodeTypeBaseDescription,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { ApplicationError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
-
-import { capitalize } from '@utils/utilities';
-
+import { ApplicationError, NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+import set from 'lodash/set';
 import { ENABLE_LESS_STRICT_TYPE_VALIDATION } from '../../../utils/constants';
 import { looseTypeValidationProperty } from '../../../utils/descriptions';
 import { getTypeValidationParameter, getTypeValidationStrictness } from '../../If/V2/utils';
+import { capitalize } from '@utils/utilities';
 
 const configuredOutputs = (parameters: INodeParameters) => {
 	const mode = parameters.mode as string;
 
 	if (mode === 'expression') {
 		return Array.from({ length: parameters.numberOutputs as number }, (_, i) => ({
-			type: 'main',
+			type: `${NodeConnectionType.Main}`,
 			displayName: i.toString(),
 		}));
 	} else {
 		const rules = ((parameters.rules as IDataObject)?.values as IDataObject[]) ?? [];
 		const ruleOutputs = rules.map((rule, index) => {
 			return {
-				type: 'main',
+				type: `${NodeConnectionType.Main}`,
 				displayName: rule.outputKey || index.toString(),
 			};
 		});
 		if ((parameters.options as IDataObject)?.fallbackOutput === 'extra') {
 			const renameFallbackOutput = (parameters.options as IDataObject)?.renameFallbackOutput;
 			ruleOutputs.push({
-				type: 'main',
+				type: `${NodeConnectionType.Main}`,
 				displayName: renameFallbackOutput || 'Fallback',
 			});
 		}
@@ -57,7 +55,7 @@ export class SwitchV3 implements INodeType {
 				name: 'Switch',
 				color: '#506000',
 			},
-			inputs: [NodeConnectionTypes.Main],
+			inputs: [NodeConnectionType.Main],
 			outputs: `={{(${configuredOutputs})($parameter)}}`,
 			properties: [
 				{

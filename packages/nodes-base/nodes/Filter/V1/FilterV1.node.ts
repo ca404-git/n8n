@@ -1,5 +1,5 @@
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type IExecuteFunctions,
 	type INodeExecutionData,
 	type INodeParameters,
@@ -22,8 +22,8 @@ export class FilterV1 implements INodeType {
 				name: 'Filter',
 				color: '#229eff',
 			},
-			inputs: [NodeConnectionTypes.Main],
-			outputs: [NodeConnectionTypes.Main],
+			inputs: [NodeConnectionType.Main],
+			outputs: [NodeConnectionType.Main],
 			outputNames: ['Kept', 'Discarded'],
 			properties: [
 				{

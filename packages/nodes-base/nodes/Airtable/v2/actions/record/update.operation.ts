@@ -5,11 +5,10 @@ import type {
 	NodeApiError,
 	IExecuteFunctions,
 } from 'n8n-workflow';
-
 import { updateDisplayOptions, wrapData } from '../../../../../utils/utilities';
-import type { UpdateRecord } from '../../helpers/interfaces';
-import { findMatches, processAirtableError, removeIgnored } from '../../helpers/utils';
 import { apiRequestAllItems, batchUpdate } from '../../transport';
+import { findMatches, processAirtableError, removeIgnored } from '../../helpers/utils';
+import type { UpdateRecord } from '../../helpers/interfaces';
 import { insertUpdateOptions } from '../common.descriptions';
 
 const properties: INodeProperties[] = [
@@ -80,7 +79,6 @@ export async function execute(
 		try {
 			const records: UpdateRecord[] = [];
 			const options = this.getNodeParameter('options', i, {});
-			const typecast = options.typecast ? true : false;
 
 			if (dataMode === 'autoMapInputData') {
 				if (columnsToMatchOn.includes('id')) {
@@ -108,22 +106,11 @@ export async function execute(
 			}
 
 			if (dataMode === 'defineBelow') {
-				const getNodeParameterOptions = typecast ? { skipValidation: true } : undefined;
 				if (columnsToMatchOn.includes('id')) {
-					const { id, ...fields } = this.getNodeParameter(
-						'columns.value',
-						i,
-						[],
-						getNodeParameterOptions,
-					) as IDataObject;
+					const { id, ...fields } = this.getNodeParameter('columns.value', i, []) as IDataObject;
 					records.push({ id: id as string, fields });
 				} else {
-					const fields = this.getNodeParameter(
-						'columns.value',
-						i,
-						[],
-						getNodeParameterOptions,
-					) as IDataObject;
+					const fields = this.getNodeParameter('columns.value', i, []) as IDataObject;
 
 					const matches = findMatches(
 						tableData,
@@ -139,7 +126,7 @@ export async function execute(
 				}
 			}
 
-			const body: IDataObject = { typecast };
+			const body: IDataObject = { typecast: options.typecast ? true : false };
 
 			const responseData = await batchUpdate.call(this, endpoint, body, records);
 

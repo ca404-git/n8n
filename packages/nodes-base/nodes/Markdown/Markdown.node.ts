@@ -1,5 +1,3 @@
-import isEmpty from 'lodash/isEmpty';
-import set from 'lodash/set';
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -8,9 +6,14 @@ import type {
 	INodeTypeDescription,
 	JsonObject,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, deepCopy } from 'n8n-workflow';
-import { NodeHtmlMarkdown } from 'node-html-markdown';
+import { NodeConnectionType, deepCopy } from 'n8n-workflow';
+
 import { Converter } from 'showdown';
+
+import { NodeHtmlMarkdown } from 'node-html-markdown';
+
+import isEmpty from 'lodash/isEmpty';
+import set from 'lodash/set';
 
 export class Markdown implements INodeType {
 	description: INodeTypeDescription = {
@@ -25,8 +28,8 @@ export class Markdown implements INodeType {
 		defaults: {
 			name: 'Markdown',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [],
 		properties: [
 			{

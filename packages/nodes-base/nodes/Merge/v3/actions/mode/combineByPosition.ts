@@ -1,16 +1,17 @@
-import merge from 'lodash/merge';
-import type {
-	IExecuteFunctions,
-	INodeExecutionData,
-	INodeProperties,
-	IPairedItemData,
+import {
+	NodeExecutionOutput,
+	type IExecuteFunctions,
+	type INodeExecutionData,
+	type INodeProperties,
+	type IPairedItemData,
 } from 'n8n-workflow';
 
-import { updateDisplayOptions } from '@utils/utilities';
+import merge from 'lodash/merge';
+import type { ClashResolveOptions } from '../../helpers/interfaces';
 
 import { clashHandlingProperties, numberInputsProperty } from '../../helpers/descriptions';
-import type { ClashResolveOptions } from '../../helpers/interfaces';
 import { addSuffixToEntriesKeys, selectMergeMethod } from '../../helpers/utils';
+import { updateDisplayOptions } from '@utils/utilities';
 
 export const properties: INodeProperties[] = [
 	numberInputsProperty,
@@ -49,7 +50,7 @@ export const description = updateDisplayOptions(displayOptions, properties);
 export async function execute(
 	this: IExecuteFunctions,
 	inputsData: INodeExecutionData[][],
-): Promise<INodeExecutionData[][]> {
+): Promise<INodeExecutionData[]> {
 	const returnData: INodeExecutionData[] = [];
 
 	const clashHandling = this.getNodeParameter(
@@ -81,10 +82,15 @@ export async function execute(
 	} else {
 		numEntries = Math.min(...inputsData.map((input) => input.length), preferred.length);
 		if (numEntries === 0) {
-			this.addExecutionHints({
-				message: 'Consider enabling "Include Any Unpaired Items" in options or check your inputs',
-			});
-			return [returnData];
+			return new NodeExecutionOutput(
+				[returnData],
+				[
+					{
+						message:
+							'Consider enabling "Include Any Unpaired Items" in options or check your inputs',
+					},
+				],
+			);
 		}
 	}
 
@@ -114,5 +120,5 @@ export async function execute(
 		returnData.push({ json, binary, pairedItem });
 	}
 
-	return [returnData];
+	return returnData;
 }

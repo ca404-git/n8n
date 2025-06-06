@@ -1,14 +1,13 @@
-import set from 'lodash/set';
 import {
 	NodeOperationError,
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type IExecuteFunctions,
 	type INodeExecutionData,
 	type INodeType,
 	type INodeTypeDescription,
-	AI_TRANSFORM_CODE_GENERATED_FOR_PROMPT,
-	AI_TRANSFORM_JS_CODE,
 } from 'n8n-workflow';
+
+import set from 'lodash/set';
 
 import { JavaScriptSandbox } from '../Code/JavaScriptSandbox';
 import { getSandboxContext } from '../Code/Sandbox';
@@ -27,17 +26,9 @@ export class AiTransform implements INodeType {
 		defaults: {
 			name: 'AI Transform',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		parameterPane: 'wide',
-		hints: [
-			{
-				message:
-					"This node doesn't have access to the contents of binary files. To use those contents here, use the 'Extract from File' node first.",
-				displayCondition: '={{ $input.all().some(i => i.binary) }}',
-				location: 'outputPane',
-			},
-		],
 		properties: [
 			{
 				displayName: 'Instructions',
@@ -55,28 +46,35 @@ export class AiTransform implements INodeType {
 						inputFieldMaxLength: 500,
 						action: {
 							type: 'askAiCodeGeneration',
-							target: AI_TRANSFORM_JS_CODE,
+							target: 'jsCode',
 						},
 					},
 				},
 			},
 			{
-				displayName: 'Code Generated For Prompt',
-				name: AI_TRANSFORM_CODE_GENERATED_FOR_PROMPT,
-				type: 'hidden',
-				default: '',
-			},
-			{
-				displayName: 'Generated JavaScript',
-				name: AI_TRANSFORM_JS_CODE,
+				displayName: 'Transformation Code',
+				name: 'jsCode',
 				type: 'string',
 				typeOptions: {
 					editor: 'jsEditor',
 					editorIsReadOnly: true,
 				},
 				default: '',
-				hint: 'Read-only. To edit this code, adjust the instructions or copy and paste it into a Code node.',
+				description:
+					'Read-only. To edit this code, adjust the prompt or copy and paste it into a Code node.',
 				noDataExpression: true,
+			},
+			{
+				displayName:
+					"Click on 'Test step' to run the transformation code. Further executions will use the generated code (and not invoke AI again).",
+				name: 'hint',
+				type: 'notice',
+				default: '',
+				displayOptions: {
+					show: {
+						jsCode: [{ _cnd: { exists: true } }],
+					},
+				},
 			},
 		],
 	};
@@ -120,7 +118,7 @@ export class AiTransform implements INodeType {
 			sandbox.on(
 				'output',
 				workflowMode === 'manual'
-					? this.sendMessageToUI.bind(this)
+					? this.sendMessageToUI
 					: CODE_ENABLE_STDOUT === 'true'
 						? (...args) =>
 								console.log(`[Workflow "${this.getWorkflow().id}"][Node "${node.name}"]`, ...args)

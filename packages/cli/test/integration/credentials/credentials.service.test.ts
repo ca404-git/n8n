@@ -1,9 +1,9 @@
-import type { CredentialsEntity } from '@n8n/db';
-import type { User } from '@n8n/db';
-import { Container } from '@n8n/di';
+import Container from 'typedi';
 
-import { CredentialsFinderService } from '@/credentials/credentials-finder.service';
 import { CredentialsService } from '@/credentials/credentials.service';
+import type { CredentialsEntity } from '@/databases/entities/credentials-entity';
+import type { User } from '@/databases/entities/user';
+import { SharedCredentialsRepository } from '@/databases/repositories/shared-credentials.repository';
 import { createTeamProject, linkUserToProject } from '@test-integration/db/projects';
 
 import { saveCredential, shareCredentialWithUsers } from '../shared/db/credentials';
@@ -32,11 +32,9 @@ beforeAll(async () => {
 describe('credentials service', () => {
 	describe('replaceCredentialContentsForSharee', () => {
 		it('should replace the contents of the credential for sharee', async () => {
-			const storedCredential = await Container.get(CredentialsFinderService).findCredentialForUser(
-				credential.id,
-				memberWhoDoesNotOwnCredential,
-				['credential:read'],
-			);
+			const storedCredential = await Container.get(
+				SharedCredentialsRepository,
+			).findCredentialForUser(credential.id, memberWhoDoesNotOwnCredential, ['credential:read']);
 
 			const decryptedData = Container.get(CredentialsService).decrypt(storedCredential!);
 
@@ -66,12 +64,10 @@ describe('credentials service', () => {
 			});
 
 			const storedProjectCredential = await Container.get(
-				CredentialsFinderService,
+				SharedCredentialsRepository,
 			).findCredentialForUser(projectCredential.id, viewerMember, ['credential:read']);
 
-			if (!storedProjectCredential) throw new Error('Could not find credential');
-
-			const decryptedData = Container.get(CredentialsService).decrypt(storedProjectCredential);
+			const decryptedData = Container.get(CredentialsService).decrypt(storedProjectCredential!);
 
 			const mergedCredentials = {
 				id: projectCredential.id,
@@ -82,7 +78,7 @@ describe('credentials service', () => {
 
 			await Container.get(CredentialsService).replaceCredentialContentsForSharee(
 				viewerMember,
-				storedProjectCredential,
+				storedProjectCredential!,
 				decryptedData,
 				mergedCredentials,
 			);
@@ -99,12 +95,10 @@ describe('credentials service', () => {
 			});
 
 			const storedProjectCredential = await Container.get(
-				CredentialsFinderService,
+				SharedCredentialsRepository,
 			).findCredentialForUser(projectCredential.id, editorMember, ['credential:read']);
 
-			if (!storedProjectCredential) throw new Error('Could not find credential');
-
-			const decryptedData = Container.get(CredentialsService).decrypt(storedProjectCredential);
+			const decryptedData = Container.get(CredentialsService).decrypt(storedProjectCredential!);
 
 			const originalData = { accessToken: '' };
 			const mergedCredentials = {
@@ -116,7 +110,7 @@ describe('credentials service', () => {
 
 			await Container.get(CredentialsService).replaceCredentialContentsForSharee(
 				editorMember,
-				storedProjectCredential,
+				storedProjectCredential!,
 				decryptedData,
 				mergedCredentials,
 			);

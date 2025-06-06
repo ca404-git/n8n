@@ -1,5 +1,3 @@
-import type { Tool } from '@langchain/core/tools';
-import _omit from 'lodash/omit';
 import type {
 	INodeProperties,
 	IExecuteFunctions,
@@ -7,15 +5,14 @@ import type {
 	IDataObject,
 } from 'n8n-workflow';
 import { jsonParse, updateDisplayOptions } from 'n8n-workflow';
-
-import { getConnectedTools } from '@utils/helpers';
-
-import { MODELS_NOT_SUPPORT_FUNCTION_CALLS } from '../../helpers/constants';
+import type { Tool } from '@langchain/core/tools';
+import _omit from 'lodash/omit';
+import { apiRequest } from '../../transport';
 import type { ChatCompletion } from '../../helpers/interfaces';
 import { formatToOpenAIAssistantTool } from '../../helpers/utils';
-import { apiRequest } from '../../transport';
 import { modelRLC } from '../descriptions';
-
+import { getConnectedTools } from '../../../../../utils/helpers';
+import { MODELS_NOT_SUPPORT_FUNCTION_CALLS } from '../../helpers/constants';
 const properties: INodeProperties[] = [
 	modelRLC('modelSearch'),
 	{
@@ -34,12 +31,11 @@ const properties: INodeProperties[] = [
 				name: 'values',
 				values: [
 					{
-						displayName: 'Prompt',
+						displayName: 'Text',
 						name: 'content',
 						type: 'string',
 						description: 'The content of the message to be send',
 						default: '',
-						placeholder: 'e.g. Hello, how can you help me?',
 						typeOptions: {
 							rows: 2,
 						},

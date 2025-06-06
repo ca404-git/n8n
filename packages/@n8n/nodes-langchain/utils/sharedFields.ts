@@ -1,5 +1,4 @@
-import { NodeConnectionTypes } from 'n8n-workflow';
-import type { IDisplayOptions, INodeProperties } from 'n8n-workflow';
+import { NodeConnectionType, type INodeProperties } from 'n8n-workflow';
 
 export const metadataFilterField: INodeProperties = {
 	displayName: 'Metadata Filter',
@@ -43,69 +42,37 @@ export function getTemplateNoticeField(templateId: number): INodeProperties {
 	};
 }
 
-export function getBatchingOptionFields(
-	displayOptions: IDisplayOptions | undefined,
-	defaultBatchSize: number = 5,
-): INodeProperties {
-	return {
-		displayName: 'Batch Processing',
-		name: 'batching',
-		type: 'collection',
-		placeholder: 'Add Batch Processing Option',
-		description: 'Batch processing options for rate limiting',
-		default: {},
-		options: [
-			{
-				displayName: 'Batch Size',
-				name: 'batchSize',
-				default: defaultBatchSize,
-				type: 'number',
-				description:
-					'How many items to process in parallel. This is useful for rate limiting, but might impact the log output ordering.',
-			},
-			{
-				displayName: 'Delay Between Batches',
-				name: 'delayBetweenBatches',
-				default: 0,
-				type: 'number',
-				description: 'Delay in milliseconds between batches. This is useful for rate limiting.',
-			},
-		],
-		displayOptions,
-	};
-}
-
 const connectionsString = {
-	[NodeConnectionTypes.AiAgent]: {
+	[NodeConnectionType.AiAgent]: {
 		// Root AI view
 		connection: '',
 		locale: 'AI Agent',
 	},
-	[NodeConnectionTypes.AiChain]: {
+	[NodeConnectionType.AiChain]: {
 		// Root AI view
 		connection: '',
 		locale: 'AI Chain',
 	},
-	[NodeConnectionTypes.AiDocument]: {
-		connection: NodeConnectionTypes.AiDocument,
+	[NodeConnectionType.AiDocument]: {
+		connection: NodeConnectionType.AiDocument,
 		locale: 'Document Loader',
 	},
-	[NodeConnectionTypes.AiVectorStore]: {
-		connection: NodeConnectionTypes.AiVectorStore,
+	[NodeConnectionType.AiVectorStore]: {
+		connection: NodeConnectionType.AiVectorStore,
 		locale: 'Vector Store',
 	},
-	[NodeConnectionTypes.AiRetriever]: {
-		connection: NodeConnectionTypes.AiRetriever,
+	[NodeConnectionType.AiRetriever]: {
+		connection: NodeConnectionType.AiRetriever,
 		locale: 'Vector Store Retriever',
 	},
 };
 
 type AllowedConnectionTypes =
-	| typeof NodeConnectionTypes.AiAgent
-	| typeof NodeConnectionTypes.AiChain
-	| typeof NodeConnectionTypes.AiDocument
-	| typeof NodeConnectionTypes.AiVectorStore
-	| typeof NodeConnectionTypes.AiRetriever;
+	| NodeConnectionType.AiAgent
+	| NodeConnectionType.AiChain
+	| NodeConnectionType.AiDocument
+	| NodeConnectionType.AiVectorStore
+	| NodeConnectionType.AiRetriever;
 
 function determineArticle(nextWord: string): string {
 	// check if the next word starts with a vowel sound

@@ -5,31 +5,9 @@ import {
 	type INodeExecutionData,
 	type INodeType,
 	type INodeTypeDescription,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
-import {
-	accountFields,
-	accountOperations,
-	contactFields,
-	contactOperations,
-	dealFields,
-	dealOperations,
-	invoiceFields,
-	invoiceOperations,
-	leadFields,
-	leadOperations,
-	productFields,
-	productOperations,
-	purchaseOrderFields,
-	purchaseOrderOperations,
-	quoteFields,
-	quoteOperations,
-	salesOrderFields,
-	salesOrderOperations,
-	vendorFields,
-	vendorOperations,
-} from './descriptions';
 import {
 	addGetAllFilterOptions,
 	adjustAccountPayload,
@@ -53,6 +31,7 @@ import {
 	zohoApiRequest,
 	zohoApiRequestAllItems,
 } from './GenericFunctions';
+
 import type {
 	CamelCaseResource,
 	GetAllFilterOptions,
@@ -63,6 +42,29 @@ import type {
 	LoadedVendors,
 	ProductDetails,
 } from './types';
+
+import {
+	accountFields,
+	accountOperations,
+	contactFields,
+	contactOperations,
+	dealFields,
+	dealOperations,
+	invoiceFields,
+	invoiceOperations,
+	leadFields,
+	leadOperations,
+	productFields,
+	productOperations,
+	purchaseOrderFields,
+	purchaseOrderOperations,
+	quoteFields,
+	quoteOperations,
+	salesOrderFields,
+	salesOrderOperations,
+	vendorFields,
+	vendorOperations,
+} from './descriptions';
 
 export class ZohoCrm implements INodeType {
 	description: INodeTypeDescription = {
@@ -76,9 +78,8 @@ export class ZohoCrm implements INodeType {
 		defaults: {
 			name: 'Zoho CRM',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'zohoOAuth2Api',

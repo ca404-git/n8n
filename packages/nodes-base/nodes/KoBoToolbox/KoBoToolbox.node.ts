@@ -6,10 +6,8 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
 
-import { fileFields, fileOperations } from './FileDescription';
-import { formFields, formOperations } from './FormDescription';
 import {
 	downloadAttachments,
 	formatSubmission,
@@ -18,8 +16,14 @@ import {
 	loadForms,
 	parseStringList,
 } from './GenericFunctions';
-import { hookFields, hookOperations } from './HookDescription';
+
+import { formFields, formOperations } from './FormDescription';
+
 import { submissionFields, submissionOperations } from './SubmissionDescription';
+
+import { hookFields, hookOperations } from './HookDescription';
+
+import { fileFields, fileOperations } from './FileDescription';
 
 export class KoBoToolbox implements INodeType {
 	description: INodeTypeDescription = {
@@ -33,9 +37,8 @@ export class KoBoToolbox implements INodeType {
 		defaults: {
 			name: 'KoBoToolbox',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'koBoToolboxApi',

@@ -1,10 +1,5 @@
 import { EventEmitter } from 'events';
-import type {
-	IExecuteFunctions,
-	INodeExecutionData,
-	ISupplyDataFunctions,
-	IWorkflowDataProxyData,
-} from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData, IWorkflowDataProxyData } from 'n8n-workflow';
 
 import { isObject } from './utils';
 import { ValidationError } from './ValidationError';
@@ -22,24 +17,9 @@ export interface SandboxContext extends IWorkflowDataProxyData {
 	helpers: IExecuteFunctions['helpers'];
 }
 
-export const REQUIRED_N8N_ITEM_KEYS = new Set([
-	'json',
-	'binary',
-	'pairedItem',
-	'error',
+export const REQUIRED_N8N_ITEM_KEYS = new Set(['json', 'binary', 'pairedItem', 'error']);
 
-	/**
-	 * The `index` key was added accidentally to Function, FunctionItem, Gong,
-	 * Execute Workflow, and ToolWorkflowV2, so we need to allow it temporarily.
-	 * Once we stop using it in all nodes, we can stop allowing the `index` key.
-	 */
-	'index',
-]);
-
-export function getSandboxContext(
-	this: IExecuteFunctions | ISupplyDataFunctions,
-	index: number,
-): SandboxContext {
+export function getSandboxContext(this: IExecuteFunctions, index: number): SandboxContext {
 	const helpers = {
 		...this.helpers,
 		httpRequestWithAuthentication: this.helpers.httpRequestWithAuthentication.bind(this),
@@ -47,8 +27,8 @@ export function getSandboxContext(
 	};
 	return {
 		// from NodeExecuteFunctions
-		$getNodeParameter: this.getNodeParameter.bind(this),
-		$getWorkflowStaticData: this.getWorkflowStaticData.bind(this),
+		$getNodeParameter: this.getNodeParameter,
+		$getWorkflowStaticData: this.getWorkflowStaticData,
 		helpers,
 
 		// to bring in all $-prefixed vars and methods from WorkflowDataProxy

@@ -19,8 +19,9 @@ export async function splunkApiRequest(
 	body: IDataObject = {},
 	qs: IDataObject = {},
 ): Promise<any> {
-	const { baseUrl, allowUnauthorizedCerts } =
-		await this.getCredentials<SplunkCredentials>('splunkApi');
+	const { baseUrl, allowUnauthorizedCerts } = (await this.getCredentials(
+		'splunkApi',
+	)) as SplunkCredentials;
 
 	const options: IRequestOptions = {
 		headers: {
@@ -94,8 +95,9 @@ export async function splunkApiJsonRequest(
 	body: IDataObject = {},
 	qs: IDataObject = {},
 ) {
-	const { baseUrl, allowUnauthorizedCerts } =
-		await this.getCredentials<SplunkCredentials>('splunkApi');
+	const { baseUrl, allowUnauthorizedCerts } = (await this.getCredentials(
+		'splunkApi',
+	)) as SplunkCredentials;
 
 	qs.output_mode = 'json';
 

@@ -1,10 +1,8 @@
-import { DateTime } from 'luxon';
 import type { INodeProperties, IExecuteFunctions, IDataObject } from 'n8n-workflow';
-
-import { updateDisplayOptions } from '@utils/utilities';
-
+import { DateTime } from 'luxon';
 import { bucketRLC, groupRLC, memberRLC, planRLC } from '../../descriptions';
 import { microsoftApiRequest } from '../../transport';
+import { updateDisplayOptions } from '@utils/utilities';
 
 const properties: INodeProperties[] = [
 	groupRLC,

@@ -1,34 +1,35 @@
-import type { WorkflowEntity } from '@n8n/db';
-import {
-	generateNanoId,
-	ProjectRepository,
-	SharedWorkflowRepository,
-	WorkflowRepository,
-	UserRepository,
-} from '@n8n/db';
-import { Container } from '@n8n/di';
 import { Flags } from '@oclif/core';
 import glob from 'fast-glob';
 import fs from 'fs';
-import type { IWorkflowBase, WorkflowId } from 'n8n-workflow';
-import { jsonParse, UserError } from 'n8n-workflow';
+import { ApplicationError, jsonParse } from 'n8n-workflow';
+import { Container } from 'typedi';
 
 import { UM_FIX_INSTRUCTION } from '@/constants';
+import type { WorkflowEntity } from '@/databases/entities/workflow-entity';
+import { ProjectRepository } from '@/databases/repositories/project.repository';
+import { SharedWorkflowRepository } from '@/databases/repositories/shared-workflow.repository';
+import { UserRepository } from '@/databases/repositories/user.repository';
+import { WorkflowRepository } from '@/databases/repositories/workflow.repository';
+import { generateNanoId } from '@/databases/utils/generators';
 import type { IWorkflowToImport } from '@/interfaces';
 import { ImportService } from '@/services/import.service';
 
 import { BaseCommand } from '../base-command';
 
-function assertHasWorkflowsToImport(
-	workflows: unknown[],
-): asserts workflows is IWorkflowToImport[] {
+function assertHasWorkflowsToImport(workflows: unknown): asserts workflows is IWorkflowToImport[] {
+	if (!Array.isArray(workflows)) {
+		throw new ApplicationError(
+			'File does not seem to contain workflows. Make sure the workflows are contained in an array.',
+		);
+	}
+
 	for (const workflow of workflows) {
 		if (
 			typeof workflow !== 'object' ||
 			!Object.prototype.hasOwnProperty.call(workflow, 'nodes') ||
 			!Object.prototype.hasOwnProperty.call(workflow, 'connections')
 		) {
-			throw new UserError('File does not seem to contain valid workflows.');
+			throw new ApplicationError('File does not seem to contain valid workflows.');
 		}
 	}
 }
@@ -79,7 +80,7 @@ export class ImportWorkflowsCommand extends BaseCommand {
 		}
 
 		if (flags.projectId && flags.userId) {
-			throw new UserError(
+			throw new ApplicationError(
 				'You cannot use `--userId` and `--projectId` together. Use one or the other.',
 			);
 		}
@@ -91,7 +92,7 @@ export class ImportWorkflowsCommand extends BaseCommand {
 		const result = await this.checkRelations(workflows, flags.projectId, flags.userId);
 
 		if (!result.success) {
-			throw new UserError(result.message);
+			throw new ApplicationError(result.message);
 		}
 
 		this.logger.info(`Importing ${workflows.length} workflows...`);
@@ -101,7 +102,7 @@ export class ImportWorkflowsCommand extends BaseCommand {
 		this.reportSuccess(workflows.length);
 	}
 
-	private async checkRelations(workflows: IWorkflowBase[], projectId?: string, userId?: string) {
+	private async checkRelations(workflows: WorkflowEntity[], projectId?: string, userId?: string) {
 		// The credential is not supposed to be re-owned.
 		if (!userId && !projectId) {
 			return {
@@ -111,11 +112,11 @@ export class ImportWorkflowsCommand extends BaseCommand {
 		}
 
 		for (const workflow of workflows) {
-			if (!(await this.workflowExists(workflow.id))) {
+			if (!(await this.workflowExists(workflow))) {
 				continue;
 			}
 
-			const { user, project: ownerProject } = await this.getWorkflowOwner(workflow.id);
+			const { user, project: ownerProject } = await this.getWorkflowOwner(workflow);
 
 			if (!ownerProject) {
 				continue;
@@ -154,9 +155,9 @@ export class ImportWorkflowsCommand extends BaseCommand {
 		this.logger.info(`Successfully imported ${total} ${total === 1 ? 'workflow.' : 'workflows.'}`);
 	}
 
-	private async getWorkflowOwner(workflowId: WorkflowId) {
+	private async getWorkflowOwner(workflow: WorkflowEntity) {
 		const sharing = await Container.get(SharedWorkflowRepository).findOne({
-			where: { workflowId, role: 'workflow:owner' },
+			where: { workflowId: workflow.id, role: 'workflow:owner' },
 			relations: { project: true },
 		});
 
@@ -174,8 +175,8 @@ export class ImportWorkflowsCommand extends BaseCommand {
 		return {};
 	}
 
-	private async workflowExists(workflowId: WorkflowId) {
-		return await Container.get(WorkflowRepository).existsBy({ id: workflowId });
+	private async workflowExists(workflow: WorkflowEntity) {
+		return await Container.get(WorkflowRepository).existsBy({ id: workflow.id });
 	}
 
 	private async readWorkflows(path: string, separate: boolean): Promise<WorkflowEntity[]> {
@@ -183,28 +184,30 @@ export class ImportWorkflowsCommand extends BaseCommand {
 			path = path.replace(/\\/g, '/');
 		}
 
-		const workflowRepository = Container.get(WorkflowRepository);
-
 		if (separate) {
 			const files = await glob('*.json', {
 				cwd: path,
 				absolute: true,
 			});
-			return files.map((file) => {
+			const workflowInstances = files.map((file) => {
 				const workflow = jsonParse<IWorkflowToImport>(fs.readFileSync(file, { encoding: 'utf8' }));
 				if (!workflow.id) {
 					workflow.id = generateNanoId();
 				}
-				return workflowRepository.create(workflow);
-			});
-		} else {
-			const workflows = jsonParse<IWorkflowToImport | IWorkflowToImport[]>(
-				fs.readFileSync(path, { encoding: 'utf8' }),
-			);
-			const workflowsArray = Array.isArray(workflows) ? workflows : [workflows];
-			assertHasWorkflowsToImport(workflowsArray);
 
-			return workflowRepository.create(workflowsArray);
+				const workflowInstance = Container.get(WorkflowRepository).create(workflow);
+
+				return workflowInstance;
+			});
+
+			return workflowInstances;
+		} else {
+			const workflows = jsonParse<IWorkflowToImport[]>(fs.readFileSync(path, { encoding: 'utf8' }));
+
+			const workflowInstances = workflows.map((w) => Container.get(WorkflowRepository).create(w));
+			assertHasWorkflowsToImport(workflows);
+
+			return workflowInstances;
 		}
 	}
 
@@ -216,7 +219,7 @@ export class ImportWorkflowsCommand extends BaseCommand {
 		if (!userId) {
 			const owner = await Container.get(UserRepository).findOneBy({ role: 'global:owner' });
 			if (!owner) {
-				throw new UserError(`Failed to find owner. ${UM_FIX_INSTRUCTION}`);
+				throw new ApplicationError(`Failed to find owner. ${UM_FIX_INSTRUCTION}`);
 			}
 			userId = owner.id;
 		}

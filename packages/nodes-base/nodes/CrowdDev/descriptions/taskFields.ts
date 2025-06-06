@@ -1,7 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
-
-import { getAdditionalOptions, getId, showFor } from './utils';
 import { taskPresend } from '../GenericFunctions';
+import { getAdditionalOptions, getId, showFor } from './utils';
 
 const displayOpts = showFor(['task']);
 

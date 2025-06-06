@@ -1,5 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
 
+import { toDisplayName, toOptions } from '../../GenericFunctions';
+
 import {
 	GROUP_BY_OPTIONS,
 	PAYMENT_METHODS,
@@ -8,7 +10,6 @@ import {
 	TRANSACTION_REPORT_COLUMNS,
 	TRANSACTION_TYPES,
 } from './constants';
-import { toDisplayName, toOptions } from '../../GenericFunctions';
 
 export const transactionOperations: INodeProperties[] = [
 	{

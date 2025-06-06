@@ -1,8 +1,9 @@
-import get from 'lodash/get';
 import type { IExecuteFunctions, ILoadOptionsFunctions, IDataObject } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
+
 import { utils as xlsxUtils } from 'xlsx';
 
+import get from 'lodash/get';
 import { googleApiRequest } from './GenericFunctions';
 
 export interface ISheetOptions {

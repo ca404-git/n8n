@@ -10,8 +10,9 @@ import { NodeApiError } from 'n8n-workflow';
 import type { ElasticsearchApiCredentials } from './types';
 
 export async function elasticsearchBulkApiRequest(this: IExecuteFunctions, body: IDataObject) {
-	const { baseUrl, ignoreSSLIssues } =
-		await this.getCredentials<ElasticsearchApiCredentials>('elasticsearchApi');
+	const { baseUrl, ignoreSSLIssues } = (await this.getCredentials(
+		'elasticsearchApi',
+	)) as ElasticsearchApiCredentials;
 
 	const bulkBody = Object.values(body).flat().join('\n') + '\n';
 
@@ -19,7 +20,7 @@ export async function elasticsearchBulkApiRequest(this: IExecuteFunctions, body:
 		method: 'POST',
 		headers: { 'Content-Type': 'application/x-ndjson' },
 		body: bulkBody,
-		url: `${baseUrl.replace(/\/$/, '')}/_bulk`,
+		url: `${baseUrl}/_bulk`,
 		skipSslCertificateValidation: ignoreSSLIssues,
 		returnFullResponse: true,
 		ignoreHttpStatusErrors: true,
@@ -57,14 +58,15 @@ export async function elasticsearchApiRequest(
 	body: IDataObject = {},
 	qs: IDataObject = {},
 ) {
-	const { baseUrl, ignoreSSLIssues } =
-		await this.getCredentials<ElasticsearchApiCredentials>('elasticsearchApi');
+	const { baseUrl, ignoreSSLIssues } = (await this.getCredentials(
+		'elasticsearchApi',
+	)) as ElasticsearchApiCredentials;
 
 	const options: IHttpRequestOptions = {
 		method,
 		body,
 		qs,
-		url: `${baseUrl.replace(/\/$/, '')}${endpoint}`,
+		url: `${baseUrl}${endpoint}`,
 		json: true,
 		skipSslCertificateValidation: ignoreSSLIssues,
 	};
@@ -111,7 +113,7 @@ export async function elasticsearchApiRequestAllItems(
 			track_total_hits: false, //Disable the tracking of total hits to speed up pagination
 		};
 
-		responseData = await elasticsearchApiRequest.call(this, 'POST', '/_search', requestBody, qs);
+		responseData = await elasticsearchApiRequest.call(this, 'GET', '/_search', requestBody, qs);
 		if (responseData?.hits?.hits) {
 			returnData = returnData.concat(responseData.hits.hits as IDataObject[]);
 			const lastHitIndex = responseData.hits.hits.length - 1;
@@ -127,7 +129,7 @@ export async function elasticsearchApiRequestAllItems(
 			requestBody.search_after = searchAfter;
 			requestBody.pit = { id: pit, keep_alive: '1m' };
 
-			responseData = await elasticsearchApiRequest.call(this, 'POST', '/_search', requestBody, qs);
+			responseData = await elasticsearchApiRequest.call(this, 'GET', '/_search', requestBody, qs);
 
 			if (responseData?.hits?.hits?.length) {
 				returnData = returnData.concat(responseData.hits.hits as IDataObject[]);

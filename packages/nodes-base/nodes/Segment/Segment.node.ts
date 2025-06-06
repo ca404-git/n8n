@@ -5,14 +5,19 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
-import { v4 as uuid } from 'uuid';
+import { NodeConnectionType } from 'n8n-workflow';
 
+import { v4 as uuid } from 'uuid';
 import { segmentApiRequest } from './GenericFunctions';
+
 import { groupFields, groupOperations } from './GroupDescription';
+
 import { identifyFields, identifyOperations } from './IdentifyDescription';
+
 import type { IIdentify } from './IdentifyInterface';
+
 import { trackFields, trackOperations } from './TrackDescription';
+
 import type { IGroup, ITrack } from './TrackInterface';
 
 export class Segment implements INodeType {
@@ -27,9 +32,8 @@ export class Segment implements INodeType {
 		defaults: {
 			name: 'Segment',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'segmentApi',

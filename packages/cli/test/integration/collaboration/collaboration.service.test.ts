@@ -1,13 +1,13 @@
-import type { User } from '@n8n/db';
-import { Container } from '@n8n/di';
 import { mock } from 'jest-mock-extended';
-import type { IWorkflowBase } from 'n8n-workflow';
+import Container from 'typedi';
 
 import type {
 	WorkflowClosedMessage,
 	WorkflowOpenedMessage,
 } from '@/collaboration/collaboration.message';
 import { CollaborationService } from '@/collaboration/collaboration.service';
+import type { User } from '@/databases/entities/user';
+import type { WorkflowEntity } from '@/databases/entities/workflow-entity';
 import { Push } from '@/push';
 import { CacheService } from '@/services/cache/cache.service';
 import { mockInstance } from '@test/mocking';
@@ -16,13 +16,13 @@ import { createWorkflow, shareWorkflowWithUsers } from '@test-integration/db/wor
 import * as testDb from '@test-integration/test-db';
 
 describe('CollaborationService', () => {
-	mockInstance(Push, new Push(mock(), mock(), mock(), mock(), mock()));
+	mockInstance(Push, new Push(mock(), mock()));
 	let pushService: Push;
 	let collaborationService: CollaborationService;
 	let owner: User;
 	let memberWithoutAccess: User;
 	let memberWithAccess: User;
-	let workflow: IWorkflowBase;
+	let workflow: WorkflowEntity;
 	let cacheService: CacheService;
 
 	beforeAll(async () => {
@@ -78,41 +78,37 @@ describe('CollaborationService', () => {
 			// Assert
 			expect(sendToUsersSpy).toHaveBeenNthCalledWith(
 				1,
+				'collaboratorsChanged',
 				{
-					type: 'collaboratorsChanged',
-					data: {
-						collaborators: [
-							{
-								lastSeen: expect.any(String),
-								user: owner.toIUser(),
-							},
-						],
-						workflowId: workflow.id,
-					},
+					collaborators: [
+						{
+							lastSeen: expect.any(String),
+							user: owner.toIUser(),
+						},
+					],
+					workflowId: workflow.id,
 				},
 				[owner.id],
 			);
 			expect(sendToUsersSpy).toHaveBeenNthCalledWith(
 				2,
+				'collaboratorsChanged',
 				{
-					type: 'collaboratorsChanged',
-					data: {
-						collaborators: expect.arrayContaining([
-							expect.objectContaining({
-								lastSeen: expect.any(String),
-								user: expect.objectContaining({
-									id: owner.id,
-								}),
+					collaborators: expect.arrayContaining([
+						expect.objectContaining({
+							lastSeen: expect.any(String),
+							user: expect.objectContaining({
+								id: owner.id,
 							}),
-							expect.objectContaining({
-								lastSeen: expect.any(String),
-								user: expect.objectContaining({
-									id: memberWithAccess.id,
-								}),
+						}),
+						expect.objectContaining({
+							lastSeen: expect.any(String),
+							user: expect.objectContaining({
+								id: memberWithAccess.id,
 							}),
-						]),
-						workflowId: workflow.id,
-					},
+						}),
+					]),
+					workflowId: workflow.id,
 				},
 				[owner.id, memberWithAccess.id],
 			);
@@ -155,19 +151,17 @@ describe('CollaborationService', () => {
 
 			// Assert
 			expect(sendToUsersSpy).toHaveBeenCalledWith(
+				'collaboratorsChanged',
 				{
-					type: 'collaboratorsChanged',
-					data: {
-						collaborators: expect.arrayContaining([
-							expect.objectContaining({
-								lastSeen: expect.any(String),
-								user: expect.objectContaining({
-									id: memberWithAccess.id,
-								}),
+					collaborators: expect.arrayContaining([
+						expect.objectContaining({
+							lastSeen: expect.any(String),
+							user: expect.objectContaining({
+								id: memberWithAccess.id,
 							}),
-						]),
-						workflowId: workflow.id,
-					},
+						}),
+					]),
+					workflowId: workflow.id,
 				},
 				[memberWithAccess.id],
 			);

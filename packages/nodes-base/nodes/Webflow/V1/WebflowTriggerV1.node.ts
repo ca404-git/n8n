@@ -6,7 +6,7 @@ import {
 	type INodeTypeDescription,
 	type IWebhookResponseData,
 	type INodeTypeBaseDescription,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
 import { getSites, webflowApiRequest } from '../GenericFunctions';
@@ -28,7 +28,7 @@ export class WebflowTriggerV1 implements INodeType {
 			},
 
 			inputs: [],
-			outputs: [NodeConnectionTypes.Main],
+			outputs: [NodeConnectionType.Main],
 			credentials: [
 				{
 					name: 'webflowApi',

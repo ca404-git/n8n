@@ -1,4 +1,3 @@
-import moment from 'moment-timezone';
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -8,8 +7,9 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
 
+import moment from 'moment-timezone';
 import {
 	campaignFieldsMetadata,
 	mailchimpApiRequest,
@@ -17,15 +17,13 @@ import {
 	validateJSON,
 } from './GenericFunctions';
 
-const Statuses = {
-	subscribe: 'subscribe',
-	unsubscribed: 'unsubscribe',
-	cleaned: 'cleaned',
-	pending: 'pending',
-	transactional: 'transactional',
-} as const;
-
-type Status = (typeof Statuses)[keyof typeof Statuses];
+const enum Status {
+	subscribe = 'subscribe',
+	unsubscribed = 'unsubscribe',
+	cleaned = 'cleaned',
+	pending = 'pending',
+	transactional = 'transactional',
+}
 
 interface ILocation {
 	latitude?: number;
@@ -61,9 +59,8 @@ export class Mailchimp implements INodeType {
 		defaults: {
 			name: 'Mailchimp',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'mailchimpApi',

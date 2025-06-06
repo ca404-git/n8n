@@ -1,5 +1,3 @@
-import jwt from 'jsonwebtoken';
-import moment from 'moment-timezone';
 import type {
 	IExecuteFunctions,
 	ILoadOptionsFunctions,
@@ -11,6 +9,10 @@ import type {
 	IPollFunctions,
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
+
+import moment from 'moment-timezone';
+
+import jwt from 'jsonwebtoken';
 
 function getOptions(
 	this: IExecuteFunctions | ILoadOptionsFunctions | IPollFunctions,
@@ -112,13 +114,14 @@ export async function salesforceApiRequest(
 			);
 			options.headers!.Authorization = `Bearer ${access_token}`;
 			Object.assign(options, option);
+			//@ts-ignore
 			return await this.helpers.request(options);
 		} else {
 			// https://help.salesforce.com/articleView?id=remoteaccess_oauth_web_server_flow.htm&type=5
 			const credentialsType = 'salesforceOAuth2Api';
-			const credentials = await this.getCredentials<{
+			const credentials = (await this.getCredentials(credentialsType)) as {
 				oauthTokenData: { instance_url: string };
-			}>(credentialsType);
+			};
 			const options = getOptions.call(
 				this,
 				method,

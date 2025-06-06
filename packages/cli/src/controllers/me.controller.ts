@@ -1,27 +1,27 @@
 import {
-	passwordSchema,
 	PasswordUpdateRequestDto,
 	SettingsUpdateRequestDto,
 	UserUpdateRequestDto,
 } from '@n8n/api-types';
-import { Logger } from '@n8n/backend-common';
-import type { User, PublicUser } from '@n8n/db';
-import { UserRepository } from '@n8n/db';
-import { Body, Patch, Post, RestController } from '@n8n/decorators';
 import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
 
 import { AuthService } from '@/auth/auth.service';
+import type { User } from '@/databases/entities/user';
+import { UserRepository } from '@/databases/repositories/user.repository';
+import { Body, Patch, Post, RestController } from '@/decorators';
 import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 import { InvalidMfaCodeError } from '@/errors/response-errors/invalid-mfa-code.error';
 import { EventService } from '@/events/event.service';
 import { ExternalHooks } from '@/external-hooks';
 import { validateEntity } from '@/generic-helpers';
+import type { PublicUser } from '@/interfaces';
+import { Logger } from '@/logging/logger.service';
 import { MfaService } from '@/mfa/mfa.service';
 import { AuthenticatedRequest, MeRequest } from '@/requests';
 import { PasswordUtility } from '@/services/password.utility';
 import { UserService } from '@/services/user.service';
-import { isSamlLicensedAndEnabled } from '@/sso.ee/saml/saml-helpers';
+import { isSamlLicensedAndEnabled } from '@/sso/saml/saml-helpers';
 
 import { PersonalizationSurveyAnswersV4 } from './survey-answers.dto';
 @RestController('/me')
@@ -68,8 +68,8 @@ export class MeController {
 				throw new BadRequestError('Two-factor code is required to change email');
 			}
 
-			const isMfaCodeValid = await this.mfaService.validateMfa(userId, payload.mfaCode, undefined);
-			if (!isMfaCodeValid) {
+			const isMfaTokenValid = await this.mfaService.validateMfa(userId, payload.mfaCode, undefined);
+			if (!isMfaTokenValid) {
 				throw new InvalidMfaCodeError();
 			}
 		}
@@ -122,6 +122,10 @@ export class MeController {
 			);
 		}
 
+		if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+			throw new BadRequestError('Invalid payload.');
+		}
+
 		if (!user.password) {
 			throw new BadRequestError('Requesting user not set up.');
 		}
@@ -131,25 +135,20 @@ export class MeController {
 			throw new BadRequestError('Provided current password is incorrect.');
 		}
 
-		const passwordValidation = passwordSchema.safeParse(newPassword);
-		if (!passwordValidation.success) {
-			throw new BadRequestError(
-				passwordValidation.error.errors.map(({ message }) => message).join(' '),
-			);
-		}
+		const validPassword = this.passwordUtility.validate(newPassword);
 
 		if (user.mfaEnabled) {
 			if (typeof mfaCode !== 'string') {
 				throw new BadRequestError('Two-factor code is required to change password.');
 			}
 
-			const isMfaCodeValid = await this.mfaService.validateMfa(user.id, mfaCode, undefined);
-			if (!isMfaCodeValid) {
+			const isMfaTokenValid = await this.mfaService.validateMfa(user.id, mfaCode, undefined);
+			if (!isMfaTokenValid) {
 				throw new InvalidMfaCodeError();
 			}
 		}
 
-		user.password = await this.passwordUtility.hash(newPassword);
+		user.password = await this.passwordUtility.hash(validPassword);
 
 		const updatedUser = await this.userRepository.save(user, { transaction: false });
 		this.logger.info('Password updated successfully', { userId: user.id });

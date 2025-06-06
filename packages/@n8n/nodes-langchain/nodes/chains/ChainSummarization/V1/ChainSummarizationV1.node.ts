@@ -1,10 +1,5 @@
-import type { Document } from '@langchain/core/documents';
-import type { BaseLanguageModel } from '@langchain/core/language_models/base';
-import { PromptTemplate } from '@langchain/core/prompts';
-import type { SummarizationChainParams } from 'langchain/chains';
-import { loadSummarizationChain } from 'langchain/chains';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type INodeTypeBaseDescription,
 	type IExecuteFunctions,
 	type INodeExecutionData,
@@ -12,10 +7,14 @@ import {
 	type INodeTypeDescription,
 } from 'n8n-workflow';
 
-import { N8nBinaryLoader } from '@utils/N8nBinaryLoader';
-import { N8nJsonLoader } from '@utils/N8nJsonLoader';
-import { getTemplateNoticeField } from '@utils/sharedFields';
-
+import type { SummarizationChainParams } from 'langchain/chains';
+import { loadSummarizationChain } from 'langchain/chains';
+import type { BaseLanguageModel } from '@langchain/core/language_models/base';
+import type { Document } from '@langchain/core/documents';
+import { PromptTemplate } from '@langchain/core/prompts';
+import { N8nJsonLoader } from '../../../../utils/N8nJsonLoader';
+import { N8nBinaryLoader } from '../../../../utils/N8nBinaryLoader';
+import { getTemplateNoticeField } from '../../../../utils/sharedFields';
 import { REFINE_PROMPT_TEMPLATE, DEFAULT_PROMPT_TEMPLATE } from '../prompt';
 
 export class ChainSummarizationV1 implements INodeType {
@@ -31,21 +30,21 @@ export class ChainSummarizationV1 implements INodeType {
 			},
 			// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 			inputs: [
-				NodeConnectionTypes.Main,
+				NodeConnectionType.Main,
 				{
 					displayName: 'Model',
 					maxConnections: 1,
-					type: NodeConnectionTypes.AiLanguageModel,
+					type: NodeConnectionType.AiLanguageModel,
 					required: true,
 				},
 				{
 					displayName: 'Document',
 					maxConnections: 1,
-					type: NodeConnectionTypes.AiDocument,
+					type: NodeConnectionType.AiDocument,
 					required: true,
 				},
 			],
-			outputs: [NodeConnectionTypes.Main],
+			outputs: [NodeConnectionType.Main],
 			credentials: [],
 			properties: [
 				getTemplateNoticeField(1951),
@@ -167,11 +166,11 @@ export class ChainSummarizationV1 implements INodeType {
 		const type = this.getNodeParameter('type', 0) as 'map_reduce' | 'stuff' | 'refine';
 
 		const model = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiLanguageModel,
+			NodeConnectionType.AiLanguageModel,
 			0,
 		)) as BaseLanguageModel;
 
-		const documentInput = (await this.getInputConnectionData(NodeConnectionTypes.AiDocument, 0)) as
+		const documentInput = (await this.getInputConnectionData(NodeConnectionType.AiDocument, 0)) as
 			| N8nJsonLoader
 			| Array<Document<Record<string, unknown>>>;
 

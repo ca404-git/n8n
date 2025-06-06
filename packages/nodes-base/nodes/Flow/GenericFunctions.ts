@@ -67,6 +67,7 @@ export async function FlowApiRequestAllItems(
 			resolveWithFullResponse: true,
 		});
 		uri = responseData.headers.link;
+		// @ts-ignore
 		returnData.push.apply(returnData, responseData.body[propertyName] as IDataObject[]);
 	} while (responseData.headers.link !== undefined && responseData.headers.link !== '');
 

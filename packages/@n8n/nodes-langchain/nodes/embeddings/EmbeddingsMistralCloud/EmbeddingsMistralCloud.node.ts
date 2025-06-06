@@ -1,16 +1,15 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-import type { MistralAIEmbeddingsParams } from '@langchain/mistralai';
-import { MistralAIEmbeddings } from '@langchain/mistralai';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
-
-import { logWrapper } from '@utils/logWrapper';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
+import type { MistralAIEmbeddingsParams } from '@langchain/mistralai';
+import { MistralAIEmbeddings } from '@langchain/mistralai';
+import { logWrapper } from '../../../utils/logWrapper';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
 
 export class EmbeddingsMistralCloud implements INodeType {
 	description: INodeTypeDescription = {
@@ -46,14 +45,14 @@ export class EmbeddingsMistralCloud implements INodeType {
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiEmbedding],
+		outputs: [NodeConnectionType.AiEmbedding],
 		outputNames: ['Embeddings'],
 		requestDefaults: {
 			ignoreHttpStatusErrors: true,
 			baseURL: 'https://api.mistral.ai/v1',
 		},
 		properties: [
-			getConnectionHintNoticeField([NodeConnectionTypes.AiVectorStore]),
+			getConnectionHintNoticeField([NodeConnectionType.AiVectorStore]),
 			{
 				displayName: 'Model',
 				name: 'model',
@@ -135,7 +134,7 @@ export class EmbeddingsMistralCloud implements INodeType {
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		const credentials = await this.getCredentials('mistralCloudApi');
 		const modelName = this.getNodeParameter('model', itemIndex) as string;
 		const options = this.getNodeParameter(

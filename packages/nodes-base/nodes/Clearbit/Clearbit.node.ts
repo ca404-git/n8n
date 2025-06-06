@@ -5,10 +5,12 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
+
+import { clearbitApiRequest } from './GenericFunctions';
 
 import { companyFields, companyOperations } from './CompanyDescription';
-import { clearbitApiRequest } from './GenericFunctions';
+
 import { personFields, personOperations } from './PersonDescription';
 
 export class Clearbit implements INodeType {
@@ -23,9 +25,8 @@ export class Clearbit implements INodeType {
 		defaults: {
 			name: 'Clearbit',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'clearbitApi',

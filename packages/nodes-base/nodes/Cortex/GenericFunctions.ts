@@ -1,4 +1,3 @@
-import moment from 'moment-timezone';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -7,6 +6,8 @@ import type {
 	ILoadOptionsFunctions,
 	IRequestOptions,
 } from 'n8n-workflow';
+
+import moment from 'moment-timezone';
 
 export async function cortexApiRequest(
 	this: IHookFunctions | IExecuteFunctions | ILoadOptionsFunctions,

@@ -6,7 +6,7 @@ import {
 	type INodeType,
 	type INodeTypeDescription,
 	type IWebhookResponseData,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
 import { capitalizeFirstLetter, linearApiRequest } from './GenericFunctions';
@@ -24,7 +24,7 @@ export class LinearTrigger implements INodeType {
 			name: 'Linear Trigger',
 		},
 		inputs: [],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'linearApi',
@@ -70,12 +70,6 @@ export class LinearTrigger implements INodeType {
 					},
 				],
 				default: 'apiToken',
-			},
-			{
-				displayName: 'Make sure your credential has the "Admin" scope to create webhooks.',
-				name: 'notice',
-				type: 'notice',
-				default: '',
 			},
 			{
 				displayName: 'Team Name or ID',

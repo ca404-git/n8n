@@ -1,7 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
-
-import { searchProperties } from './common.descriptions';
 import { updateDisplayOptions } from '../../../utils/utilities';
+import { searchProperties } from './common.descriptions';
 
 const searchDisplayOptions = {
 	show: {

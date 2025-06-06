@@ -4,14 +4,13 @@ import {
 	type PGVectorStoreArgs,
 } from '@langchain/community/vectorstores/pgvector';
 import type { EmbeddingsInterface } from '@langchain/core/embeddings';
-import { configurePostgres } from 'n8n-nodes-base/dist/nodes/Postgres/transport/index';
 import type { PostgresNodeCredentials } from 'n8n-nodes-base/dist/nodes/Postgres/v2/helpers/interfaces';
+import { configurePostgres } from 'n8n-nodes-base/dist/nodes/Postgres/v2/transport';
 import type { INodeProperties } from 'n8n-workflow';
 import type pg from 'pg';
 
-import { metadataFilterField } from '@utils/sharedFields';
-
-import { createVectorStoreNode } from '../shared/createVectorStoreNode/createVectorStoreNode';
+import { metadataFilterField } from '../../../utils/sharedFields';
+import { createVectorStoreNode } from '../shared/createVectorStoreNode';
 
 type CollectionOptions = {
 	useCollection?: boolean;
@@ -213,7 +212,7 @@ class ExtendedPGVectorStore extends PGVectorStore {
 	}
 }
 
-export class VectorStorePGVector extends createVectorStoreNode<ExtendedPGVectorStore>({
+export const VectorStorePGVector = createVectorStoreNode({
 	meta: {
 		description: 'Work with your data in Postgresql with the PGVector extension',
 		icon: 'file:postgres.svg',
@@ -228,7 +227,7 @@ export class VectorStorePGVector extends createVectorStoreNode<ExtendedPGVectorS
 				testedBy: 'postgresConnectionTest',
 			},
 		],
-		operationModes: ['load', 'insert', 'retrieve', 'retrieve-as-tool'],
+		operationModes: ['load', 'insert', 'retrieve'],
 	},
 	sharedFields,
 	insertFields,
@@ -274,7 +273,6 @@ export class VectorStorePGVector extends createVectorStoreNode<ExtendedPGVectorS
 
 		return await ExtendedPGVectorStore.initialize(embeddings, config);
 	},
-
 	async populateVectorStore(context, embeddings, documents, itemIndex) {
 		// NOTE: if you are to create the HNSW index before use, you need to consider moving the distanceStrategy field to
 		// shared fields, because you need that strategy when creating the index.
@@ -308,11 +306,6 @@ export class VectorStorePGVector extends createVectorStoreNode<ExtendedPGVectorS
 			metadataColumnName: 'metadata',
 		}) as ColumnOptions;
 
-		const vectorStore = await PGVectorStore.fromDocuments(documents, embeddings, config);
-		vectorStore.client?.release();
+		await PGVectorStore.fromDocuments(documents, embeddings, config);
 	},
-
-	releaseVectorStoreClient(vectorStore) {
-		vectorStore.client?.release();
-	},
-}) {}
+});

@@ -65,11 +65,15 @@ Cypress.Commands.add('signin', ({ email, password }) => {
 			.request({
 				method: 'POST',
 				url: `${BACKEND_BASE_URL}/rest/login`,
-				body: { emailOrLdapLoginId: email, password },
+				body: { email, password },
 				failOnStatusCode: false,
 			})
 			.then((response) => {
 				Cypress.env('currentUserId', response.body.data.id);
+
+				cy.window().then((win) => {
+					win.localStorage.setItem('NodeView.switcher.discovered', 'true'); // @TODO Remove this once the switcher is removed
+				});
 			});
 	});
 });
@@ -159,7 +163,6 @@ Cypress.Commands.add('drag', (selector, pos, options) => {
 		};
 		if (options?.realMouse) {
 			element.realMouseDown();
-			element.realMouseMove(0, 0);
 			element.realMouseMove(newPosition.x, newPosition.y);
 			element.realMouseUp();
 		} else {
@@ -170,16 +173,6 @@ Cypress.Commands.add('drag', (selector, pos, options) => {
 				pageY: newPosition.y,
 				force: true,
 			});
-			if (options?.moveTwice) {
-				// first move like hover to trigger object to be visible
-				// like in main panel in ndv
-				element.trigger('mousemove', {
-					which: 1,
-					pageX: newPosition.x,
-					pageY: newPosition.y,
-					force: true,
-				});
-			}
 			if (options?.clickToFinish) {
 				// Click to finish the drag
 				// For some reason, mouseup isn't working when moving nodes
@@ -206,7 +199,8 @@ Cypress.Commands.add('draganddrop', (draggableSelector, droppableSelector, optio
 			const pageY = coords.top + coords.height / 2;
 
 			if (draggableSelector) {
-				cy.get(draggableSelector).realMouseDown();
+				// We can't use realMouseDown here because it hangs headless run
+				cy.get(draggableSelector).trigger('mousedown');
 			}
 			// We don't chain these commands to make sure cy.get is re-trying correctly
 			cy.get(droppableSelector).realMouseMove(0, 0);
@@ -239,19 +233,4 @@ Cypress.Commands.add('resetDatabase', () => {
 		members: INSTANCE_MEMBERS,
 		admin: INSTANCE_ADMIN,
 	});
-});
-
-Cypress.Commands.add('interceptNewTab', () => {
-	cy.window().then((win) => {
-		cy.stub(win, 'open').as('windowOpen');
-	});
-});
-
-Cypress.Commands.add('visitInterceptedTab', () => {
-	cy.get('@windowOpen')
-		.should('have.been.called')
-		.then((stub: any) => {
-			const url = stub.firstCall.args[0];
-			cy.visit(url);
-		});
 });

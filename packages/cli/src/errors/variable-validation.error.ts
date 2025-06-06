@@ -1,3 +1,3 @@
-import { UnexpectedError } from 'n8n-workflow';
+import { ApplicationError } from 'n8n-workflow';
 
-export class VariableValidationError extends UnexpectedError {}
+export class VariableValidationError extends ApplicationError {}

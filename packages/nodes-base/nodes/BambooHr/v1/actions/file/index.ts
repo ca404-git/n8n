@@ -1,5 +1,4 @@
 import type { INodeProperties } from 'n8n-workflow';
-
 import * as del from './del';
 import * as download from './download';
 import * as getAll from './getAll';

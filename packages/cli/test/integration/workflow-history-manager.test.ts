@@ -1,11 +1,11 @@
-import { GlobalConfig } from '@n8n/config';
-import { WorkflowHistoryRepository } from '@n8n/db';
-import { Container } from '@n8n/di';
 import { In } from '@n8n/typeorm';
 import { DateTime } from 'luxon';
+import Container from 'typedi';
 
+import config from '@/config';
+import { WorkflowHistoryRepository } from '@/databases/repositories/workflow-history.repository';
 import { License } from '@/license';
-import { WorkflowHistoryManager } from '@/workflows/workflow-history.ee/workflow-history-manager.ee';
+import { WorkflowHistoryManager } from '@/workflows/workflow-history/workflow-history-manager.ee';
 
 import { createManyWorkflowHistoryItems } from './shared/db/workflow-history';
 import { createWorkflow } from './shared/db/workflows';
@@ -16,21 +16,19 @@ describe('Workflow History Manager', () => {
 	const license = mockInstance(License);
 	let repo: WorkflowHistoryRepository;
 	let manager: WorkflowHistoryManager;
-	let globalConfig: GlobalConfig;
 
 	beforeAll(async () => {
 		await testDb.init();
 		repo = Container.get(WorkflowHistoryRepository);
 		manager = Container.get(WorkflowHistoryManager);
-		globalConfig = Container.get(GlobalConfig);
 	});
 
 	beforeEach(async () => {
-		await testDb.truncate(['WorkflowEntity']);
+		await testDb.truncate(['Workflow']);
 		jest.clearAllMocks();
 
-		globalConfig.workflowHistory.enabled = true;
-		globalConfig.workflowHistory.pruneTime = -1;
+		config.set('workflowHistory.enabled', true);
+		config.set('workflowHistory.pruneTime', -1);
 
 		license.isWorkflowHistoryLicensed.mockReturnValue(true);
 		license.getWorkflowHistoryPruneLimit.mockReturnValue(-1);
@@ -66,7 +64,7 @@ describe('Workflow History Manager', () => {
 	});
 
 	test('should not prune when licensed but disabled', async () => {
-		globalConfig.workflowHistory.enabled = false;
+		config.set('workflowHistory.enabled', false);
 		await createWorkflowHistory();
 		await pruneAndAssertCount();
 	});
@@ -77,7 +75,7 @@ describe('Workflow History Manager', () => {
 	});
 
 	test('should prune when config prune time is not -1 (infinite)', async () => {
-		globalConfig.workflowHistory.pruneTime = 24;
+		config.set('workflowHistory.pruneTime', 24);
 		await createWorkflowHistory();
 		await pruneAndAssertCount(0);
 	});
@@ -90,7 +88,7 @@ describe('Workflow History Manager', () => {
 	});
 
 	test('should only prune versions older than prune time', async () => {
-		globalConfig.workflowHistory.pruneTime = 24;
+		config.set('workflowHistory.pruneTime', 24);
 
 		const recentVersions = await createWorkflowHistory(0);
 		const oldVersions = await createWorkflowHistory();

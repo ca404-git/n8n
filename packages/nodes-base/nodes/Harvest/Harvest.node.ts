@@ -8,18 +8,28 @@ import type {
 	INodeTypeDescription,
 	IHttpRequestMethods,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
 import { clientFields, clientOperations } from './ClientDescription';
-import { companyOperations } from './CompanyDescription';
+
 import { contactFields, contactOperations } from './ContactDescription';
+
+import { companyOperations } from './CompanyDescription';
+
 import { estimateFields, estimateOperations } from './EstimateDescription';
+
 import { expenseFields, expenseOperations } from './ExpenseDescription';
+
 import { getAllResource, harvestApiRequest } from './GenericFunctions';
+
 import { invoiceFields, invoiceOperations } from './InvoiceDescription';
+
 import { projectFields, projectOperations } from './ProjectDescription';
+
 import { taskFields, taskOperations } from './TaskDescription';
+
 import { timeEntryFields, timeEntryOperations } from './TimeEntryDescription';
+
 import { userFields, userOperations } from './UserDescription';
 
 export class Harvest implements INodeType {
@@ -35,9 +45,8 @@ export class Harvest implements INodeType {
 		defaults: {
 			name: 'Harvest',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'harvestApi',

@@ -3,6 +3,7 @@ import { mock } from 'jest-mock-extended';
 import { InstanceSettings } from 'n8n-core';
 import { PostHog } from 'posthog-node';
 
+import config from '@/config';
 import { PostHogClient } from '@/posthog';
 import { mockInstance } from '@test/mocking';
 
@@ -19,11 +20,12 @@ describe('PostHog', () => {
 	const globalConfig = mock<GlobalConfig>({ logging: { level: 'debug' } });
 
 	beforeAll(() => {
-		globalConfig.diagnostics.posthogConfig = { apiKey, apiHost };
+		config.set('diagnostics.config.posthog.apiKey', apiKey);
+		config.set('diagnostics.config.posthog.apiHost', apiHost);
 	});
 
 	beforeEach(() => {
-		globalConfig.diagnostics.enabled = true;
+		config.set('diagnostics.enabled', true);
 		jest.resetAllMocks();
 	});
 
@@ -35,7 +37,7 @@ describe('PostHog', () => {
 	});
 
 	it('does not initialize or track if diagnostics are not enabled', async () => {
-		globalConfig.diagnostics.enabled = false;
+		config.set('diagnostics.enabled', false);
 
 		const ph = new PostHogClient(instanceSettings, globalConfig);
 		await ph.init();

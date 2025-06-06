@@ -7,9 +7,8 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
 
-import { accountFields, accountOperations } from './descriptions';
 import type { IField } from './GenericFunctions';
 import {
 	adjustAddresses,
@@ -19,6 +18,8 @@ import {
 	microsoftApiRequestAllItems,
 	sort,
 } from './GenericFunctions';
+
+import { accountFields, accountOperations } from './descriptions';
 
 export class MicrosoftDynamicsCrm implements INodeType {
 	description: INodeTypeDescription = {
@@ -32,9 +33,8 @@ export class MicrosoftDynamicsCrm implements INodeType {
 		defaults: {
 			name: 'Microsoft Dynamics CRM',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'microsoftDynamicsOAuth2Api',

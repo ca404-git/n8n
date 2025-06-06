@@ -18,13 +18,6 @@ export class Redis implements ICredentialType {
 			default: '',
 		},
 		{
-			displayName: 'User',
-			name: 'user',
-			type: 'string',
-			default: '',
-			hint: 'Leave blank for password-only auth',
-		},
-		{
 			displayName: 'Host',
 			name: 'host',
 			type: 'string',

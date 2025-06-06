@@ -1,6 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
 
 import { destinationExternalField } from './DestinationDescription';
+
 import { recipientExternalField } from './RecipientDescription';
 
 export const taskOperations: INodeProperties[] = [

@@ -1,19 +1,22 @@
-import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import { PromptTemplate } from '@langchain/core/prompts';
-import { PlanAndExecuteAgentExecutor } from 'langchain/experimental/plan_and_execute';
 import {
 	type IExecuteFunctions,
 	type INodeExecutionData,
-	NodeConnectionTypes,
+	NodeConnectionType,
 	NodeOperationError,
 } from 'n8n-workflow';
 
-import { getConnectedTools, getPromptInputByType } from '@utils/helpers';
-import { getOptionalOutputParser } from '@utils/output_parsers/N8nOutputParser';
-import { throwIfToolSchema } from '@utils/schemaParsing';
-import { getTracingConfig } from '@utils/tracing';
-
-import { checkForStructuredTools, extractParsedOutput } from '../utils';
+import type { BaseOutputParser } from '@langchain/core/output_parsers';
+import { PromptTemplate } from '@langchain/core/prompts';
+import { CombiningOutputParser } from 'langchain/output_parsers';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import { PlanAndExecuteAgentExecutor } from 'langchain/experimental/plan_and_execute';
+import {
+	getConnectedTools,
+	getOptionalOutputParsers,
+	getPromptInputByType,
+} from '../../../../../utils/helpers';
+import { getTracingConfig } from '../../../../../utils/tracing';
+import { throwIfToolSchema } from '../../../../../utils/schemaParsing';
 
 export async function planAndExecuteAgentExecute(
 	this: IExecuteFunctions,
@@ -21,14 +24,13 @@ export async function planAndExecuteAgentExecute(
 ): Promise<INodeExecutionData[][]> {
 	this.logger.debug('Executing PlanAndExecute Agent');
 	const model = (await this.getInputConnectionData(
-		NodeConnectionTypes.AiLanguageModel,
+		NodeConnectionType.AiLanguageModel,
 		0,
 	)) as BaseChatModel;
 
-	const tools = await getConnectedTools(this, nodeVersion >= 1.5, true, true);
+	const tools = await getConnectedTools(this, nodeVersion >= 1.5);
 
-	await checkForStructuredTools(tools, this.getNode(), 'Plan & Execute Agent');
-	const outputParser = await getOptionalOutputParser(this);
+	const outputParsers = await getOptionalOutputParsers(this);
 
 	const options = this.getNodeParameter('options', 0, {}) as {
 		humanMessageTemplate?: string;
@@ -42,8 +44,12 @@ export async function planAndExecuteAgentExecute(
 
 	const returnData: INodeExecutionData[] = [];
 
+	let outputParser: BaseOutputParser | undefined;
 	let prompt: PromptTemplate | undefined;
-	if (outputParser) {
+	if (outputParsers.length) {
+		outputParser =
+			outputParsers.length === 1 ? outputParsers[0] : new CombiningOutputParser(...outputParsers);
+
 		const formatInstructions = outputParser.getFormatInstructions();
 
 		prompt = new PromptTemplate({
@@ -76,12 +82,12 @@ export async function planAndExecuteAgentExecute(
 				input = (await prompt.invoke({ input })).value;
 			}
 
-			const response = await agentExecutor
+			let response = await agentExecutor
 				.withConfig(getTracingConfig(this))
-				.invoke({ input, outputParser });
+				.invoke({ input, outputParsers });
 
 			if (outputParser) {
-				response.output = await extractParsedOutput(this, outputParser, response.output as string);
+				response = { output: await outputParser.parse(response.output as string) };
 			}
 
 			returnData.push({ json: response });

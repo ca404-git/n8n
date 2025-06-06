@@ -1266,7 +1266,7 @@
 						"next-url": "https://dummyjson.com/users?skip=4&limit=4"
 					},
 					"statusCode": 200,
-					"statusMessage": "OK"
+					"statusMessage": null
 				}
 			},
 			{
@@ -1277,7 +1277,7 @@
 						"next-url": "https://dummyjson.com/users?skip=8&limit=4"
 					},
 					"statusCode": 200,
-					"statusMessage": "OK"
+					"statusMessage": null
 				}
 			},
 			{
@@ -1288,7 +1288,7 @@
 						"next-url": "https://dummyjson.com/users?skip=12&limit=4"
 					},
 					"statusCode": 200,
-					"statusMessage": "OK"
+					"statusMessage": null
 				}
 			},
 			{
@@ -1299,7 +1299,7 @@
 						"next-url": "https://dummyjson.com/users?skip=16&limit=4"
 					},
 					"statusCode": 200,
-					"statusMessage": "OK"
+					"statusMessage": null
 				}
 			},
 			{
@@ -1310,7 +1310,7 @@
 						"next-url": "https://dummyjson.com/users?skip=20&limit=4"
 					},
 					"statusCode": 404,
-					"statusMessage": "Not Found"
+					"statusMessage": null
 				}
 			}
 		],
@@ -1532,7 +1532,7 @@
 						"next-url": "https://dummyjson.com/users?skip=4&limit=4"
 					},
 					"statusCode": 200,
-					"statusMessage": "OK"
+					"statusMessage": null
 				}
 			},
 			{
@@ -1543,7 +1543,7 @@
 						"next-url": "https://dummyjson.com/users?skip=8&limit=4"
 					},
 					"statusCode": 200,
-					"statusMessage": "OK"
+					"statusMessage": null
 				}
 			},
 			{
@@ -1554,7 +1554,7 @@
 						"next-url": "https://dummyjson.com/users?skip=12&limit=4"
 					},
 					"statusCode": 200,
-					"statusMessage": "OK"
+					"statusMessage": null
 				}
 			},
 			{
@@ -1565,7 +1565,7 @@
 						"next-url": "https://dummyjson.com/users?skip=16&limit=4"
 					},
 					"statusCode": 200,
-					"statusMessage": "OK"
+					"statusMessage": null
 				}
 			},
 			{
@@ -1576,7 +1576,7 @@
 						"next-url": "https://dummyjson.com/users?skip=20&limit=4"
 					},
 					"statusCode": 404,
-					"statusMessage": "Not Found"
+					"statusMessage": null
 				}
 			}
 		],

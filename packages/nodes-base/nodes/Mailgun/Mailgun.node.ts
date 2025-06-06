@@ -7,7 +7,7 @@ import type {
 	JsonObject,
 	IRequestOptions,
 } from 'n8n-workflow';
-import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionType } from 'n8n-workflow';
 
 export class Mailgun implements INodeType {
 	description: INodeTypeDescription = {
@@ -20,9 +20,8 @@ export class Mailgun implements INodeType {
 		defaults: {
 			name: 'Mailgun',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'mailgunApi',
@@ -164,6 +163,7 @@ export class Mailgun implements INodeType {
 					}
 
 					if (attachments.length) {
+						// @ts-ignore
 						formData.attachment = attachments;
 					}
 				}

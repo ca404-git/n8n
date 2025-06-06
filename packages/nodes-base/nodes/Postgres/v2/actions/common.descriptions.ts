@@ -52,7 +52,7 @@ export const optionsCollection: INodeProperties = {
 					description: 'A single query for all incoming items',
 				},
 				{
-					name: 'Independent',
+					name: 'Independently',
 					value: 'independently',
 					description: 'Execute one query per incoming item of the run',
 				},

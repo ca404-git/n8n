@@ -1,4 +1,3 @@
-import moment from 'moment-timezone';
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -10,7 +9,7 @@ import type {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 
-import { versionDescription } from './VersionDescription';
+import moment from 'moment-timezone';
 import type { SortData } from '../shared/GenericFunctions';
 import {
 	extractDatabaseId,
@@ -26,7 +25,9 @@ import {
 	notionApiRequestAllItems,
 	simplifyObjects,
 } from '../shared/GenericFunctions';
+
 import { listSearch } from '../shared/methods';
+import { versionDescription } from './VersionDescription';
 
 export class NotionV1 implements INodeType {
 	description: INodeTypeDescription;

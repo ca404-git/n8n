@@ -1,4 +1,3 @@
-import type FormData from 'form-data';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -8,8 +7,10 @@ import type {
 	ILoadOptionsFunctions,
 	IRequestOptions,
 } from 'n8n-workflow';
+
 import { sleep, NodeApiError, jsonParse } from 'n8n-workflow';
 
+import type FormData from 'form-data';
 import { getCredentialsType, requestApi } from './helpers';
 
 export async function discordApiRequest(

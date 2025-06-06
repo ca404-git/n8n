@@ -33,7 +33,6 @@
     "@lezer/lr": "^1.4.0"
   },
   "devDependencies": {
-    "@n8n/typescript-config": "workspace:*",
     "@lezer/generator": "^1.7.0"
   }
 }

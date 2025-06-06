@@ -1,5 +1,4 @@
 import type { INodeProperties } from 'n8n-workflow';
-
 import { BrevoNode } from './GenericFunctions';
 
 export const emailOperations: INodeProperties[] = [

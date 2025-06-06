@@ -1,16 +1,12 @@
-import { NodeTestHarness } from '@nodes-testing/node-test-harness';
 import nock from 'nock';
+import { testWorkflows, getWorkflowFilenames } from '@test/nodes/Helpers';
+import { FAKE_CREDENTIALS_DATA } from '@test/nodes/FakeCredentialsMap';
 
 describe('Test npm Node', () => {
-	const credentials = {
-		npmApi: {
-			accessToken: 'fake-npm-access-token',
-			registryUrl: 'https://fake.npm.registry',
-		},
-	};
-
 	beforeAll(() => {
-		const { registryUrl } = credentials.npmApi;
+		nock.disableNetConnect();
+
+		const { registryUrl } = FAKE_CREDENTIALS_DATA.npmApi;
 		const mock = nock(registryUrl); //.matchHeader('Authorization', `Bearer ${accessToken}`);
 
 		mock.get('/-/package/n8n/dist-tags').reply(200, {
@@ -33,5 +29,10 @@ describe('Test npm Node', () => {
 		});
 	});
 
-	new NodeTestHarness().setupTests({ credentials });
+	afterAll(() => {
+		nock.restore();
+	});
+
+	const workflows = getWorkflowFilenames(__dirname);
+	testWorkflows(workflows);
 });

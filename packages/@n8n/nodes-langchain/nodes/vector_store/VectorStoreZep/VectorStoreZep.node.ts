@@ -1,11 +1,9 @@
-import { ZepVectorStore } from '@langchain/community/vectorstores/zep';
-import { ZepCloudVectorStore } from '@langchain/community/vectorstores/zep_cloud';
 import type { IDataObject, INodeProperties } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-
-import { metadataFilterField } from '@utils/sharedFields';
-
-import { createVectorStoreNode } from '../shared/createVectorStoreNode/createVectorStoreNode';
+import type { IZepConfig } from '@langchain/community/vectorstores/zep';
+import { ZepVectorStore } from '@langchain/community/vectorstores/zep';
+import { createVectorStoreNode } from '../shared/createVectorStoreNode';
+import { metadataFilterField } from '../../../utils/sharedFields';
 
 const embeddingDimensions: INodeProperties = {
 	displayName: 'Embedding Dimensions',
@@ -46,7 +44,7 @@ const retrieveFields: INodeProperties[] = [
 	},
 ];
 
-export class VectorStoreZep extends createVectorStoreNode<ZepVectorStore | ZepCloudVectorStore>({
+export const VectorStoreZep = createVectorStoreNode({
 	meta: {
 		displayName: 'Zep Vector Store',
 		name: 'vectorStoreZep',
@@ -84,21 +82,17 @@ export class VectorStoreZep extends createVectorStoreNode<ZepVectorStore | ZepCl
 		const credentials = await context.getCredentials<{
 			apiKey?: string;
 			apiUrl: string;
-			cloud: boolean;
 		}>('zepApi');
 
-		const zepConfig = {
+		const zepConfig: IZepConfig = {
+			apiUrl: credentials.apiUrl,
 			apiKey: credentials.apiKey,
 			collectionName,
 			embeddingDimensions: options.embeddingDimensions ?? 1536,
 			metadata: filter,
 		};
 
-		if (credentials.cloud) {
-			return new ZepCloudVectorStore(embeddings, zepConfig);
-		} else {
-			return new ZepVectorStore(embeddings, { ...zepConfig, apiUrl: credentials.apiUrl });
-		}
+		return new ZepVectorStore(embeddings, zepConfig);
 	},
 	async populateVectorStore(context, embeddings, documents, itemIndex) {
 		const collectionName = context.getNodeParameter('collectionName', itemIndex) as string;
@@ -111,10 +105,10 @@ export class VectorStoreZep extends createVectorStoreNode<ZepVectorStore | ZepCl
 		const credentials = await context.getCredentials<{
 			apiKey?: string;
 			apiUrl: string;
-			cloud: boolean;
 		}>('zepApi');
 
 		const zepConfig = {
+			apiUrl: credentials.apiUrl,
 			apiKey: credentials.apiKey,
 			collectionName,
 			embeddingDimensions: options.embeddingDimensions ?? 1536,
@@ -122,14 +116,7 @@ export class VectorStoreZep extends createVectorStoreNode<ZepVectorStore | ZepCl
 		};
 
 		try {
-			if (credentials.cloud) {
-				await ZepCloudVectorStore.fromDocuments(documents, embeddings, zepConfig);
-			} else {
-				await ZepVectorStore.fromDocuments(documents, embeddings, {
-					...zepConfig,
-					apiUrl: credentials.apiUrl,
-				});
-			}
+			await ZepVectorStore.fromDocuments(documents, embeddings, zepConfig);
 		} catch (error) {
 			const errorCode = (error as IDataObject).code as number;
 			const responseData = (error as IDataObject).responseData as string;
@@ -143,4 +130,4 @@ export class VectorStoreZep extends createVectorStoreNode<ZepVectorStore | ZepCl
 			throw new NodeOperationError(context.getNode(), error as Error, { itemIndex });
 		}
 	},
-}) {}
+});

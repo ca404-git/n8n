@@ -8,8 +8,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, deepCopy, NodeOperationError } from 'n8n-workflow';
-
+import { NodeConnectionType, deepCopy, NodeOperationError } from 'n8n-workflow';
 import { vmResolver } from '../Code/JavaScriptSandbox';
 
 export class Function implements INodeType {
@@ -26,8 +25,8 @@ export class Function implements INodeType {
 			name: 'Function',
 			color: '#FF9922',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
 				displayName: 'A newer version of this node type is available, called the ‘Code’ node',
@@ -93,8 +92,8 @@ return items;`,
 
 		// Define the global objects for the custom function
 		const sandbox = {
-			getNodeParameter: this.getNodeParameter.bind(this),
-			getWorkflowStaticData: this.getWorkflowStaticData.bind(this),
+			getNodeParameter: this.getNodeParameter,
+			getWorkflowStaticData: this.getWorkflowStaticData,
 			helpers: this.helpers,
 			items,
 			// To be able to access data of other items
@@ -158,7 +157,7 @@ return items;`,
 		const vm = new NodeVM(options);
 
 		if (mode === 'manual') {
-			vm.on('console.log', this.sendMessageToUI.bind(this));
+			vm.on('console.log', this.sendMessageToUI);
 		}
 
 		// Get the code to execute

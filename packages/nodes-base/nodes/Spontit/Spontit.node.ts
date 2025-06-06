@@ -1,4 +1,3 @@
-import moment from 'moment-timezone';
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -6,9 +5,11 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
 
+import moment from 'moment-timezone';
 import { spontitApiRequest } from './GenericFunctions';
+
 import { pushFields, pushOperations } from './PushDescription';
 
 export class Spontit implements INodeType {
@@ -24,9 +25,8 @@ export class Spontit implements INodeType {
 		defaults: {
 			name: 'Spontit',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'spontitApi',

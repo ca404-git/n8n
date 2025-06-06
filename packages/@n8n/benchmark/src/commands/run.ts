@@ -13,10 +13,6 @@ export default class RunCommand extends Command {
 
 	static flags = {
 		testScenariosPath,
-		scenarioFilter: Flags.string({
-			char: 'f',
-			description: 'Filter scenarios by name',
-		}),
 		scenarioNamePrefix: Flags.string({
 			description: 'Prefix for the scenario name',
 			default: 'Unnamed',
@@ -99,7 +95,7 @@ export default class RunCommand extends Command {
 			flags.scenarioNamePrefix,
 		);
 
-		const allScenarios = scenarioLoader.loadAll(flags.testScenariosPath, flags.scenarioFilter);
+		const allScenarios = scenarioLoader.loadAll(flags.testScenariosPath);
 
 		await scenarioRunner.runManyScenarios(allScenarios);
 	}

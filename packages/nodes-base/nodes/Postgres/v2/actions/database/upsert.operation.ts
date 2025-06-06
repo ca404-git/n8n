@@ -6,8 +6,6 @@ import type {
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 
-import { updateDisplayOptions } from '@utils/utilities';
-
 import type {
 	PgpDatabase,
 	PostgresNodeOptions,
@@ -15,6 +13,7 @@ import type {
 	QueryValues,
 	QueryWithValues,
 } from '../../helpers/interfaces';
+
 import {
 	addReturning,
 	checkItemAgainstSchema,
@@ -24,7 +23,9 @@ import {
 	configureTableSchemaUpdater,
 	convertArraysToPostgresFormat,
 } from '../../helpers/utils';
+
 import { optionsCollection } from '../common.descriptions';
+import { updateDisplayOptions } from '@utils/utilities';
 
 const properties: INodeProperties[] = [
 	{
@@ -285,7 +286,7 @@ export async function execute(
 			valuesLength = valuesLength + 1;
 			values.push(column);
 		});
-		const onConflict = ` ON CONFLICT (${conflictColumns.join(',')})`;
+		const onConflict = ` ON CONFLICT (${conflictColumns.join(',')}) DO UPDATE `;
 
 		const insertQuery = `INSERT INTO $1:name.$2:name($${valuesLength}:name) VALUES($${valuesLength}:csv)${onConflict}`;
 		valuesLength = valuesLength + 1;
@@ -300,9 +301,7 @@ export async function execute(
 			values.push(column, item[column] as string);
 		}
 
-		const updateQuery =
-			updates?.length > 0 ? ` DO UPDATE  SET ${updates.join(', ')}` : ' DO NOTHING ';
-		let query = `${insertQuery}${updateQuery}`;
+		let query = `${insertQuery} SET ${updates.join(', ')}`;
 
 		const outputColumns = this.getNodeParameter('options.outputColumns', i, ['*']) as string[];
 

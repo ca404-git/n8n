@@ -1,20 +1,23 @@
-import { PromptTemplate } from '@langchain/core/prompts';
-import { ChatOpenAI } from '@langchain/openai';
-import type { AgentExecutorInput } from 'langchain/agents';
-import { AgentExecutor, OpenAIAgent } from 'langchain/agents';
-import { BufferMemory, type BaseChatMemory } from 'langchain/memory';
 import {
 	type IExecuteFunctions,
 	type INodeExecutionData,
-	NodeConnectionTypes,
+	NodeConnectionType,
 	NodeOperationError,
 } from 'n8n-workflow';
 
-import { getConnectedTools, getPromptInputByType } from '@utils/helpers';
-import { getOptionalOutputParser } from '@utils/output_parsers/N8nOutputParser';
-import { getTracingConfig } from '@utils/tracing';
-
-import { extractParsedOutput } from '../utils';
+import type { AgentExecutorInput } from 'langchain/agents';
+import { AgentExecutor, OpenAIAgent } from 'langchain/agents';
+import type { BaseOutputParser } from '@langchain/core/output_parsers';
+import { PromptTemplate } from '@langchain/core/prompts';
+import { CombiningOutputParser } from 'langchain/output_parsers';
+import { BufferMemory, type BaseChatMemory } from 'langchain/memory';
+import { ChatOpenAI } from '@langchain/openai';
+import {
+	getConnectedTools,
+	getOptionalOutputParsers,
+	getPromptInputByType,
+} from '../../../../../utils/helpers';
+import { getTracingConfig } from '../../../../../utils/tracing';
 
 export async function openAiFunctionsAgentExecute(
 	this: IExecuteFunctions,
@@ -22,7 +25,7 @@ export async function openAiFunctionsAgentExecute(
 ): Promise<INodeExecutionData[][]> {
 	this.logger.debug('Executing OpenAi Functions Agent');
 	const model = (await this.getInputConnectionData(
-		NodeConnectionTypes.AiLanguageModel,
+		NodeConnectionType.AiLanguageModel,
 		0,
 	)) as ChatOpenAI;
 
@@ -32,11 +35,11 @@ export async function openAiFunctionsAgentExecute(
 			'OpenAI Functions Agent requires OpenAI Chat Model',
 		);
 	}
-	const memory = (await this.getInputConnectionData(NodeConnectionTypes.AiMemory, 0)) as
+	const memory = (await this.getInputConnectionData(NodeConnectionType.AiMemory, 0)) as
 		| BaseChatMemory
 		| undefined;
 	const tools = await getConnectedTools(this, nodeVersion >= 1.5, false);
-	const outputParser = await getOptionalOutputParser(this);
+	const outputParsers = await getOptionalOutputParsers(this);
 	const options = this.getNodeParameter('options', 0, {}) as {
 		systemMessage?: string;
 		maxIterations?: number;
@@ -65,8 +68,12 @@ export async function openAiFunctionsAgentExecute(
 
 	const returnData: INodeExecutionData[] = [];
 
+	let outputParser: BaseOutputParser | undefined;
 	let prompt: PromptTemplate | undefined;
-	if (outputParser) {
+	if (outputParsers.length) {
+		outputParser =
+			outputParsers.length === 1 ? outputParsers[0] : new CombiningOutputParser(...outputParsers);
+
 		const formatInstructions = outputParser.getFormatInstructions();
 
 		prompt = new PromptTemplate({
@@ -99,12 +106,12 @@ export async function openAiFunctionsAgentExecute(
 				input = (await prompt.invoke({ input })).value;
 			}
 
-			const response = await agentExecutor
+			let response = await agentExecutor
 				.withConfig(getTracingConfig(this))
-				.invoke({ input, outputParser });
+				.invoke({ input, outputParsers });
 
 			if (outputParser) {
-				response.output = await extractParsedOutput(this, outputParser, response.output as string);
+				response = { output: await outputParser.parse(response.output as string) };
 			}
 
 			returnData.push({ json: response });

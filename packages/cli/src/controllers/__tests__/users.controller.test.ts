@@ -1,10 +1,10 @@
-import type { User } from '@n8n/db';
-import type { UserRepository } from '@n8n/db';
 import { mock } from 'jest-mock-extended';
 
+import type { User } from '@/databases/entities/user';
+import type { UserRepository } from '@/databases/repositories/user.repository';
 import type { EventService } from '@/events/event.service';
 import type { AuthenticatedRequest } from '@/requests';
-import type { ProjectService } from '@/services/project.service.ee';
+import type { ProjectService } from '@/services/project.service';
 
 import { UsersController } from '../users.controller';
 
@@ -25,7 +25,6 @@ describe('UsersController', () => {
 		mock(),
 		projectService,
 		eventService,
-		mock(),
 	);
 
 	beforeEach(() => {

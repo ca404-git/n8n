@@ -1,4 +1,3 @@
-import get from 'lodash/get';
 import type {
 	GenericValue,
 	IDataObject,
@@ -8,9 +7,9 @@ import type {
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 
-import { updateDisplayOptions } from '@utils/utilities';
-
+import get from 'lodash/get';
 import { disableDotNotationBoolean } from '../common.descriptions';
+import { updateDisplayOptions } from '@utils/utilities';
 
 type AggregationType =
 	| 'append'

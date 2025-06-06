@@ -1,16 +1,15 @@
-import { NodeTestHarness } from '@nodes-testing/node-test-harness';
+import type { INodeTypes } from 'n8n-workflow';
 import nock from 'nock';
+import * as transport from '../../../../v2/transport/discord.api';
+import { getResultNodeData, setup, workflowToTests } from '@test/nodes/Helpers';
+import type { WorkflowTestData } from '@test/nodes/types';
+import { executeWorkflow } from '@test/nodes/ExecuteWorkflow';
 
-describe('Test DiscordV2, webhook => sendLegacy', () => {
-	const credentials = {
-		discordWebhookApi: {
-			webhookUri: 'https://discord.com/webhook',
-		},
-	};
+const discordApiRequestSpy = jest.spyOn(transport, 'discordApiRequest');
 
-	nock(credentials.discordWebhookApi.webhookUri)
-		.post('?wait=true')
-		.reply(200, {
+discordApiRequestSpy.mockImplementation(async (method: string) => {
+	if (method === 'POST') {
+		return {
 			id: '1168768986385747999',
 			type: 0,
 			content: 'TEST Message',
@@ -47,10 +46,59 @@ describe('Test DiscordV2, webhook => sendLegacy', () => {
 			flags: 4096,
 			components: [],
 			webhook_id: '1153265494955135077',
+		};
+	}
+});
+
+describe('Test DiscordV2, webhook => sendLegacy', () => {
+	const workflows = ['nodes/Discord/test/v2/node/webhook/sendLegacy.workflow.json'];
+	const tests = workflowToTests(workflows);
+
+	beforeAll(() => {
+		nock.disableNetConnect();
+	});
+
+	afterAll(() => {
+		nock.restore();
+		jest.resetAllMocks();
+	});
+
+	const nodeTypes = setup(tests);
+
+	const testNode = async (testData: WorkflowTestData, types: INodeTypes) => {
+		const { result } = await executeWorkflow(testData, types);
+
+		const resultNodeData = getResultNodeData(result, testData);
+
+		resultNodeData.forEach(({ nodeName, resultData }) => {
+			return expect(resultData).toEqual(testData.output.nodeData[nodeName]);
 		});
 
-	new NodeTestHarness().setupTests({
-		credentials,
-		workflowFiles: ['sendLegacy.workflow.json'],
-	});
+		expect(discordApiRequestSpy).toHaveBeenCalledTimes(1);
+		expect(discordApiRequestSpy).toHaveBeenCalledWith(
+			'POST',
+			'',
+			{
+				content: 'TEST Message',
+				embeds: [
+					{
+						author: { name: 'Michael' },
+						color: 10930459,
+						description: 'some description',
+						timestamp: '2023-10-17T21:00:00.000Z',
+					},
+				],
+				flags: 4096,
+				tts: true,
+				username: 'TEST_USER',
+			},
+			{ wait: true },
+		);
+
+		expect(result.finished).toEqual(true);
+	};
+
+	for (const testData of tests) {
+		test(testData.description, async () => await testNode(testData, nodeTypes));
+	}
 });

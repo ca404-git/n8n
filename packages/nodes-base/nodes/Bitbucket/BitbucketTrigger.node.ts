@@ -11,7 +11,7 @@ import {
 	type INodeTypeDescription,
 	type IWebhookResponseData,
 	type IRequestOptions,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
 import { bitbucketApiRequest, bitbucketApiRequestAllItems } from './GenericFunctions';
@@ -28,7 +28,7 @@ export class BitbucketTrigger implements INodeType {
 			name: 'Bitbucket Trigger',
 		},
 		inputs: [],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'bitbucketApi',

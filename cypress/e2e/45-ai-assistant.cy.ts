@@ -4,14 +4,13 @@ import { clickCreateNewCredential, openCredentialSelect } from '../composables/n
 import { GMAIL_NODE_NAME, SCHEDULE_TRIGGER_NODE_NAME } from '../constants';
 import { CredentialsModal, CredentialsPage, NDV, WorkflowPage } from '../pages';
 import { AIAssistant } from '../pages/features/ai-assistant';
-import { NodeCreator } from '../pages/features/node-creator';
+import { getVisibleSelect } from '../utils';
 
 const wf = new WorkflowPage();
 const ndv = new NDV();
 const aiAssistant = new AIAssistant();
 const credentialsPage = new CredentialsPage();
 const credentialsModal = new CredentialsModal();
-const nodeCreatorFeature = new NodeCreator();
 
 describe('AI Assistant::disabled', () => {
 	beforeEach(() => {
@@ -49,7 +48,6 @@ describe('AI Assistant::enabled', () => {
 	it('should resize assistant chat up', () => {
 		aiAssistant.getters.askAssistantFloatingButton().click();
 		aiAssistant.getters.askAssistantSidebarResizer().should('be.visible');
-		aiAssistant.getters.askAssistantChat().should('be.visible');
 		aiAssistant.getters.askAssistantChat().then((element) => {
 			const { width, left } = element[0].getBoundingClientRect();
 			cy.drag(aiAssistant.getters.askAssistantSidebarResizer(), [left - 10, 0], {
@@ -66,7 +64,6 @@ describe('AI Assistant::enabled', () => {
 	it('should resize assistant chat down', () => {
 		aiAssistant.getters.askAssistantFloatingButton().click();
 		aiAssistant.getters.askAssistantSidebarResizer().should('be.visible');
-		aiAssistant.getters.askAssistantChat().should('be.visible');
 		aiAssistant.getters.askAssistantChat().then((element) => {
 			const { width, left } = element[0].getBoundingClientRect();
 			cy.drag(aiAssistant.getters.askAssistantSidebarResizer(), [left + 10, 0], {
@@ -225,54 +222,6 @@ describe('AI Assistant::enabled', () => {
 			.should('contain.text', 'item.json.myNewField = 1');
 	});
 
-	it('Should ignore node execution success and error messages after the node run successfully once', () => {
-		const getParameter = () => ndv.getters.parameterInput('jsCode').should('be.visible');
-
-		const getEditor = () => getParameter().find('.cm-content').should('exist');
-
-		cy.intercept('POST', '/rest/ai/chat', {
-			statusCode: 200,
-			fixture: 'aiAssistant/responses/code_diff_suggestion_response.json',
-		}).as('chatRequest');
-
-		cy.createFixtureWorkflow('aiAssistant/workflows/test_workflow.json');
-		wf.actions.openNode('Code');
-		ndv.getters.nodeExecuteButton().click();
-		aiAssistant.getters.nodeErrorViewAssistantButton().click({ force: true });
-		cy.wait('@chatRequest');
-
-		cy.intercept('POST', '/rest/ai/chat', {
-			statusCode: 200,
-			fixture: 'aiAssistant/responses/node_execution_succeeded_response.json',
-		}).as('chatRequest2');
-
-		getEditor()
-			.type('{selectall}')
-			.paste(
-				'for (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();',
-			);
-
-		ndv.getters.nodeExecuteButton().click();
-
-		getEditor()
-			.type('{selectall}')
-			.paste(
-				'for (const item of $input.all()) {\n  item.json.myNewField = 1aaaa!;\n}\n\nreturn $input.all();',
-			);
-
-		ndv.getters.nodeExecuteButton().click();
-
-		aiAssistant.getters.chatMessagesAssistant().should('have.length', 3);
-
-		aiAssistant.getters
-			.chatMessagesAssistant()
-			.eq(2)
-			.should(
-				'contain.text',
-				'Code node ran successfully, did my solution help resolve your issue?\nQuick reply 👇Yes, thanksNo, I am still stuck',
-			);
-	});
-
 	it('should end chat session when `end_session` event is received', () => {
 		cy.intercept('POST', '/rest/ai/chat', {
 			statusCode: 200,
@@ -329,20 +278,6 @@ describe('AI Assistant::enabled', () => {
 		wf.actions.openNode(SCHEDULE_TRIGGER_NODE_NAME);
 		ndv.getters.nodeExecuteButton().click();
 		wf.getters.isWorkflowSaved();
-		aiAssistant.getters.placeholderMessage().should('not.exist');
-	});
-
-	it('should send message via enter even with global NodeCreator panel opened', () => {
-		cy.intercept('POST', '/rest/ai/chat', {
-			statusCode: 200,
-			fixture: 'aiAssistant/responses/simple_message_response.json',
-		}).as('chatRequest');
-
-		wf.actions.addInitialNodeToCanvas(SCHEDULE_TRIGGER_NODE_NAME);
-		aiAssistant.actions.openChat();
-		nodeCreatorFeature.actions.openNodeCreator();
-		aiAssistant.getters.chatInput().type('Hello{Enter}');
-
 		aiAssistant.getters.placeholderMessage().should('not.exist');
 	});
 });
@@ -435,7 +370,7 @@ describe('AI Assistant Credential Help', () => {
 		wf.actions.addNodeToCanvas('Slack', true, true, 'Get a channel');
 		wf.getters.nodeCredentialsSelect().should('exist');
 		wf.getters.nodeCredentialsSelect().click();
-		wf.getters.nodeCredentialsCreateOption().click();
+		getVisibleSelect().find('li').last().click();
 		credentialsModal.getters.credentialAuthTypeRadioButtons().first().click();
 		ndv.getters.copyInput().should('not.exist');
 		credentialsModal.getters.oauthConnectButton().should('have.length', 1);
@@ -468,7 +403,7 @@ describe('AI Assistant Credential Help', () => {
 		wf.actions.addNodeToCanvas('Microsoft Outlook', true, true, 'Get a calendar');
 		wf.getters.nodeCredentialsSelect().should('exist');
 		wf.getters.nodeCredentialsSelect().click();
-		wf.getters.nodeCredentialsCreateOption().click();
+		getVisibleSelect().find('li').last().click();
 		ndv.getters.copyInput().should('not.exist');
 		credentialsModal.getters.oauthConnectButton().should('have.length', 1);
 		credentialsModal.getters.credentialInputs().should('have.length', 1);
@@ -558,8 +493,6 @@ describe('General help', () => {
 		}).as('chatRequest');
 
 		aiAssistant.getters.askAssistantFloatingButton().click();
-		wf.getters.zoomToFitButton().click();
-
 		aiAssistant.actions.sendMessage('What is wrong with this workflow?');
 		cy.wait('@chatRequest');
 

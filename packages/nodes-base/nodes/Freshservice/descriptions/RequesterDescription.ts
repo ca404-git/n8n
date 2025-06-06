@@ -1,5 +1,4 @@
 import type { INodeProperties } from 'n8n-workflow';
-
 import { LANGUAGES } from '../constants';
 
 export const requesterOperations: INodeProperties[] = [

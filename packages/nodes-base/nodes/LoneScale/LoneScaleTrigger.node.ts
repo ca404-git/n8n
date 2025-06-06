@@ -1,5 +1,5 @@
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type IDataObject,
 	type IHookFunctions,
 	type ILoadOptionsFunctions,
@@ -24,7 +24,7 @@ export class LoneScaleTrigger implements INodeType {
 			name: 'LoneScale Trigger',
 		},
 		inputs: [],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'loneScaleApi',

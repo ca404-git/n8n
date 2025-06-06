@@ -1,18 +1,16 @@
 import { AgentExecutor } from 'langchain/agents';
-import type { OpenAIToolType } from 'langchain/dist/experimental/openai_assistant/schema';
+import { OpenAI as OpenAIClient } from 'openai';
 import { OpenAIAssistantRunnable } from 'langchain/experimental/openai_assistant';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 import type {
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { OpenAI as OpenAIClient } from 'openai';
-
-import { getConnectedTools } from '@utils/helpers';
-import { getTracingConfig } from '@utils/tracing';
-
+import type { OpenAIToolType } from 'langchain/dist/experimental/openai_assistant/schema';
+import { getConnectedTools } from '../../../utils/helpers';
+import { getTracingConfig } from '../../../utils/tracing';
 import { formatToOpenAIAssistantTool } from './utils';
 
 export class OpenAiAssistant implements INodeType {
@@ -44,10 +42,10 @@ export class OpenAiAssistant implements INodeType {
 			},
 		},
 		inputs: [
-			{ type: NodeConnectionTypes.Main },
-			{ type: NodeConnectionTypes.AiTool, displayName: 'Tools' },
+			{ type: NodeConnectionType.Main },
+			{ type: NodeConnectionType.AiTool, displayName: 'Tools' },
 		],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'openAiApi',

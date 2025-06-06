@@ -1,24 +1,24 @@
-import { Logger } from '@n8n/backend-common';
-import type { IExecutionResponse } from '@n8n/db';
-import { ExecutionRepository } from '@n8n/db';
-import { Service } from '@n8n/di';
 import type express from 'express';
 import {
 	FORM_NODE_TYPE,
 	type INodes,
 	type IWorkflowBase,
+	NodeHelpers,
 	SEND_AND_WAIT_OPERATION,
 	WAIT_NODE_TYPE,
 	Workflow,
 } from 'n8n-workflow';
+import { Service } from 'typedi';
 
+import { ExecutionRepository } from '@/databases/repositories/execution.repository';
 import { ConflictError } from '@/errors/response-errors/conflict.error';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
+import type { IExecutionResponse, IWorkflowDb } from '@/interfaces';
+import { Logger } from '@/logging/logger.service';
 import { NodeTypes } from '@/node-types';
 import * as WebhookHelpers from '@/webhooks/webhook-helpers';
 import * as WorkflowExecuteAdditionalData from '@/workflow-execute-additional-data';
 
-import { WebhookService } from './webhook.service';
 import type {
 	IWebhookResponseCallbackData,
 	IWebhookManager,
@@ -38,7 +38,6 @@ export class WaitingWebhooks implements IWebhookManager {
 		protected readonly logger: Logger,
 		protected readonly nodeTypes: NodeTypes,
 		private readonly executionRepository: ExecutionRepository,
-		private readonly webhookService: WebhookService,
 	) {}
 
 	// TODO: implement `getWebhookMethods` for CORS support
@@ -103,9 +102,7 @@ export class WaitingWebhooks implements IWebhookManager {
 		}
 
 		if (execution.data?.resultData?.error) {
-			const message = `The execution "${executionId}" has finished with error.`;
-			this.logger.debug(message, { error: execution.data.resultData.error });
-			throw new ConflictError(message);
+			throw new ConflictError(`The execution "${executionId} has finished already.`);
 		}
 
 		if (execution.finished) {
@@ -165,15 +162,17 @@ export class WaitingWebhooks implements IWebhookManager {
 		}
 
 		const additionalData = await WorkflowExecuteAdditionalData.getBase();
-		const webhookData = this.webhookService
-			.getNodeWebhooks(workflow, workflowStartNode, additionalData)
-			.find(
-				(webhook) =>
-					webhook.httpMethod === req.method &&
-					webhook.path === (suffix ?? '') &&
-					webhook.webhookDescription.restartWebhook === true &&
-					(webhook.webhookDescription.nodeType === 'form' || false) === this.includeForms,
-			);
+		const webhookData = NodeHelpers.getNodeWebhooks(
+			workflow,
+			workflowStartNode,
+			additionalData,
+		).find(
+			(webhook) =>
+				webhook.httpMethod === req.method &&
+				webhook.path === (suffix ?? '') &&
+				webhook.webhookDescription.restartWebhook === true &&
+				(webhook.webhookDescription.isForm || false) === this.includeForms,
+		);
 
 		if (webhookData === undefined) {
 			// If no data got found it means that the execution can not be started via a webhook.
@@ -183,37 +182,36 @@ export class WaitingWebhooks implements IWebhookManager {
 			if (this.isSendAndWaitRequest(workflow.nodes, suffix)) {
 				res.render('send-and-wait-no-action-required', { isTestWebhook: false });
 				return { noWebhookResponse: true };
-			}
-
-			if (!execution.data.resultData.error && execution.status === 'waiting') {
+			} else if (!execution.data.resultData.error && execution.status === 'waiting') {
 				const childNodes = workflow.getChildNodes(
 					execution.data.resultData.lastNodeExecuted as string,
 				);
-
 				const hasChildForms = childNodes.some(
 					(node) =>
 						workflow.nodes[node].type === FORM_NODE_TYPE ||
 						workflow.nodes[node].type === WAIT_NODE_TYPE,
 				);
-
 				if (hasChildForms) {
 					return { noWebhookResponse: true };
+				} else {
+					throw new NotFoundError(errorMessage);
 				}
+			} else {
+				throw new NotFoundError(errorMessage);
 			}
-
-			throw new NotFoundError(errorMessage);
 		}
 
 		const runExecutionData = execution.data;
 
 		return await new Promise((resolve, reject) => {
+			const executionMode = 'webhook';
 			void WebhookHelpers.executeWebhook(
 				workflow,
 				webhookData,
-				workflowData,
+				workflowData as IWorkflowDb,
 				workflowStartNode,
-				execution.mode,
-				runExecutionData.pushRef,
+				executionMode,
+				undefined,
 				runExecutionData,
 				execution.id,
 				req,

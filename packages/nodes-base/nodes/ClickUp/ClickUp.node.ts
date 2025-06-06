@@ -1,4 +1,3 @@
-import moment from 'moment-timezone';
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -8,25 +7,47 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+
+import moment from 'moment-timezone';
+import { clickupApiRequest, clickupApiRequestAllItems, validateJSON } from './GenericFunctions';
 
 import { checklistFields, checklistOperations } from './ChecklistDescription';
+
 import { checklistItemFields, checklistItemOperations } from './ChecklistItemDescription';
+
 import { commentFields, commentOperations } from './CommentDescription';
+
 import { folderFields, folderOperations } from './FolderDescription';
-import { clickupApiRequest, clickupApiRequestAllItems, validateJSON } from './GenericFunctions';
+
 import { goalFields, goalOperations } from './GoalDescription';
+
 import { goalKeyResultFields, goalKeyResultOperations } from './GoalKeyResultDescription';
-import { listFields, listOperations } from './ListDescription';
-import type { IList } from './ListInterface';
-import { spaceTagFields, spaceTagOperations } from './SpaceTagDescription';
-import { taskDependencyFields, taskDependencyOperations } from './TaskDependencyDescription';
+
+// import {
+// 	guestFields,
+// 	guestOperations,
+// } from './guestDescription';
+
 import { taskFields, taskOperations } from './TaskDescription';
-import type { ITask } from './TaskInterface';
+
 import { taskListFields, taskListOperations } from './TaskListDescription';
+
 import { taskTagFields, taskTagOperations } from './TaskTagDescription';
+
+import { spaceTagFields, spaceTagOperations } from './SpaceTagDescription';
+
+import { taskDependencyFields, taskDependencyOperations } from './TaskDependencyDescription';
+
 import { timeEntryFields, timeEntryOperations } from './TimeEntryDescription';
+
 import { timeEntryTagFields, timeEntryTagOperations } from './TimeEntryTagDescription';
+
+import { listFields, listOperations } from './ListDescription';
+
+import type { ITask } from './TaskInterface';
+
+import type { IList } from './ListInterface';
 
 export class ClickUp implements INodeType {
 	description: INodeTypeDescription = {
@@ -40,9 +61,8 @@ export class ClickUp implements INodeType {
 		defaults: {
 			name: 'ClickUp',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'clickUpApi',

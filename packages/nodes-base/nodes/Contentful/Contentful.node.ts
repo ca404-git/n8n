@@ -5,14 +5,15 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
 
-import * as AssetDescription from './AssetDescription';
+import { contentfulApiRequestAllItems, contentfulApiRequest } from './GenericFunctions';
+
+import * as SpaceDescription from './SpaceDescription';
 import * as ContentTypeDescription from './ContentTypeDescription';
 import * as EntryDescription from './EntryDescription';
-import { contentfulApiRequestAllItems, contentfulApiRequest } from './GenericFunctions';
+import * as AssetDescription from './AssetDescription';
 import * as LocaleDescription from './LocaleDescription';
-import * as SpaceDescription from './SpaceDescription';
 
 export class Contentful implements INodeType {
 	description: INodeTypeDescription = {
@@ -27,9 +28,8 @@ export class Contentful implements INodeType {
 		defaults: {
 			name: 'Contentful',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'contentfulApi',

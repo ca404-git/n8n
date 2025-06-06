@@ -1,10 +1,9 @@
 import type { INodeType, INodeTypeDescription } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
-
-import { chatFields, chatOperations } from './ChatDescription';
+import { NodeConnectionType } from 'n8n-workflow';
+import { oldVersionNotice } from '../../utils/descriptions';
 import { imageFields, imageOperations } from './ImageDescription';
 import { textFields, textOperations } from './TextDescription';
-import { oldVersionNotice } from '../../utils/descriptions';
+import { chatFields, chatOperations } from './ChatDescription';
 
 export class OpenAi implements INodeType {
 	description: INodeTypeDescription = {
@@ -19,8 +18,8 @@ export class OpenAi implements INodeType {
 		defaults: {
 			name: 'OpenAI',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'openAiApi',
@@ -29,8 +28,7 @@ export class OpenAi implements INodeType {
 		],
 		requestDefaults: {
 			ignoreHttpStatusErrors: true,
-			baseURL:
-				'={{ $credentials.url?.split("/").slice(0,-1).join("/") ?? "https://api.openai.com" }}',
+			baseURL: 'https://api.openai.com',
 		},
 		properties: [
 			oldVersionNotice,

@@ -1,5 +1,4 @@
 import cheerio from 'cheerio';
-import get from 'lodash/get';
 import type {
 	INodeExecutionData,
 	IExecuteFunctions,
@@ -8,13 +7,12 @@ import type {
 	IDataObject,
 	INodeProperties,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
-
-import { getResolvables, sanitizeDataPathKey } from '@utils/utilities';
-
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+import get from 'lodash/get';
 import { placeholder } from './placeholder';
-import type { IValueData } from './types';
 import { getValue } from './utils';
+import type { IValueData } from './types';
+import { getResolvables, sanitizeDataPathKey } from '@utils/utilities';
 
 export const capitalizeHeader = (header: string, capitalize?: boolean) => {
 	if (!capitalize) return header;
@@ -135,8 +133,8 @@ export class Html implements INodeType {
 		defaults: {
 			name: 'HTML',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		parameterPane: 'wide',
 		properties: [
 			{

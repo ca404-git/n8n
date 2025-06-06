@@ -1,4 +1,3 @@
-import get from 'lodash/get';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -9,6 +8,8 @@ import type {
 	IHttpRequestMethods,
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
+
+import get from 'lodash/get';
 
 export async function helpscoutApiRequest(
 	this: IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions,
@@ -37,6 +38,7 @@ export async function helpscoutApiRequest(
 		if (Object.keys(body as IDataObject).length === 0) {
 			delete options.body;
 		}
+		//@ts-ignore
 		return await this.helpers.requestOAuth2.call(this, 'helpScoutOAuth2Api', options);
 	} catch (error) {
 		throw new NodeApiError(this.getNode(), error as JsonObject);

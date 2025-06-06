@@ -1,11 +1,10 @@
 /* eslint-disable n8n-nodes-base/node-filename-against-convention */
-import { NodeConnectionTypes, type INodeTypeDescription } from 'n8n-workflow';
+import { NodeConnectionType, type INodeTypeDescription } from 'n8n-workflow';
 
 import * as channel from './channel';
 import * as channelMessage from './channelMessage';
 import * as chatMessage from './chatMessage';
 import * as task from './task';
-import { sendAndWaitWebhooksDescription } from '../../../../../utils/sendAndWait/descriptions';
 
 export const versionDescription: INodeTypeDescription = {
 	displayName: 'Microsoft Teams',
@@ -18,15 +17,14 @@ export const versionDescription: INodeTypeDescription = {
 	defaults: {
 		name: 'Microsoft Teams',
 	},
-	inputs: [NodeConnectionTypes.Main],
-	outputs: [NodeConnectionTypes.Main],
+	inputs: [NodeConnectionType.Main],
+	outputs: [NodeConnectionType.Main],
 	credentials: [
 		{
 			name: 'microsoftTeamsOAuth2Api',
 			required: true,
 		},
 	],
-	webhooks: sendAndWaitWebhooksDescription,
 	properties: [
 		{
 			displayName: 'Resource',

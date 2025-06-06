@@ -1,5 +1,4 @@
 import type { ILoadOptionsFunctions, INodeListSearchResult, INodeProperties } from 'n8n-workflow';
-
 import { apiRequestAllItems } from './GenericFunctions';
 
 type DataItemsResponse<T> = {

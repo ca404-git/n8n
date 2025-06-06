@@ -1,20 +1,19 @@
-import type { Document } from '@langchain/core/documents';
-import type { Embeddings } from '@langchain/core/embeddings';
-import { PineconeStore } from '@langchain/pinecone';
-import { Pinecone } from '@pinecone-database/pinecone';
 import {
 	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
 	type INodeExecutionData,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
+import type { Embeddings } from '@langchain/core/embeddings';
+import type { Document } from '@langchain/core/documents';
 
-import type { N8nJsonLoader } from '@utils/N8nJsonLoader';
-
-import { pineconeIndexSearch } from '../shared/createVectorStoreNode/methods/listSearch';
-import { pineconeIndexRLC } from '../shared/descriptions';
+import { PineconeStore } from '@langchain/pinecone';
+import { Pinecone } from '@pinecone-database/pinecone';
+import type { N8nJsonLoader } from '../../../utils/N8nJsonLoader';
 import { processDocuments } from '../shared/processDocuments';
+import { pineconeIndexRLC } from '../shared/descriptions';
+import { pineconeIndexSearch } from '../shared/methods/listSearch';
 
 // This node is deprecated. Use VectorStorePinecone instead.
 export class VectorStorePineconeInsert implements INodeType {
@@ -51,21 +50,21 @@ export class VectorStorePineconeInsert implements INodeType {
 			},
 		],
 		inputs: [
-			NodeConnectionTypes.Main,
+			NodeConnectionType.Main,
 			{
 				displayName: 'Document',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiDocument,
+				type: NodeConnectionType.AiDocument,
 				required: true,
 			},
 			{
 				displayName: 'Embedding',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiEmbedding,
+				type: NodeConnectionType.AiEmbedding,
 				required: true,
 			},
 		],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			pineconeIndexRLC,
 			{
@@ -106,12 +105,12 @@ export class VectorStorePineconeInsert implements INodeType {
 
 		const credentials = await this.getCredentials('pineconeApi');
 
-		const documentInput = (await this.getInputConnectionData(NodeConnectionTypes.AiDocument, 0)) as
+		const documentInput = (await this.getInputConnectionData(NodeConnectionType.AiDocument, 0)) as
 			| N8nJsonLoader
 			| Array<Document<Record<string, unknown>>>;
 
 		const embeddings = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiEmbedding,
+			NodeConnectionType.AiEmbedding,
 			0,
 		)) as Embeddings;
 

@@ -1,24 +1,24 @@
-import type { SharedCredentials } from '@n8n/db';
-import { Project, SharedWorkflow, User, WorkflowEntity, ProjectRelation } from '@n8n/db';
-import { ProjectRelationRepository } from '@n8n/db';
-import { SharedWorkflowRepository } from '@n8n/db';
-import { UserRepository } from '@n8n/db';
 import { mock } from 'jest-mock-extended';
-import { v4 as uuid } from 'uuid';
 
+import { Project } from '@/databases/entities/project';
+import { ProjectRelation } from '@/databases/entities/project-relation';
+import type { SharedCredentials } from '@/databases/entities/shared-credentials';
+import { SharedWorkflow } from '@/databases/entities/shared-workflow';
+import { User } from '@/databases/entities/user';
+import { WorkflowEntity } from '@/databases/entities/workflow-entity';
+import { ProjectRelationRepository } from '@/databases/repositories/project-relation.repository';
+import { SharedWorkflowRepository } from '@/databases/repositories/shared-workflow.repository';
+import { UserRepository } from '@/databases/repositories/user.repository';
 import { OwnershipService } from '@/services/ownership.service';
 import { mockCredential, mockProject } from '@test/mock-objects';
 import { mockInstance } from '@test/mocking';
-
-import { CacheService } from '../cache/cache.service';
 
 describe('OwnershipService', () => {
 	const userRepository = mockInstance(UserRepository);
 	const sharedWorkflowRepository = mockInstance(SharedWorkflowRepository);
 	const projectRelationRepository = mockInstance(ProjectRelationRepository);
-	const cacheService = mockInstance(CacheService);
 	const ownershipService = new OwnershipService(
-		cacheService,
+		mock(),
 		userRepository,
 		mock(),
 		projectRelationRepository,
@@ -52,22 +52,22 @@ describe('OwnershipService', () => {
 		});
 	});
 
-	describe('getPersonalProjectOwnerCached()', () => {
+	describe('getProjectOwnerCached()', () => {
 		test('should retrieve a project owner', async () => {
-			// ARRANGE
-			const project = new Project();
-			const owner = new User();
-			const projectRelation = new ProjectRelation();
-			projectRelation.role = 'project:personalOwner';
-			(projectRelation.project = project), (projectRelation.user = owner);
+			const mockProject = new Project();
+			const mockOwner = new User();
+
+			const projectRelation = Object.assign(new ProjectRelation(), {
+				role: 'project:personalOwner',
+				project: mockProject,
+				user: mockOwner,
+			});
 
 			projectRelationRepository.getPersonalProjectOwners.mockResolvedValueOnce([projectRelation]);
 
-			// ACT
 			const returnedOwner = await ownershipService.getPersonalProjectOwnerCached('some-project-id');
 
-			// ASSERT
-			expect(returnedOwner).toBe(owner);
+			expect(returnedOwner).toBe(mockOwner);
 		});
 
 		test('should not throw if no project owner found, should return null instead', async () => {
@@ -76,29 +76,6 @@ describe('OwnershipService', () => {
 			const owner = await ownershipService.getPersonalProjectOwnerCached('some-project-id');
 
 			expect(owner).toBeNull();
-		});
-
-		test('should not use the repository if the owner was found in the cache', async () => {
-			// ARRANGE
-			const project = new Project();
-			project.id = uuid();
-			const owner = new User();
-			owner.id = uuid();
-			const projectRelation = new ProjectRelation();
-			projectRelation.role = 'project:personalOwner';
-			(projectRelation.project = project), (projectRelation.user = owner);
-
-			cacheService.getHashValue.mockResolvedValueOnce(owner);
-			userRepository.create.mockReturnValueOnce(owner);
-
-			// ACT
-			const foundOwner = await ownershipService.getPersonalProjectOwnerCached(project.id);
-
-			// ASSERT
-			expect(cacheService.getHashValue).toHaveBeenCalledTimes(1);
-			expect(cacheService.getHashValue).toHaveBeenCalledWith('project-owner', project.id);
-			expect(projectRelationRepository.getPersonalProjectOwners).not.toHaveBeenCalled();
-			expect(foundOwner).toEqual(owner);
 		});
 	});
 

@@ -1,16 +1,14 @@
-import { ZepVectorStore } from '@langchain/community/vectorstores/zep';
-import type { Document } from '@langchain/core/documents';
-import type { Embeddings } from '@langchain/core/embeddings';
 import {
 	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
 	type INodeExecutionData,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
-
-import type { N8nJsonLoader } from '@utils/N8nJsonLoader';
-
+import { ZepVectorStore } from '@langchain/community/vectorstores/zep';
+import type { Embeddings } from '@langchain/core/embeddings';
+import type { Document } from '@langchain/core/documents';
+import type { N8nJsonLoader } from '../../../utils/N8nJsonLoader';
 import { processDocuments } from '../shared/processDocuments';
 
 // This node is deprecated. Use VectorStoreZep instead.
@@ -47,21 +45,21 @@ export class VectorStoreZepInsert implements INodeType {
 			},
 		],
 		inputs: [
-			NodeConnectionTypes.Main,
+			NodeConnectionType.Main,
 			{
 				displayName: 'Document',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiDocument,
+				type: NodeConnectionType.AiDocument,
 				required: true,
 			},
 			{
 				displayName: 'Embedding',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiEmbedding,
+				type: NodeConnectionType.AiEmbedding,
 				required: true,
 			},
 		],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
 				displayName: 'Collection Name',
@@ -117,12 +115,12 @@ export class VectorStoreZepInsert implements INodeType {
 			apiUrl: string;
 		}>('zepApi');
 
-		const documentInput = (await this.getInputConnectionData(NodeConnectionTypes.AiDocument, 0)) as
+		const documentInput = (await this.getInputConnectionData(NodeConnectionType.AiDocument, 0)) as
 			| N8nJsonLoader
 			| Array<Document<Record<string, unknown>>>;
 
 		const embeddings = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiEmbedding,
+			NodeConnectionType.AiEmbedding,
 			0,
 		)) as Embeddings;
 

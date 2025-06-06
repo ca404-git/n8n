@@ -7,10 +7,8 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
-import { contactFields, contactOperations } from './ContactDescription';
-import type { ICreateContactBody } from './ContactInterface';
 import {
 	capitalize,
 	freshdeskApiRequest,
@@ -18,37 +16,33 @@ import {
 	// validateJSON,
 } from './GenericFunctions';
 
-const Status = {
-	Open: 2,
-	Pending: 3,
-	Resolved: 4,
-	Closed: 5,
-} as const;
+import type { ICreateContactBody } from './ContactInterface';
 
-const Priority = {
-	Low: 1,
-	Medium: 2,
-	High: 3,
-	Urgent: 4,
-} as const;
+import { contactFields, contactOperations } from './ContactDescription';
 
-const Source = {
-	Email: 1,
-	Portal: 2,
-	Phone: 3,
-	Chat: 7,
-	Mobihelp: 8,
-	FeedbackWidget: 9,
-	OutboundEmail: 10,
-} as const;
+const enum Status {
+	Open = 2,
+	Pending = 3,
+	Resolved = 4,
+	Closed = 5,
+}
 
-type StatusKey = keyof typeof Status;
-type PriorityKey = keyof typeof Priority;
-type SourceKey = keyof typeof Source;
+const enum Priority {
+	Low = 1,
+	Medium = 2,
+	High = 3,
+	Urgent = 4,
+}
 
-type StatusValue = (typeof Status)[keyof typeof Status];
-type PriorityValue = (typeof Priority)[keyof typeof Priority];
-type SourceValue = (typeof Source)[keyof typeof Source];
+const enum Source {
+	Email = 1,
+	Portal = 2,
+	Phone = 3,
+	Chat = 7,
+	Mobihelp = 8,
+	FeedbackWidget = 9,
+	OutboundEmail = 10,
+}
 
 interface ICreateTicketBody {
 	name?: string;
@@ -60,8 +54,8 @@ interface ICreateTicketBody {
 	unique_external_id?: string;
 	subject?: string | null;
 	type?: string;
-	status?: StatusValue;
-	priority?: PriorityValue;
+	status?: Status;
+	priority?: Priority;
 	description?: string;
 	responder_id?: number;
 	cc_emails?: [string];
@@ -71,7 +65,7 @@ interface ICreateTicketBody {
 	fr_due_by?: string;
 	group_id?: number;
 	product_id?: number;
-	source?: SourceValue;
+	source?: Source;
 	tags?: [string];
 	company_id?: number;
 }
@@ -89,9 +83,8 @@ export class Freshdesk implements INodeType {
 		defaults: {
 			name: 'Freshdesk',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'freshdeskApi',
@@ -1116,9 +1109,12 @@ export class Freshdesk implements INodeType {
 						const options = this.getNodeParameter('options', i);
 						//const jsonActive = this.getNodeParameter('jsonParameters') as boolean;
 						const body: ICreateTicketBody = {
-							status: Status[capitalize(status) as StatusKey],
-							priority: Priority[capitalize(priority) as PriorityKey],
-							source: Source[capitalize(source) as SourceKey],
+							// @ts-ignore
+							status: Status[capitalize(status)],
+							// @ts-ignore
+							priority: Priority[capitalize(priority)],
+							// @ts-ignore
+							source: Source[capitalize(source)],
 						};
 
 						if (requester === 'requesterId') {
@@ -1209,6 +1205,7 @@ export class Freshdesk implements INodeType {
 						if (updateFields.requester) {
 							const value = updateFields.requesterIdentificationValue as string;
 							if (updateFields.requester === 'requesterId') {
+								// @ts-ignore
 								if (isNaN(parseInt(value, 10))) {
 									throw new NodeOperationError(this.getNode(), 'Requester Id must be a number', {
 										itemIndex: i,

@@ -1,3 +1,5 @@
+import type { Readable } from 'stream';
+
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -14,9 +16,8 @@ import {
 	NodeOperationError,
 	sleep,
 	removeCircularRefs,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
-import type { Readable } from 'stream';
 
 import type { IAuthDataSanitizeKeys } from '../GenericFunctions';
 import { replaceNullValues, sanitizeUiMessage } from '../GenericFunctions';
@@ -42,8 +43,8 @@ export class HttpRequestV1 implements INodeType {
 				name: 'HTTP Request',
 				color: '#2200DD',
 			},
-			inputs: [NodeConnectionTypes.Main],
-			outputs: [NodeConnectionTypes.Main],
+			inputs: [NodeConnectionType.Main],
+			outputs: [NodeConnectionType.Main],
 			credentials: [
 				// ----------------------------------
 				//            v1 creds
@@ -195,7 +196,7 @@ export class HttpRequestV1 implements INodeType {
 					required: true,
 				},
 				{
-					displayName: 'Ignore SSL Issues (Insecure)',
+					displayName: 'Ignore SSL Issues',
 					name: 'allowUnauthorizedCerts',
 					type: 'boolean',
 					default: false,
@@ -700,6 +701,7 @@ export class HttpRequestV1 implements INodeType {
 			} satisfies IRequestOptions;
 
 			if (fullResponse) {
+				// @ts-ignore
 				requestOptions.resolveWithFullResponse = true;
 			}
 
@@ -712,6 +714,7 @@ export class HttpRequestV1 implements INodeType {
 			}
 
 			if (options.ignoreResponseCode === true) {
+				// @ts-ignore
 				requestOptions.simple = false;
 			}
 			if (options.proxy !== undefined) {
@@ -973,10 +976,12 @@ export class HttpRequestV1 implements INodeType {
 			}
 		}
 
+		// @ts-ignore
 		const promisesResponses = await Promise.allSettled(requestPromises);
 
 		let response: any;
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
+			// @ts-ignore
 			response = promisesResponses.shift();
 
 			if (response!.status !== 'fulfilled') {

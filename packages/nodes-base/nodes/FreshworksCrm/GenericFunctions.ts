@@ -1,4 +1,3 @@
-import omit from 'lodash/omit';
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -9,6 +8,7 @@ import type {
 } from 'n8n-workflow';
 import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 
+import omit from 'lodash/omit';
 import type {
 	FreshworksConfigResponse,
 	FreshworksCrmApiCredentials,

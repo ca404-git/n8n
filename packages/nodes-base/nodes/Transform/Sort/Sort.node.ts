@@ -8,12 +8,10 @@ import {
 	type INodeExecutionData,
 	type INodeType,
 	type INodeTypeDescription,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
-
-import { shuffleArray } from '@utils/utilities';
-
 import { sortByCode } from './utils';
+import { shuffleArray } from '@utils/utilities';
 
 export class Sort implements INodeType {
 	description: INodeTypeDescription = {
@@ -27,8 +25,8 @@ export class Sort implements INodeType {
 		defaults: {
 			name: 'Sort',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
 				displayName: 'Type',
@@ -49,7 +47,7 @@ export class Sort implements INodeType {
 					},
 				],
 				default: 'simple',
-				description: 'The type of sorting to perform',
+				description: 'The fields of the input items to compare to see if they are the same',
 			},
 			{
 				displayName: 'Fields To Sort By',
@@ -97,7 +95,7 @@ export class Sort implements INodeType {
 					},
 				],
 				default: {},
-				description: 'The fields of the input items to sort by',
+				description: 'The fields of the input items to compare to see if they are the same',
 				displayOptions: {
 					show: {
 						type: ['simple'],

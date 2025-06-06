@@ -1,25 +1,24 @@
-import { PullWorkFolderRequestDto } from '@n8n/api-types';
-import { Container } from '@n8n/di';
 import type express from 'express';
 import type { StatusResult } from 'simple-git';
+import { Container } from 'typedi';
 
 import {
 	getTrackingInformationFromPullResult,
 	isSourceControlLicensed,
-} from '@/environments.ee/source-control/source-control-helper.ee';
-import { SourceControlPreferencesService } from '@/environments.ee/source-control/source-control-preferences.service.ee';
-import { SourceControlService } from '@/environments.ee/source-control/source-control.service.ee';
-import type { ImportResult } from '@/environments.ee/source-control/types/import-result';
+} from '@/environments/source-control/source-control-helper.ee';
+import { SourceControlPreferencesService } from '@/environments/source-control/source-control-preferences.service.ee';
+import { SourceControlService } from '@/environments/source-control/source-control.service.ee';
+import type { ImportResult } from '@/environments/source-control/types/import-result';
 import { EventService } from '@/events/event.service';
-import type { AuthenticatedRequest } from '@/requests';
 
-import { apiKeyHasScopeWithGlobalScopeFallback } from '../../shared/middlewares/global.middleware';
+import type { PublicSourceControlRequest } from '../../../types';
+import { globalScope } from '../../shared/middlewares/global.middleware';
 
 export = {
 	pull: [
-		apiKeyHasScopeWithGlobalScopeFallback({ scope: 'sourceControl:pull' }),
+		globalScope('sourceControl:pull'),
 		async (
-			req: AuthenticatedRequest,
+			req: PublicSourceControlRequest.Pull,
 			res: express.Response,
 		): Promise<ImportResult | StatusResult | Promise<express.Response>> => {
 			const sourceControlPreferencesService = Container.get(SourceControlPreferencesService);
@@ -34,14 +33,17 @@ export = {
 					.json({ status: 'Error', message: 'Source Control is not connected to a repository' });
 			}
 			try {
-				const payload = PullWorkFolderRequestDto.parse(req.body);
 				const sourceControlService = Container.get(SourceControlService);
-				const result = await sourceControlService.pullWorkfolder(req.user, payload);
+				const result = await sourceControlService.pullWorkfolder({
+					force: req.body.force,
+					variables: req.body.variables,
+					userId: req.user.id,
+				});
 
 				if (result.statusCode === 200) {
 					Container.get(EventService).emit('source-control-user-pulled-api', {
-						...getTrackingInformationFromPullResult(req.user.id, result.statusResult),
-						forced: payload.force ?? false,
+						...getTrackingInformationFromPullResult(result.statusResult),
+						forced: req.body.force ?? false,
 					});
 					return res.status(200).send(result.statusResult);
 				} else {

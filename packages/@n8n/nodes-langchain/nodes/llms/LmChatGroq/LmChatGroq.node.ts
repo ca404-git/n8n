@@ -1,17 +1,14 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-import { ChatGroq } from '@langchain/groq';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
 
-import { getHttpProxyAgent } from '@utils/httpProxyAgent';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
-
-import { makeN8nLlmFailedAttemptHandler } from '../n8nLlmFailedAttemptHandler';
+import { ChatGroq } from '@langchain/groq';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
 import { N8nLlmTracing } from '../N8nLlmTracing';
 
 export class LmChatGroq implements INodeType {
@@ -43,7 +40,7 @@ export class LmChatGroq implements INodeType {
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiLanguageModel],
+		outputs: [NodeConnectionType.AiLanguageModel],
 		outputNames: ['Model'],
 		credentials: [
 			{
@@ -55,7 +52,7 @@ export class LmChatGroq implements INodeType {
 			baseURL: 'https://api.groq.com/openai/v1',
 		},
 		properties: [
-			getConnectionHintNoticeField([NodeConnectionTypes.AiChain, NodeConnectionTypes.AiChain]),
+			getConnectionHintNoticeField([NodeConnectionType.AiChain, NodeConnectionType.AiChain]),
 			{
 				displayName: 'Model',
 				name: 'model',
@@ -132,7 +129,7 @@ export class LmChatGroq implements INodeType {
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		const credentials = await this.getCredentials('groqApi');
 
 		const modelName = this.getNodeParameter('model', itemIndex) as string;
@@ -147,8 +144,6 @@ export class LmChatGroq implements INodeType {
 			maxTokens: options.maxTokensToSample,
 			temperature: options.temperature,
 			callbacks: [new N8nLlmTracing(this)],
-			httpAgent: getHttpProxyAgent(),
-			onFailedAttempt: makeN8nLlmFailedAttemptHandler(this),
 		});
 
 		return {

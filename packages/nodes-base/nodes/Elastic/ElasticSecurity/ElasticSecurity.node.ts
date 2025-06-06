@@ -7,7 +7,15 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+
+import {
+	elasticSecurityApiRequest,
+	getConnector,
+	getVersion,
+	handleListing,
+	throwOnEmptyUpdate,
+} from './GenericFunctions';
 
 import {
 	caseCommentFields,
@@ -19,13 +27,7 @@ import {
 	connectorFields,
 	connectorOperations,
 } from './descriptions';
-import {
-	elasticSecurityApiRequest,
-	getConnector,
-	getVersion,
-	handleListing,
-	throwOnEmptyUpdate,
-} from './GenericFunctions';
+
 import type { Connector, ConnectorCreatePayload, ConnectorType } from './types';
 
 export class ElasticSecurity implements INodeType {
@@ -40,9 +42,8 @@ export class ElasticSecurity implements INodeType {
 		defaults: {
 			name: 'Elastic Security',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'elasticSecurityApi',

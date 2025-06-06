@@ -35,7 +35,7 @@ export class ZammadBasicAuthApi implements ICredentialType {
 			required: true,
 		},
 		{
-			displayName: 'Ignore SSL Issues (Insecure)',
+			displayName: 'Ignore SSL Issues',
 			name: 'allowUnauthorizedCerts',
 			type: 'boolean',
 			description: 'Whether to connect even if SSL certificate validation is not possible',

@@ -10,7 +10,6 @@ import type {
 	IRequestOptions,
 } from 'n8n-workflow';
 import { ApplicationError } from 'n8n-workflow';
-
 import type { IAttachment, IRecord } from '../helpers/interfaces';
 import { flattenOutput } from '../helpers/utils';
 

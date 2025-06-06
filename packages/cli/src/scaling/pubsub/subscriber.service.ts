@@ -1,15 +1,14 @@
-import { Logger } from '@n8n/backend-common';
-import { Service } from '@n8n/di';
 import type { Redis as SingleNodeClient, Cluster as MultiNodeClient } from 'ioredis';
 import debounce from 'lodash/debounce';
 import { InstanceSettings } from 'n8n-core';
 import { jsonParse } from 'n8n-workflow';
-import type { LogMetadata } from 'n8n-workflow';
+import { Service } from 'typedi';
 
 import config from '@/config';
+import { EventService } from '@/events/event.service';
+import { Logger } from '@/logging/logger.service';
 import { RedisClientService } from '@/services/redis-client.service';
 
-import { PubSubEventBus } from './pubsub.eventbus';
 import type { PubSub } from './pubsub.types';
 
 /**
@@ -21,25 +20,25 @@ export class Subscriber {
 
 	constructor(
 		private readonly logger: Logger,
-		private readonly instanceSettings: InstanceSettings,
-		private readonly pubsubEventBus: PubSubEventBus,
 		private readonly redisClientService: RedisClientService,
+		private readonly eventService: EventService,
+		private readonly instanceSettings: InstanceSettings,
 	) {
 		// @TODO: Once this class is only ever initialized in scaling mode, throw in the next line instead.
 		if (config.getEnv('executions.mode') !== 'queue') return;
 
-		this.logger = this.logger.scoped(['scaling', 'pubsub']);
+		this.logger = this.logger.withScope('scaling');
 
 		this.client = this.redisClientService.createClient({ type: 'subscriber(n8n)' });
 
 		const handlerFn = (msg: PubSub.Command | PubSub.WorkerResponse) => {
 			const eventName = 'command' in msg ? msg.command : msg.response;
-			this.pubsubEventBus.emit(eventName, msg.payload);
+			this.eventService.emit(eventName, msg.payload);
 		};
 
 		const debouncedHandlerFn = debounce(handlerFn, 300);
 
-		this.client.on('message', (channel: PubSub.Channel, str: string) => {
+		this.client.on('message', (channel: PubSub.Channel, str) => {
 			const msg = this.parseMessage(str, channel);
 			if (!msg) return;
 			if (msg.debounce) debouncedHandlerFn(msg);
@@ -73,7 +72,7 @@ export class Subscriber {
 		});
 
 		if (!msg) {
-			this.logger.error('Received malformed pubsub message', {
+			this.logger.error(`Received malformed message via channel ${channel}`, {
 				msg: str,
 				channel,
 			});
@@ -90,18 +89,12 @@ export class Subscriber {
 			return null;
 		}
 
-		let msgName = 'command' in msg ? msg.command : msg.response;
+		const msgName = 'command' in msg ? msg.command : msg.response;
 
-		const metadata: LogMetadata = { msg: msgName, channel };
-
-		if ('command' in msg && msg.command === 'relay-execution-lifecycle-event') {
-			const { data, type } = msg.payload;
-			msgName += ` (${type})`;
-			metadata.type = type;
-			if ('executionId' in data) metadata.executionId = data.executionId;
-		}
-
-		this.logger.debug(`Received pubsub msg: ${msgName}`, metadata);
+		this.logger.debug(`Received message ${msgName} via channel ${channel}`, {
+			msg,
+			channel,
+		});
 
 		return msg;
 	}

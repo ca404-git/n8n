@@ -1,11 +1,12 @@
-import { Container } from '@n8n/di';
 import { Flags } from '@oclif/core';
+import { ApplicationError } from 'n8n-workflow';
+import { Container } from 'typedi';
 
 import { ActiveExecutions } from '@/active-executions';
 import config from '@/config';
-import { Publisher } from '@/scaling/pubsub/publisher.service';
-import { PubSubRegistry } from '@/scaling/pubsub/pubsub.registry';
+import { PubSubHandler } from '@/scaling/pubsub/pubsub-handler';
 import { Subscriber } from '@/scaling/pubsub/subscriber.service';
+import { OrchestrationService } from '@/services/orchestration.service';
 import { WebhookServer } from '@/webhooks/webhook-server';
 
 import { BaseCommand } from './base-command';
@@ -32,7 +33,7 @@ export class Webhook extends BaseCommand {
 		this.logger.info('\nStopping n8n...');
 
 		try {
-			await this.externalHooks?.run('n8n.stop');
+			await this.externalHooks?.run('n8n.stop', []);
 
 			await Container.get(ActiveExecutions).shutdown();
 		} catch (error) {
@@ -77,11 +78,17 @@ export class Webhook extends BaseCommand {
 		this.logger.debug('Data deduplication service init complete');
 		await this.initExternalHooks();
 		this.logger.debug('External hooks init complete');
-
-		await this.loadModules();
+		await this.initExternalSecrets();
+		this.logger.debug('External secrets init complete');
 	}
 
 	async run() {
+		if (this.globalConfig.multiMainSetup.enabled) {
+			throw new ApplicationError(
+				'Webhook process cannot be started when multi-main setup is enabled.',
+			);
+		}
+
 		const { ScalingService } = await import('@/scaling/scaling.service');
 		await Container.get(ScalingService).setupQueue();
 		await this.server.start();
@@ -96,9 +103,9 @@ export class Webhook extends BaseCommand {
 	}
 
 	async initOrchestration() {
-		Container.get(Publisher);
+		await Container.get(OrchestrationService).init();
 
-		Container.get(PubSubRegistry).init();
+		Container.get(PubSubHandler).init();
 		await Container.get(Subscriber).subscribe('n8n.commands');
 	}
 }

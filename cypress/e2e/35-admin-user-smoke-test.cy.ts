@@ -1,20 +1,22 @@
-const url = '/settings';
+import { SettingsPage } from '../pages/settings';
+
+const settingsPage = new SettingsPage();
 
 describe('Admin user', { disableAutoLogin: true }, () => {
 	it('should see same Settings sub menu items as instance owner', () => {
 		cy.signinAsOwner();
-		cy.visit(url);
+		cy.visit(settingsPage.url);
 
 		let ownerMenuItems = 0;
 
-		cy.getByTestId('menu-item').then(($el) => {
+		settingsPage.getters.menuItems().then(($el) => {
 			ownerMenuItems = $el.length;
 		});
 
 		cy.signout();
 		cy.signinAsAdmin();
-		cy.visit(url);
+		cy.visit(settingsPage.url);
 
-		cy.getByTestId('menu-item').should('have.length', ownerMenuItems);
+		settingsPage.getters.menuItems().should('have.length', ownerMenuItems);
 	});
 });

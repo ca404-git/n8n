@@ -1,12 +1,11 @@
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type IDataObject,
 	type IExecuteSingleFunctions,
 	type IHttpRequestOptions,
 	type INodeType,
 	type INodeTypeDescription,
 } from 'n8n-workflow';
-
 import { collectionFields } from './CollectionDescription';
 import type { FieldsUiValues } from './types';
 
@@ -22,9 +21,8 @@ export class Adalo implements INodeType {
 		defaults: {
 			name: 'Adalo',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'adaloApi',

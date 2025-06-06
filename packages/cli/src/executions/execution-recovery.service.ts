@@ -1,17 +1,18 @@
-import { Logger } from '@n8n/backend-common';
-import type { IExecutionResponse } from '@n8n/db';
-import { ExecutionRepository } from '@n8n/db';
-import { Service } from '@n8n/di';
 import type { DateTime } from 'luxon';
 import { InstanceSettings } from 'n8n-core';
 import { sleep } from 'n8n-workflow';
 import type { IRun, ITaskData } from 'n8n-workflow';
+import { Service } from 'typedi';
 
 import { ARTIFICIAL_TASK_DATA } from '@/constants';
+import { ExecutionRepository } from '@/databases/repositories/execution.repository';
 import { NodeCrashedError } from '@/errors/node-crashed.error';
 import { WorkflowCrashedError } from '@/errors/workflow-crashed.error';
-import { getLifecycleHooksForRegularMain } from '@/execution-lifecycle/execution-lifecycle-hooks';
+import { EventService } from '@/events/event.service';
+import type { IExecutionResponse } from '@/interfaces';
+import { Logger } from '@/logging/logger.service';
 import { Push } from '@/push';
+import { getWorkflowHooksMain } from '@/workflow-execute-additional-data'; // @TODO: Dependency cycle
 
 import type { EventMessageTypes } from '../eventbus/event-message-classes';
 
@@ -25,6 +26,7 @@ export class ExecutionRecoveryService {
 		private readonly instanceSettings: InstanceSettings,
 		private readonly push: Push,
 		private readonly executionRepository: ExecutionRepository,
+		private readonly eventService: EventService,
 	) {}
 
 	/**
@@ -47,7 +49,7 @@ export class ExecutionRecoveryService {
 
 		this.push.once('editorUiConnected', async () => {
 			await sleep(1000);
-			this.push.broadcast({ type: 'executionRecovered', data: { executionId } });
+			this.push.broadcast('executionRecovered', { executionId });
 		});
 
 		return amendedExecution;
@@ -72,7 +74,7 @@ export class ExecutionRecoveryService {
 			unflattenData: true,
 		});
 
-		if (!execution || (execution.status === 'success' && execution.data)) return null;
+		if (!execution || execution.status === 'success') return null;
 
 		const runExecutionData = execution.data ?? { resultData: { runData: {} } };
 
@@ -95,7 +97,6 @@ export class ExecutionRecoveryService {
 
 			const taskData: ITaskData = {
 				startTime: nodeStartedMessage.ts.toUnixInteger(),
-				executionIndex: 0,
 				executionTime: -1,
 				source: [null],
 			};
@@ -176,14 +177,20 @@ export class ExecutionRecoveryService {
 	private async runHooks(execution: IExecutionResponse) {
 		execution.data ??= { resultData: { runData: {} } };
 
-		const lifecycleHooks = getLifecycleHooksForRegularMain(
+		this.eventService.emit('workflow-post-execute', {
+			workflow: execution.workflowData,
+			executionId: execution.id,
+			runData: execution,
+		});
+
+		const externalHooks = getWorkflowHooksMain(
 			{
 				userId: '',
 				workflowData: execution.workflowData,
 				executionMode: execution.mode,
 				executionData: execution.data,
 				runData: execution.data.resultData.runData,
-				retryOf: execution.retryOf ?? undefined,
+				retryOf: execution.retryOf,
 			},
 			execution.id,
 		);
@@ -198,6 +205,6 @@ export class ExecutionRecoveryService {
 			status: execution.status,
 		};
 
-		await lifecycleHooks.runHook('workflowExecuteAfter', [run]);
+		await externalHooks.executeHookFunctions('workflowExecuteAfter', [run]);
 	}
 }

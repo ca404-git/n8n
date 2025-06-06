@@ -1,12 +1,15 @@
-import { NodeTestHarness } from '@nodes-testing/node-test-harness';
+import type { INodeTypes } from 'n8n-workflow';
 import nock from 'nock';
+import * as transport from '../../../../v2/transport';
+import { getResultNodeData, setup, workflowToTests } from '@test/nodes/Helpers';
+import type { WorkflowTestData } from '@test/nodes/types';
+import { executeWorkflow } from '@test/nodes/ExecuteWorkflow';
 
-import { credentials } from '../../../credentials';
+const microsoftApiRequestSpy = jest.spyOn(transport, 'microsoftApiRequest');
 
-describe('Test MicrosoftTeamsV2, chatMessage => get', () => {
-	nock('https://graph.microsoft.com')
-		.get('/v1.0/chats/19:ebed9ad42c904d6c83adf0db360053ec@thread.v2/messages/1698378560692')
-		.reply(200, {
+microsoftApiRequestSpy.mockImplementation(async (method: string) => {
+	if (method === 'GET') {
+		return {
 			'@odata.context':
 				"https://graph.microsoft.com/v1.0/$metadata#chats('19%3Aebed9ad42c904d6c83adf0db360053ec%40thread.v2')/messages/$entity",
 			id: '1698378560692',
@@ -45,10 +48,44 @@ describe('Test MicrosoftTeamsV2, chatMessage => get', () => {
 			attachments: [],
 			mentions: [],
 			reactions: [],
+		};
+	}
+});
+
+describe('Test MicrosoftTeamsV2, chatMessage => get', () => {
+	const workflows = ['nodes/Microsoft/Teams/test/v2/node/chatMessage/get.workflow.json'];
+	const tests = workflowToTests(workflows);
+
+	beforeAll(() => {
+		nock.disableNetConnect();
+	});
+
+	afterAll(() => {
+		nock.restore();
+		jest.resetAllMocks();
+	});
+
+	const nodeTypes = setup(tests);
+
+	const testNode = async (testData: WorkflowTestData, types: INodeTypes) => {
+		const { result } = await executeWorkflow(testData, types);
+
+		const resultNodeData = getResultNodeData(result, testData);
+
+		resultNodeData.forEach(({ nodeName, resultData }) => {
+			return expect(resultData).toEqual(testData.output.nodeData[nodeName]);
 		});
 
-	new NodeTestHarness().setupTests({
-		credentials,
-		workflowFiles: ['get.workflow.json'],
-	});
+		expect(microsoftApiRequestSpy).toHaveBeenCalledTimes(1);
+		expect(microsoftApiRequestSpy).toHaveBeenCalledWith(
+			'GET',
+			'/v1.0/chats/19:ebed9ad42c904d6c83adf0db360053ec@thread.v2/messages/1698378560692',
+		);
+
+		expect(result.finished).toEqual(true);
+	};
+
+	for (const testData of tests) {
+		test(testData.description, async () => await testNode(testData, nodeTypes));
+	}
 });

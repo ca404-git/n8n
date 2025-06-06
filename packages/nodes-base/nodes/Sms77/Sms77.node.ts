@@ -1,5 +1,5 @@
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type IDataObject,
 	type IExecuteFunctions,
 	type INodeExecutionData,
@@ -21,9 +21,8 @@ export class Sms77 implements INodeType {
 		defaults: {
 			name: 'seven',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'sms77Api',
@@ -139,7 +138,7 @@ export class Sms77 implements INodeType {
 				displayName: 'Options',
 				name: 'options',
 				type: 'collection',
-				placeholder: 'Add Option',
+				placeholder: 'Add Opton',
 				default: {},
 				displayOptions: {
 					show: {
@@ -148,6 +147,13 @@ export class Sms77 implements INodeType {
 					},
 				},
 				options: [
+					{
+						displayName: 'Debug',
+						name: 'debug',
+						type: 'boolean',
+						default: false,
+						description: 'Whether the API returns fake responses like in a sandbox',
+					},
 					{
 						displayName: 'Delay',
 						name: 'delay',
@@ -180,6 +186,13 @@ export class Sms77 implements INodeType {
 						description: 'Custom label used to group analytics',
 					},
 					{
+						displayName: 'No Reload',
+						name: 'no_reload',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to disable reload lock to allow sending duplicate messages',
+					},
+					{
 						displayName: 'Performance Tracking',
 						name: 'performance_tracking',
 						type: 'boolean',
@@ -204,7 +217,7 @@ export class Sms77 implements INodeType {
 				displayName: 'Options',
 				name: 'options',
 				type: 'collection',
-				placeholder: 'Add Option',
+				placeholder: 'Add Opton',
 				default: {},
 				displayOptions: {
 					show: {
@@ -214,6 +227,13 @@ export class Sms77 implements INodeType {
 				},
 				options: [
 					{
+						displayName: 'Debug',
+						name: 'debug',
+						type: 'boolean',
+						default: false,
+						description: 'Whether the API returns fake responses like in a sandbox',
+					},
+					{
 						displayName: 'From',
 						name: 'from',
 						type: 'string',
@@ -221,6 +241,13 @@ export class Sms77 implements INodeType {
 						placeholder: '+4901234567890',
 						description:
 							'The caller ID. Please use only verified sender IDs, one of your virtual inbound numbers or one of our shared virtual numbers.',
+					},
+					{
+						displayName: 'XML',
+						name: 'xml',
+						type: 'boolean',
+						default: false,
+						description: 'Whether the text is in XML format',
 					},
 				],
 			},

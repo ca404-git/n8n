@@ -9,14 +9,15 @@ import type {
 	INodeTypeDescription,
 	JsonObject,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeApiError } from 'n8n-workflow';
+import { NodeConnectionType, NodeApiError } from 'n8n-workflow';
+
 import { v4 as uuid } from 'uuid';
+import { generatePairedItemData } from '../../../../utils/utilities';
+import { googleApiRequest, googleApiRequestAllItems, simplify } from './GenericFunctions';
+
+import { recordFields, recordOperations } from './RecordDescription';
 
 import { oldVersionNotice } from '@utils/descriptions';
-
-import { googleApiRequest, googleApiRequestAllItems, simplify } from './GenericFunctions';
-import { recordFields, recordOperations } from './RecordDescription';
-import { generatePairedItemData } from '../../../../utils/utilities';
 
 const versionDescription: INodeTypeDescription = {
 	displayName: 'Google BigQuery',
@@ -29,8 +30,8 @@ const versionDescription: INodeTypeDescription = {
 	defaults: {
 		name: 'Google BigQuery',
 	},
-	inputs: [NodeConnectionTypes.Main],
-	outputs: [NodeConnectionTypes.Main],
+	inputs: [NodeConnectionType.Main],
+	outputs: [NodeConnectionType.Main],
 	credentials: [
 		{
 			name: 'googleApi',

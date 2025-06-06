@@ -1,4 +1,4 @@
-import { Container } from '@n8n/di';
+import { Container } from 'typedi';
 import { Command, Flags } from '@oclif/core';
 import { InstanceSettings } from 'n8n-core';
 

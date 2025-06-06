@@ -1,10 +1,9 @@
 import type { IDataObject } from 'n8n-workflow';
 import { ApplicationError, jsonParse } from 'n8n-workflow';
 import { v4 as uuid } from 'uuid';
-
-import type { Section, TodoistResponse } from './Service';
 import type { Context } from '../GenericFunctions';
 import { FormatDueDatetime, todoistApiRequest, todoistSyncRequest } from '../GenericFunctions';
+import type { Section, TodoistResponse } from './Service';
 
 export interface OperationHandler {
 	handleOperation(ctx: Context, itemIndex: number): Promise<TodoistResponse>;
@@ -43,16 +42,14 @@ export interface Command {
 	};
 }
 
-export const CommandTypes = {
-	ITEM_MOVE: 'item_move',
-	ITEM_ADD: 'item_add',
-	ITEM_UPDATE: 'item_update',
-	ITEM_REORDER: 'item_reorder',
-	ITEM_DELETE: 'item_delete',
-	ITEM_COMPLETE: 'item_complete',
-} as const;
-
-export type CommandType = (typeof CommandTypes)[keyof typeof CommandTypes];
+export const enum CommandType {
+	ITEM_MOVE = 'item_move',
+	ITEM_ADD = 'item_add',
+	ITEM_UPDATE = 'item_update',
+	ITEM_REORDER = 'item_reorder',
+	ITEM_DELETE = 'item_delete',
+	ITEM_COMPLETE = 'item_complete',
+}
 
 async function getLabelNameFromId(ctx: Context, labelIds: number[]): Promise<string[]> {
 	const labelList = [];
@@ -265,7 +262,7 @@ export class MoveHandler implements OperationHandler {
 		const body: SyncRequest = {
 			commands: [
 				{
-					type: CommandTypes.ITEM_MOVE,
+					type: CommandType.ITEM_MOVE,
 					uuid: uuid(),
 					args: {
 						id: taskId,
@@ -341,7 +338,7 @@ export class SyncHandler implements OperationHandler {
 	}
 
 	private requiresProjectId(command: Command) {
-		return command.type === CommandTypes.ITEM_ADD;
+		return command.type === CommandType.ITEM_ADD;
 	}
 
 	private enrichTempId(command: Command, tempIdMapping: Map<string, string>, projectId: number) {
@@ -352,6 +349,6 @@ export class SyncHandler implements OperationHandler {
 	}
 
 	private requiresTempId(command: Command) {
-		return command.type === CommandTypes.ITEM_ADD;
+		return command.type === CommandType.ITEM_ADD;
 	}
 }

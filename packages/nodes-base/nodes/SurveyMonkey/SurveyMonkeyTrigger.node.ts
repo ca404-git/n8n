@@ -10,9 +10,10 @@ import type {
 	INodeTypeDescription,
 	IWebhookResponseData,
 } from 'n8n-workflow';
-import { deepCopy, jsonParse, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { deepCopy, jsonParse, NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
 import { idsExist, surveyMonkeyApiRequest, surveyMonkeyRequestAllItems } from './GenericFunctions';
+
 import type { IAnswer, IChoice, IOther, IQuestion, IRow } from './Interfaces';
 
 export class SurveyMonkeyTrigger implements INodeType {
@@ -27,7 +28,7 @@ export class SurveyMonkeyTrigger implements INodeType {
 			name: 'SurveyMonkey Trigger',
 		},
 		inputs: [],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'surveyMonkeyApi',

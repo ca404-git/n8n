@@ -1,10 +1,13 @@
 import type { INodeType, INodeTypeDescription } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
+
+import { questionsFields, questionsOperations } from './QuestionsDescription';
+
+import { metricsFields, metricsOperations } from './MetricsDescription';
+
+import { databasesFields, databasesOperations } from './DatabasesDescription';
 
 import { alertsFields, alertsOperations } from './AlertsDescription';
-import { databasesFields, databasesOperations } from './DatabasesDescription';
-import { metricsFields, metricsOperations } from './MetricsDescription';
-import { questionsFields, questionsOperations } from './QuestionsDescription';
 
 export class Metabase implements INodeType {
 	description: INodeTypeDescription = {
@@ -18,9 +21,8 @@ export class Metabase implements INodeType {
 		defaults: {
 			name: 'Metabase',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'metabaseApi',

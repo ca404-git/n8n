@@ -30,13 +30,6 @@ export class OpenAiApi implements ICredentialType {
 			description:
 				"For users who belong to multiple organizations, you can set which organization is used for an API request. Usage from these API requests will count against the specified organization's subscription quota.",
 		},
-		{
-			displayName: 'Base URL',
-			name: 'url',
-			type: 'string',
-			default: 'https://api.openai.com/v1',
-			description: 'Override the default base URL for the API',
-		},
 	];
 
 	authenticate: IAuthenticateGeneric = {
@@ -51,8 +44,8 @@ export class OpenAiApi implements ICredentialType {
 
 	test: ICredentialTestRequest = {
 		request: {
-			baseURL: '={{$credentials?.url}}',
-			url: '/models',
+			baseURL: 'https://api.openai.com',
+			url: '/v1/models',
 		},
 	};
 }

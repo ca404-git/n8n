@@ -1,8 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
-
+import { activityPresend } from '../GenericFunctions';
 import { emailsField } from './shared';
 import { getAdditionalOptions, mapWith, showFor } from './utils';
-import { activityPresend } from '../GenericFunctions';
 
 const displayOpts = showFor(['activity']);
 

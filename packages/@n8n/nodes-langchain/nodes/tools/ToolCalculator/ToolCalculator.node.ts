@@ -1,22 +1,20 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-import { Calculator } from '@langchain/community/tools/calculator';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
-
-import { logWrapper } from '@utils/logWrapper';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
+import { Calculator } from '@langchain/community/tools/calculator';
+import { logWrapper } from '../../../utils/logWrapper';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
 
 export class ToolCalculator implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Calculator',
 		name: 'toolCalculator',
 		icon: 'fa:calculator',
-		iconColor: 'black',
 		group: ['transform'],
 		version: 1,
 		description: 'Make it easier for AI agents to perform arithmetic',
@@ -40,12 +38,12 @@ export class ToolCalculator implements INodeType {
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiTool],
+		outputs: [NodeConnectionType.AiTool],
 		outputNames: ['Tool'],
-		properties: [getConnectionHintNoticeField([NodeConnectionTypes.AiAgent])],
+		properties: [getConnectionHintNoticeField([NodeConnectionType.AiAgent])],
 	};
 
-	async supplyData(this: ISupplyDataFunctions): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions): Promise<SupplyData> {
 		return {
 			response: logWrapper(new Calculator(), this),
 		};

@@ -1,6 +1,7 @@
-import { WorkflowRepository } from '@n8n/db';
-import { Container } from '@n8n/di';
 import { Flags } from '@oclif/core';
+import { Container } from 'typedi';
+
+import { WorkflowRepository } from '@/databases/repositories/workflow.repository';
 
 import { BaseCommand } from '../base-command';
 

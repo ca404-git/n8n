@@ -1,4 +1,4 @@
-import { Container } from '@n8n/di';
+import { Container } from 'typedi';
 
 import { Config, Env } from '../src/decorators';
 

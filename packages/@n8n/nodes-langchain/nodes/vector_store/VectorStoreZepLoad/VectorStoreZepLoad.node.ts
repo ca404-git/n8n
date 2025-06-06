@@ -1,17 +1,16 @@
+import {
+	NodeConnectionType,
+	type IExecuteFunctions,
+	type INodeType,
+	type INodeTypeDescription,
+	type SupplyData,
+} from 'n8n-workflow';
 import type { IZepConfig } from '@langchain/community/vectorstores/zep';
 import { ZepVectorStore } from '@langchain/community/vectorstores/zep';
 import type { Embeddings } from '@langchain/core/embeddings';
-import {
-	NodeConnectionTypes,
-	type INodeType,
-	type INodeTypeDescription,
-	type ISupplyDataFunctions,
-	type SupplyData,
-} from 'n8n-workflow';
-
-import { getMetadataFiltersValues } from '@utils/helpers';
-import { logWrapper } from '@utils/logWrapper';
-import { metadataFilterField } from '@utils/sharedFields';
+import { metadataFilterField } from '../../../utils/sharedFields';
+import { getMetadataFiltersValues } from '../../../utils/helpers';
+import { logWrapper } from '../../../utils/logWrapper';
 
 // This node is deprecated. Use VectorStoreZep instead.
 export class VectorStoreZepLoad implements INodeType {
@@ -50,11 +49,11 @@ export class VectorStoreZepLoad implements INodeType {
 			{
 				displayName: 'Embedding',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiEmbedding,
+				type: NodeConnectionType.AiEmbedding,
 				required: true,
 			},
 		],
-		outputs: [NodeConnectionTypes.AiVectorStore],
+		outputs: [NodeConnectionType.AiVectorStore],
 		outputNames: ['Vector Store'],
 		properties: [
 			{
@@ -84,7 +83,7 @@ export class VectorStoreZepLoad implements INodeType {
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		this.logger.debug('Supplying data for Zep Load Vector Store');
 
 		const collectionName = this.getNodeParameter('collectionName', itemIndex) as string;
@@ -99,7 +98,7 @@ export class VectorStoreZepLoad implements INodeType {
 			apiUrl: string;
 		}>('zepApi');
 		const embeddings = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiEmbedding,
+			NodeConnectionType.AiEmbedding,
 			0,
 		)) as Embeddings;
 

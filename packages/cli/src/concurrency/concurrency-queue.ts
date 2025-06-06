@@ -1,4 +1,4 @@
-import { Service } from '@n8n/di';
+import { Service } from 'typedi';
 
 import { TypedEmitter } from '@/typed-emitter';
 
@@ -56,10 +56,6 @@ export class ConcurrencyQueue extends TypedEmitter<ConcurrencyEvents> {
 
 	getAll() {
 		return new Set(this.queue.map((item) => item.executionId));
-	}
-
-	has(executionId: string) {
-		return this.queue.some((item) => item.executionId === executionId);
 	}
 
 	private resolveNext() {

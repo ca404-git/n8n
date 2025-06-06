@@ -1,14 +1,6 @@
 import { BasePage } from './base';
 import { getVisiblePopper, getVisibleSelect } from '../utils';
 
-/**
- * @deprecated Use functional composables from @composables instead.
- * If a composable doesn't exist for your use case, please create a new one in:
- * cypress/composables
- *
- * This class-based approach is being phased out in favor of more modular functional composables.
- * Each getter and action in this class should be moved to individual composable functions.
- */
 export class NDV extends BasePage {
 	getters = {
 		container: () => cy.getByTestId('ndv'),
@@ -92,10 +84,7 @@ export class NDV extends BasePage {
 		resourceLocatorModeSelector: (paramName: string) =>
 			this.getters.resourceLocator(paramName).find('[data-test-id="rlc-mode-selector"]'),
 		resourceLocatorSearch: (paramName: string) =>
-			this.getters
-				.resourceLocator(paramName)
-				.find('[aria-describedby]')
-				.then(($el) => cy.get(`#${$el.attr('aria-describedby')}`).findChildByTestId('rlc-search')),
+			this.getters.resourceLocator(paramName).findChildByTestId('rlc-search'),
 		resourceMapperFieldsContainer: () => cy.getByTestId('mapping-fields-container'),
 		resourceMapperSelectColumn: () => cy.getByTestId('matching-column-select'),
 		resourceMapperRemoveFieldButton: (fieldName: string) =>
@@ -150,12 +139,10 @@ export class NDV extends BasePage {
 		nodeRunErrorDescription: () => cy.getByTestId('node-error-description'),
 		fixedCollectionParameter: (paramName: string) =>
 			cy.getByTestId(`fixed-collection-${paramName}`),
-		schemaViewNode: () => cy.getByTestId('run-data-schema-header'),
+		schemaViewNode: () => cy.getByTestId('run-data-schema-node'),
+		schemaViewNodeName: () => cy.getByTestId('run-data-schema-node-name'),
 		expressionExpanders: () => cy.getByTestId('expander'),
 		expressionModalOutput: () => cy.getByTestId('expression-modal-output'),
-		floatingNodes: () => cy.getByTestId('floating-node'),
-		floatingNodeByName: (name: string) =>
-			cy.getByTestId('floating-node').filter(`[data-node-name="${name}"]`),
 	};
 
 	actions = {
@@ -206,7 +193,7 @@ export class NDV extends BasePage {
 		typeIntoParameterInput: (
 			parameterName: string,
 			content: string,
-			opts?: Partial<Cypress.TypeOptions>,
+			opts?: { parseSpecialCharSequences: boolean },
 		) => {
 			this.getters.parameterInput(parameterName).type(content, opts);
 		},
@@ -239,6 +226,9 @@ export class NDV extends BasePage {
 		selectInputNode: (nodeName: string) => {
 			this.getters.inputSelect().find('.el-select').click();
 			this.getters.inputOption().contains(nodeName).click();
+		},
+		expandSchemaViewNode: (nodeName: string) => {
+			this.getters.schemaViewNodeName().contains(nodeName).click();
 		},
 		addDefaultPinnedData: () => {
 			this.actions.editPinnedData();
@@ -332,20 +322,6 @@ export class NDV extends BasePage {
 		},
 		addItemToFixedCollection: (paramName: string) => {
 			this.getters.fixedCollectionParameter(paramName).getByTestId('fixed-collection-add').click();
-		},
-		typeIntoFixedCollectionItem: (fixedCollectionName: string, index: number, content: string) => {
-			this.getters.fixedCollectionParameter(fixedCollectionName).within(() => {
-				cy.getByTestId('parameter-input').eq(index).type(content);
-			});
-		},
-		dragMainPanelToLeft: () => {
-			cy.drag('[data-test-id=panel-drag-button]', [-1000, 0], { moveTwice: true });
-		},
-		dragMainPanelToRight: () => {
-			cy.drag('[data-test-id=panel-drag-button]', [1000, 0], { moveTwice: true });
-		},
-		clickFloatingNode: (name: string) => {
-			this.getters.floatingNodeByName(name).realHover().click({ force: true });
 		},
 	};
 }

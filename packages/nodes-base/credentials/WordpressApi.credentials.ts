@@ -36,7 +36,7 @@ export class WordpressApi implements ICredentialType {
 			placeholder: 'https://example.com',
 		},
 		{
-			displayName: 'Ignore SSL Issues (Insecure)',
+			displayName: 'Ignore SSL Issues',
 			name: 'allowUnauthorizedCerts',
 			type: 'boolean',
 			description: 'Whether to connect even if SSL certificate validation is not possible',

@@ -1,10 +1,10 @@
 /* eslint-disable n8n-nodes-base/node-filename-against-convention */
-import { NodeConnectionTypes, type INodeTypeDescription } from 'n8n-workflow';
+import { NodeConnectionType, type INodeTypeDescription } from 'n8n-workflow';
 
-import * as contact from './contact';
 import * as customer from './customer';
-import * as rmm from './rmm';
 import * as ticket from './ticket';
+import * as contact from './contact';
+import * as rmm from './rmm';
 
 export const versionDescription: INodeTypeDescription = {
 	displayName: 'SyncroMSP',
@@ -18,8 +18,8 @@ export const versionDescription: INodeTypeDescription = {
 	defaults: {
 		name: 'SyncroMSP',
 	},
-	inputs: [NodeConnectionTypes.Main],
-	outputs: [NodeConnectionTypes.Main],
+	inputs: [NodeConnectionType.Main],
+	outputs: [NodeConnectionType.Main],
 	credentials: [
 		{
 			name: 'syncroMspApi',

@@ -1,27 +1,25 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-import { MotorheadMemory } from '@langchain/community/memory/motorhead_memory';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
+	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
-	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
 
-import { getSessionId } from '@utils/helpers';
-import { logWrapper } from '@utils/logWrapper';
-import { getConnectionHintNoticeField } from '@utils/sharedFields';
-
-import { expressionSessionKeyProperty, sessionIdOption, sessionKeyProperty } from '../descriptions';
+import { MotorheadMemory } from '@langchain/community/memory/motorhead_memory';
+import { logWrapper } from '../../../utils/logWrapper';
+import { getConnectionHintNoticeField } from '../../../utils/sharedFields';
+import { sessionIdOption, sessionKeyProperty } from '../descriptions';
+import { getSessionId } from '../../../utils/helpers';
 
 export class MemoryMotorhead implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Motorhead',
 		name: 'memoryMotorhead',
 		icon: 'fa:file-export',
-		iconColor: 'black',
 		group: ['transform'],
-		version: [1, 1.1, 1.2, 1.3],
+		version: [1, 1.1, 1.2],
 		description: 'Use Motorhead Memory',
 		defaults: {
 			name: 'Motorhead',
@@ -30,7 +28,6 @@ export class MemoryMotorhead implements INodeType {
 			categories: ['AI'],
 			subcategories: {
 				AI: ['Memory'],
-				Memory: ['Other memories'],
 			},
 			resources: {
 				primaryDocumentation: [
@@ -43,7 +40,7 @@ export class MemoryMotorhead implements INodeType {
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [],
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionTypes.AiMemory],
+		outputs: [NodeConnectionType.AiMemory],
 		outputNames: ['Memory'],
 		credentials: [
 			{
@@ -52,7 +49,7 @@ export class MemoryMotorhead implements INodeType {
 			},
 		],
 		properties: [
-			getConnectionHintNoticeField([NodeConnectionTypes.AiAgent]),
+			getConnectionHintNoticeField([NodeConnectionType.AiAgent]),
 			{
 				displayName: 'Session ID',
 				name: 'sessionId',
@@ -85,12 +82,11 @@ export class MemoryMotorhead implements INodeType {
 					},
 				},
 			},
-			expressionSessionKeyProperty(1.3),
 			sessionKeyProperty,
 		],
 	};
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+	async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
 		const credentials = await this.getCredentials('motorheadApi');
 		const nodeVersion = this.getNode().typeVersion;
 

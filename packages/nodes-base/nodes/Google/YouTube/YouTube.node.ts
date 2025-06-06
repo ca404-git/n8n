@@ -1,3 +1,4 @@
+import type { Readable } from 'stream';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -7,18 +8,22 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, BINARY_ENCODING, NodeOperationError } from 'n8n-workflow';
-import { Readable } from 'stream';
+import { NodeConnectionType, BINARY_ENCODING, NodeOperationError } from 'n8n-workflow';
 
-import { isoCountryCodes } from '@utils/ISOCountryCodes';
+import { DateTime } from 'luxon';
+import { googleApiRequest, googleApiRequestAllItems } from './GenericFunctions';
 
 import { channelFields, channelOperations } from './ChannelDescription';
-import { googleApiRequest, googleApiRequestAllItems } from './GenericFunctions';
+
 import { playlistFields, playlistOperations } from './PlaylistDescription';
+
 import { playlistItemFields, playlistItemOperations } from './PlaylistItemDescription';
-import { videoCategoryFields, videoCategoryOperations } from './VideoCategoryDescription';
+
 import { videoFields, videoOperations } from './VideoDescription';
-import { validateAndSetDate } from '../GenericFunctions';
+
+import { videoCategoryFields, videoCategoryOperations } from './VideoCategoryDescription';
+
+import { isoCountryCodes } from '@utils/ISOCountryCodes';
 
 const UPLOAD_CHUNK_SIZE = 1024 * 1024;
 
@@ -35,9 +40,8 @@ export class YouTube implements INodeType {
 		defaults: {
 			name: 'YouTube',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'youTubeOAuth2Api',
@@ -759,13 +763,27 @@ export class YouTube implements INodeType {
 						qs.type = 'video';
 
 						qs.forMine = true;
-
 						if (filters.publishedAfter) {
-							validateAndSetDate(filters, 'publishedAfter', this.getTimezone(), this);
+							const publishedAfter = DateTime.fromISO(filters.publishedAfter as string);
+							if (publishedAfter.isValid) {
+								filters.publishedAfter = publishedAfter.setZone(this.getTimezone()).toISO();
+							} else {
+								throw new NodeOperationError(
+									this.getNode(),
+									`The value "${filters.publishedAfter as string}" is not a valid DateTime.`,
+								);
+							}
 						}
-
 						if (filters.publishedBefore) {
-							validateAndSetDate(filters, 'publishedBefore', this.getTimezone(), this);
+							const publishedBefore = DateTime.fromISO(filters.publishedBefore as string);
+							if (publishedBefore.isValid) {
+								filters.publishedAfter = publishedBefore.setZone(this.getTimezone()).toISO();
+							} else {
+								throw new NodeOperationError(
+									this.getNode(),
+									`The value "${filters.publishedBefore as string}" is not a valid DateTime.`,
+								);
+							}
 						}
 
 						Object.assign(qs, options, filters);
@@ -839,7 +857,7 @@ export class YouTube implements INodeType {
 
 						let mimeType: string;
 						let contentLength: number;
-						let fileContent: Readable;
+						let fileContent: Buffer | Readable;
 
 						if (binaryData.id) {
 							// Stream data in 256KB chunks, and upload the via the resumable upload api
@@ -848,9 +866,8 @@ export class YouTube implements INodeType {
 							contentLength = metadata.fileSize;
 							mimeType = metadata.mimeType ?? binaryData.mimeType;
 						} else {
-							const buffer = Buffer.from(binaryData.data, BINARY_ENCODING);
-							fileContent = Readable.from(buffer);
-							contentLength = buffer.length;
+							fileContent = Buffer.from(binaryData.data, BINARY_ENCODING);
+							contentLength = fileContent.length;
 							mimeType = binaryData.mimeType;
 						}
 

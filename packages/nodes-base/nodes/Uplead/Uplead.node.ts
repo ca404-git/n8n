@@ -5,10 +5,9 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
-
-import { companyFields, companyOperations } from './CompanyDesciption';
+import { NodeConnectionType } from 'n8n-workflow';
 import { upleadApiRequest } from './GenericFunctions';
+import { companyFields, companyOperations } from './CompanyDesciption';
 import { personFields, personOperations } from './PersonDescription';
 
 export class Uplead implements INodeType {
@@ -24,9 +23,8 @@ export class Uplead implements INodeType {
 		defaults: {
 			name: 'Uplead',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'upleadApi',

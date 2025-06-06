@@ -7,15 +7,18 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
 import { affiliateFields, affiliateOperations } from './AffiliateDescription';
+
 import {
 	affiliateMetadataFields,
 	affiliateMetadataOperations,
 } from './AffiliateMetadataDescription';
-import { tapfiliateApiRequest, tapfiliateApiRequestAllItems } from './GenericFunctions';
+
 import { programAffiliateFields, programAffiliateOperations } from './ProgramAffiliateDescription';
+
+import { tapfiliateApiRequest, tapfiliateApiRequestAllItems } from './GenericFunctions';
 
 export class Tapfiliate implements INodeType {
 	description: INodeTypeDescription = {
@@ -29,9 +32,8 @@ export class Tapfiliate implements INodeType {
 		defaults: {
 			name: 'Tapfiliate',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'tapfiliateApi',

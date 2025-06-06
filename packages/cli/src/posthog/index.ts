@@ -1,9 +1,11 @@
 import { GlobalConfig } from '@n8n/config';
-import type { PublicUser } from '@n8n/db';
-import { Service } from '@n8n/di';
 import { InstanceSettings } from 'n8n-core';
 import type { FeatureFlags, ITelemetryTrackProperties } from 'n8n-workflow';
 import type { PostHog } from 'posthog-node';
+import { Service } from 'typedi';
+
+import config from '@/config';
+import type { PublicUser } from '@/interfaces';
 
 @Service()
 export class PostHogClient {
@@ -15,14 +17,14 @@ export class PostHogClient {
 	) {}
 
 	async init() {
-		const { enabled, posthogConfig } = this.globalConfig.diagnostics;
+		const enabled = config.getEnv('diagnostics.enabled');
 		if (!enabled) {
 			return;
 		}
 
 		const { PostHog } = await import('posthog-node');
-		this.postHog = new PostHog(posthogConfig.apiKey, {
-			host: posthogConfig.apiHost,
+		this.postHog = new PostHog(config.getEnv('diagnostics.config.posthog.apiKey'), {
+			host: config.getEnv('diagnostics.config.posthog.apiHost'),
 		});
 
 		const logLevel = this.globalConfig.logging.level;

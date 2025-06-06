@@ -1,5 +1,7 @@
 import type { ICredentialType, INodeProperties } from 'n8n-workflow';
 
+const scopes = ['read', 'write', 'issues:create', 'comments:create'];
+
 export class LinearOAuth2Api implements ICredentialType {
 	name = 'linearOAuth2Api';
 
@@ -49,18 +51,10 @@ export class LinearOAuth2Api implements ICredentialType {
 			default: 'user',
 		},
 		{
-			displayName: 'Include Admin Scope',
-			name: 'includeAdminScope',
-			type: 'boolean',
-			default: false,
-			description: 'Grants the "Admin" scope, Needed to create webhooks',
-		},
-		{
 			displayName: 'Scope',
 			name: 'scope',
 			type: 'hidden',
-			default:
-				'={{$self["includeAdminScope"] ? "read write issues:create comments:create admin" : "read write issues:create comments:create"}}',
+			default: scopes.join(' '),
 			required: true,
 		},
 		{

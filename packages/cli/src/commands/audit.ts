@@ -1,9 +1,10 @@
-import { SecurityConfig } from '@n8n/config';
-import { Container } from '@n8n/di';
 import { Flags } from '@oclif/core';
-import { UserError } from 'n8n-workflow';
+import { ApplicationError } from 'n8n-workflow';
+import { Container } from 'typedi';
 
+import config from '@/config';
 import { RISK_CATEGORIES } from '@/security-audit/constants';
+import { SecurityAuditService } from '@/security-audit/security-audit.service';
 import type { Risk } from '@/security-audit/types';
 
 import { BaseCommand } from './base-command';
@@ -25,7 +26,7 @@ export class SecurityAudit extends BaseCommand {
 		}),
 
 		'days-abandoned-workflow': Flags.integer({
-			default: Container.get(SecurityConfig).daysAbandonedWorkflow,
+			default: config.getEnv('security.audit.daysAbandonedWorkflow'),
 			description: 'Days for a workflow to be considered abandoned if not executed',
 		}),
 	};
@@ -47,10 +48,8 @@ export class SecurityAudit extends BaseCommand {
 
 			const hint = `Valid categories are: ${RISK_CATEGORIES.join(', ')}`;
 
-			throw new UserError([message, hint].join('. '));
+			throw new ApplicationError([message, hint].join('. '));
 		}
-
-		const { SecurityAuditService } = await import('@/security-audit/security-audit.service');
 
 		const result = await Container.get(SecurityAuditService).run(
 			categories,

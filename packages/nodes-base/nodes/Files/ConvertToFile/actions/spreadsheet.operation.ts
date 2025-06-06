@@ -5,9 +5,10 @@ import {
 	type INodeProperties,
 } from 'n8n-workflow';
 
-import type { JsonToSpreadsheetBinaryOptions, JsonToSpreadsheetBinaryFormat } from '@utils/binary';
-import { convertJsonToSpreadsheetBinary } from '@utils/binary';
 import { generatePairedItemData, updateDisplayOptions } from '@utils/utilities';
+import type { JsonToSpreadsheetBinaryOptions, JsonToSpreadsheetBinaryFormat } from '@utils/binary';
+
+import { convertJsonToSpreadsheetBinary } from '@utils/binary';
 
 export const operations = ['csv', 'html', 'rtf', 'ods', 'xls', 'xlsx'];
 
@@ -39,18 +40,6 @@ export const properties: INodeProperties[] = [
 				},
 				default: false,
 				description: 'Whether to reduce the output file size',
-			},
-			{
-				displayName: 'Delimiter',
-				name: 'delimiter',
-				type: 'string',
-				displayOptions: {
-					show: {
-						'/operation': ['csv'],
-					},
-				},
-				default: ',',
-				description: 'The character to use to separate fields',
 			},
 			{
 				displayName: 'File Name',

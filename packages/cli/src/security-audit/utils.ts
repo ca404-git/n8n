@@ -1,10 +1,9 @@
-import type { IWorkflowBase } from 'n8n-workflow';
-
+import type { WorkflowEntity as Workflow } from '@/databases/entities/workflow-entity';
 import type { Risk } from '@/security-audit/types';
 
-type Node = IWorkflowBase['nodes'][number];
+type Node = Workflow['nodes'][number];
 
-export const toFlaggedNode = ({ node, workflow }: { node: Node; workflow: IWorkflowBase }) => ({
+export const toFlaggedNode = ({ node, workflow }: { node: Node; workflow: Workflow }) => ({
 	kind: 'node' as const,
 	workflowId: workflow.id,
 	workflowName: workflow.name,
@@ -16,7 +15,7 @@ export const toFlaggedNode = ({ node, workflow }: { node: Node; workflow: IWorkf
 export const toReportTitle = (riskCategory: Risk.Category) =>
 	riskCategory.charAt(0).toUpperCase() + riskCategory.slice(1) + ' Risk Report';
 
-export function getNodeTypes(workflows: IWorkflowBase[], test: (element: Node) => boolean) {
+export function getNodeTypes(workflows: Workflow[], test: (element: Node) => boolean) {
 	return workflows.reduce<Risk.NodeLocation[]>((acc, workflow) => {
 		workflow.nodes.forEach((node) => {
 			if (test(node)) acc.push(toFlaggedNode({ node, workflow }));

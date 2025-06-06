@@ -1,10 +1,15 @@
-import { NodeTestHarness } from '@nodes-testing/node-test-harness';
+import type { INodeTypes } from 'n8n-workflow';
 import nock from 'nock';
+import * as transport from '../../../../v2/transport/discord.api';
+import { getResultNodeData, setup, workflowToTests } from '@test/nodes/Helpers';
+import type { WorkflowTestData } from '@test/nodes/types';
+import { executeWorkflow } from '@test/nodes/ExecuteWorkflow';
 
-describe('Test DiscordV2, channel => getAll', () => {
-	nock('https://discord.com/api/v10')
-		.get('/guilds/1168516062791340136/channels')
-		.reply(200, [
+const discordApiRequestSpy = jest.spyOn(transport, 'discordApiRequest');
+
+discordApiRequestSpy.mockImplementation(async (method: string) => {
+	if (method === 'GET') {
+		return [
 			{
 				id: '1168516063340789831',
 				type: 4,
@@ -93,9 +98,44 @@ describe('Test DiscordV2, channel => getAll', () => {
 				permission_overwrites: [],
 				nsfw: false,
 			},
-		]);
+		];
+	}
+});
 
-	new NodeTestHarness().setupTests({
-		workflowFiles: ['getAll.workflow.json'],
+describe('Test DiscordV2, channel => getAll', () => {
+	const workflows = ['nodes/Discord/test/v2/node/channel/getAll.workflow.json'];
+	const tests = workflowToTests(workflows);
+
+	beforeAll(() => {
+		nock.disableNetConnect();
 	});
+
+	afterAll(() => {
+		nock.restore();
+		jest.resetAllMocks();
+	});
+
+	const nodeTypes = setup(tests);
+
+	const testNode = async (testData: WorkflowTestData, types: INodeTypes) => {
+		const { result } = await executeWorkflow(testData, types);
+
+		const resultNodeData = getResultNodeData(result, testData);
+
+		resultNodeData.forEach(({ nodeName, resultData }) => {
+			return expect(resultData).toEqual(testData.output.nodeData[nodeName]);
+		});
+
+		expect(discordApiRequestSpy).toHaveBeenCalledTimes(1);
+		expect(discordApiRequestSpy).toHaveBeenCalledWith(
+			'GET',
+			'/guilds/1168516062791340136/channels',
+		);
+
+		expect(result.finished).toEqual(true);
+	};
+
+	for (const testData of tests) {
+		test(testData.description, async () => await testNode(testData, nodeTypes));
+	}
 });

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/dot-notation */
-import set from 'lodash/set';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type IDataObject,
 	type IExecuteFunctions,
 	type IHttpRequestMethods,
@@ -13,11 +12,20 @@ import {
 	type INodeTypeDescription,
 } from 'n8n-workflow';
 
+import set from 'lodash/set';
 import { alertFields, alertOperations } from './descriptions/AlertDescription';
-import { caseFields, caseOperations } from './descriptions/CaseDescription';
-import { logFields, logOperations } from './descriptions/LogDescription';
+
 import { observableFields, observableOperations } from './descriptions/ObservableDescription';
+
+import { caseFields, caseOperations } from './descriptions/CaseDescription';
+
 import { taskFields, taskOperations } from './descriptions/TaskDescription';
+
+import { logFields, logOperations } from './descriptions/LogDescription';
+
+import type { IQueryObject } from './QueryFunctions';
+import { And, Between, ContainsString, Eq, Id, In, Parent } from './QueryFunctions';
+
 import {
 	buildCustomFieldSearch,
 	mapResource,
@@ -28,8 +36,6 @@ import {
 	splitTags,
 	theHiveApiRequest,
 } from './GenericFunctions';
-import type { IQueryObject } from './QueryFunctions';
-import { And, Between, ContainsString, Eq, Id, In, Parent } from './QueryFunctions';
 
 export class TheHive implements INodeType {
 	description: INodeTypeDescription = {
@@ -43,9 +49,8 @@ export class TheHive implements INodeType {
 		defaults: {
 			name: 'TheHive',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'theHiveApi',

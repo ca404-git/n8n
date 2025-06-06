@@ -1,5 +1,11 @@
 import { createWriteStream } from 'fs';
-import { BINARY_ENCODING, NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
+import { basename, dirname } from 'path';
+import type { Readable } from 'stream';
+import { pipeline } from 'stream/promises';
+import { file as tmpFile } from 'tmp-promise';
+import ftpClient from 'promise-ftp';
+import sftpClient from 'ssh2-sftp-client';
+import { BINARY_ENCODING, NodeApiError, NodeConnectionType } from 'n8n-workflow';
 import type {
 	ICredentialDataDecryptedObject,
 	ICredentialsDecrypted,
@@ -12,13 +18,6 @@ import type {
 	INodeTypeDescription,
 	JsonObject,
 } from 'n8n-workflow';
-import { basename, dirname } from 'path';
-import ftpClient from 'promise-ftp';
-import sftpClient from 'ssh2-sftp-client';
-import type { Readable } from 'stream';
-import { pipeline } from 'stream/promises';
-import { file as tmpFile } from 'tmp-promise';
-
 import { formatPrivateKey, generatePairedItemData } from '@utils/utilities';
 
 interface ReturnFtpItem {
@@ -123,8 +122,8 @@ export class Ftp implements INodeType {
 			name: 'FTP',
 			color: '#303050',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				// nodelinter-ignore-next-line
@@ -753,20 +752,10 @@ export class Ftp implements INodeType {
 
 						if (operation === 'rename') {
 							const oldPath = this.getNodeParameter('oldPath', i) as string;
-							const newPath = this.getNodeParameter('newPath', i) as string;
-							const options = this.getNodeParameter('options', i);
 
-							try {
-								await ftp!.rename(oldPath, newPath);
-							} catch (error) {
-								if ([451, 550].includes(error.code) && options.createDirectories) {
-									const dirPath = newPath.replace(basename(newPath), '');
-									await ftp!.mkdir(dirPath, true);
-									await ftp!.rename(oldPath, newPath);
-								} else {
-									throw new NodeApiError(this.getNode(), error as JsonObject);
-								}
-							}
+							const newPath = this.getNodeParameter('newPath', i) as string;
+
+							await ftp!.rename(oldPath, newPath);
 							const executionData = this.helpers.constructExecutionMetaData(
 								[{ json: { success: true } }],
 								{ itemData: { item: i } },

@@ -1,18 +1,16 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-import type { Embeddings } from '@langchain/core/embeddings';
-import type { Document } from 'langchain/document';
 import {
-	NodeConnectionTypes,
+	NodeConnectionType,
 	type INodeExecutionData,
 	type IExecuteFunctions,
 	type INodeType,
 	type INodeTypeDescription,
 } from 'n8n-workflow';
-
-import type { N8nJsonLoader } from '@utils/N8nJsonLoader';
-
-import { MemoryVectorStoreManager } from '../shared/MemoryManager/MemoryVectorStoreManager';
+import type { Document } from 'langchain/document';
+import type { Embeddings } from '@langchain/core/embeddings';
+import type { N8nJsonLoader } from '../../../utils/N8nJsonLoader';
 import { processDocuments } from '../shared/processDocuments';
+import { MemoryVectorStoreManager } from '../shared/MemoryVectorStoreManager';
 
 // This node is deprecated. Use VectorStoreInMemory instead.
 export class VectorStoreInMemoryInsert implements INodeType {
@@ -42,21 +40,21 @@ export class VectorStoreInMemoryInsert implements INodeType {
 		},
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
 		inputs: [
-			NodeConnectionTypes.Main,
+			NodeConnectionType.Main,
 			{
 				displayName: 'Document',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiDocument,
+				type: NodeConnectionType.AiDocument,
 				required: true,
 			},
 			{
 				displayName: 'Embedding',
 				maxConnections: 1,
-				type: NodeConnectionTypes.AiEmbedding,
+				type: NodeConnectionType.AiEmbedding,
 				required: true,
 			},
 		],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
 				displayName:
@@ -86,13 +84,13 @@ export class VectorStoreInMemoryInsert implements INodeType {
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData(0);
 		const embeddings = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiEmbedding,
+			NodeConnectionType.AiEmbedding,
 			0,
 		)) as Embeddings;
 
 		const memoryKey = this.getNodeParameter('memoryKey', 0) as string;
 		const clearStore = this.getNodeParameter('clearStore', 0) as boolean;
-		const documentInput = (await this.getInputConnectionData(NodeConnectionTypes.AiDocument, 0)) as
+		const documentInput = (await this.getInputConnectionData(NodeConnectionType.AiDocument, 0)) as
 			| N8nJsonLoader
 			| Array<Document<Record<string, unknown>>>;
 
@@ -103,7 +101,7 @@ export class VectorStoreInMemoryInsert implements INodeType {
 
 		const workflowId = this.getWorkflow().id;
 
-		const vectorStoreInstance = MemoryVectorStoreManager.getInstance(embeddings, this.logger);
+		const vectorStoreInstance = MemoryVectorStoreManager.getInstance(embeddings);
 		await vectorStoreInstance.addDocuments(
 			`${workflowId}__${memoryKey}`,
 			processedDocuments,

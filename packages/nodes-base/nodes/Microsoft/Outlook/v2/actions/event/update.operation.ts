@@ -1,11 +1,10 @@
-import { DateTime } from 'luxon';
 import type { IDataObject, IExecuteFunctions, INodeProperties } from 'n8n-workflow';
 
-import { updateDisplayOptions } from '@utils/utilities';
-
+import { DateTime } from 'luxon';
+import { microsoftApiRequest } from '../../transport';
 import { calendarRLC, eventRLC } from '../../descriptions';
 import { decodeOutlookId } from '../../helpers/utils';
-import { microsoftApiRequest } from '../../transport';
+import { updateDisplayOptions } from '@utils/utilities';
 
 export const properties: INodeProperties[] = [
 	calendarRLC,

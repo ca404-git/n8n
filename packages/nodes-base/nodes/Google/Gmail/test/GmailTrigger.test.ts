@@ -1,5 +1,5 @@
-import * as mailparser from 'mailparser';
 import nock from 'nock';
+import * as mailparser from 'mailparser';
 
 import { testPollingTriggerNode } from '@test/nodes/TriggerHelpers';
 
@@ -42,6 +42,8 @@ describe('GmailTrigger', () => {
 	}
 
 	beforeAll(() => {
+		nock.disableNetConnect();
+
 		jest.spyOn(mailparser, 'simpleParser').mockResolvedValue({
 			headers: new Map([['headerKey', 'headerValue']]),
 			attachments: [],
@@ -59,6 +61,10 @@ describe('GmailTrigger', () => {
 				html: 'to@example.com',
 			},
 		});
+	});
+
+	afterAll(() => {
+		nock.restore();
 	});
 
 	it('should return incoming emails', async () => {
@@ -211,64 +217,5 @@ describe('GmailTrigger', () => {
 		});
 
 		expect(response).toEqual(null);
-	});
-
-	it('should handle duplicates and different date fields', async () => {
-		const messageListResponse: MessageListResponse = {
-			messages: [
-				createListMessage({ id: '1' }),
-				createListMessage({ id: '2' }),
-				createListMessage({ id: '3' }),
-				createListMessage({ id: '4' }),
-				createListMessage({ id: '5' }),
-			],
-			resultSizeEstimate: 123,
-		};
-
-		nock(baseUrl)
-			.get('/gmail/v1/users/me/labels')
-			.reply(200, { labels: [{ id: 'testLabelId', name: 'Test Label Name' }] });
-		nock(baseUrl).get(new RegExp('/gmail/v1/users/me/messages?.*')).reply(200, messageListResponse);
-		nock(baseUrl)
-			.get(new RegExp('/gmail/v1/users/me/messages/1?.*'))
-			.reply(200, createMessage({ id: '1', internalDate: '1727777957863', date: undefined }));
-		nock(baseUrl)
-			.get(new RegExp('/gmail/v1/users/me/messages/2?.*'))
-			.reply(200, createMessage({ id: '2', internalDate: undefined, date: '1727777957863' }));
-		nock(baseUrl)
-			.get(new RegExp('/gmail/v1/users/me/messages/3?.*'))
-			.reply(
-				200,
-				createMessage({
-					id: '3',
-					internalDate: undefined,
-					date: undefined,
-					headers: { date: 'Thu, 5 Dec 2024 08:30:00 -0800' },
-				}),
-			);
-		nock(baseUrl)
-			.get(new RegExp('/gmail/v1/users/me/messages/4?.*'))
-			.reply(
-				200,
-				createMessage({
-					id: '4',
-					internalDate: undefined,
-					date: undefined,
-					headers: undefined,
-				}),
-			);
-		nock(baseUrl).get(new RegExp('/gmail/v1/users/me/messages/5?.*')).reply(200, {});
-
-		const { response } = await testPollingTriggerNode(GmailTrigger, {
-			node: { parameters: { simple: true } },
-			workflowStaticData: {
-				'Gmail Trigger': {
-					lastTimeChecked: new Date('2024-10-31').getTime() / 1000,
-					possibleDuplicates: ['1'],
-				},
-			},
-		});
-
-		expect(response).toMatchSnapshot();
 	});
 });

@@ -9,8 +9,7 @@ import type {
 	IWebhookResponseData,
 	JsonObject,
 } from 'n8n-workflow';
-import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
-
+import { NodeApiError, NodeConnectionType } from 'n8n-workflow';
 import { mailchimpApiRequest } from './GenericFunctions';
 
 export class MailchimpTrigger implements INodeType {
@@ -25,7 +24,7 @@ export class MailchimpTrigger implements INodeType {
 			name: 'Mailchimp Trigger',
 		},
 		inputs: [],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'mailchimpApi',
@@ -214,6 +213,7 @@ export class MailchimpTrigger implements INodeType {
 			},
 
 			async create(this: IHookFunctions): Promise<boolean> {
+				let webhook;
 				const webhookUrl = this.getNodeWebhookUrl('default');
 				const listId = this.getNodeParameter('list') as string;
 				const events = this.getNodeParameter('events', []) as string[];
@@ -232,7 +232,11 @@ export class MailchimpTrigger implements INodeType {
 					}, {}),
 				};
 				const endpoint = `/lists/${listId}/webhooks`;
-				const webhook = await mailchimpApiRequest.call(this, endpoint, 'POST', body);
+				try {
+					webhook = await mailchimpApiRequest.call(this, endpoint, 'POST', body);
+				} catch (error) {
+					throw error;
+				}
 				if (webhook.id === undefined) {
 					return false;
 				}

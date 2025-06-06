@@ -21,13 +21,6 @@ export class AnthropicApi implements ICredentialType {
 			required: true,
 			default: '',
 		},
-		{
-			displayName: 'Base URL',
-			name: 'url',
-			type: 'string',
-			default: 'https://api.anthropic.com',
-			description: 'Override the default base URL for the API',
-		},
 	];
 
 	authenticate: IAuthenticateGeneric = {
@@ -41,16 +34,16 @@ export class AnthropicApi implements ICredentialType {
 
 	test: ICredentialTestRequest = {
 		request: {
-			baseURL: '={{$credentials?.url}}',
-			url: '/v1/messages',
+			baseURL: 'https://api.anthropic.com',
+			url: '/v1/complete',
 			method: 'POST',
 			headers: {
 				'anthropic-version': '2023-06-01',
 			},
 			body: {
-				model: 'claude-3-haiku-20240307',
-				messages: [{ role: 'user', content: 'Hey' }],
-				max_tokens: 1,
+				model: 'claude-2',
+				prompt: '\n\nHuman: Hello, world!\n\nAssistant:',
+				max_tokens_to_sample: 256,
 			},
 		},
 	};

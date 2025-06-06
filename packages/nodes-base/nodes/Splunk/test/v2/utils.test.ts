@@ -1,7 +1,5 @@
 import { mock } from 'jest-mock-extended';
 import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
-
-import { SPLUNK } from '../../v1/types';
 import {
 	formatEntry,
 	extractErrorDescription,
@@ -11,6 +9,7 @@ import {
 	setReturnAllOrLimit,
 	parseXml,
 } from '../../v2/helpers/utils';
+import { SPLUNK } from '../../v1/types';
 
 describe('Splunk, formatEntry', () => {
 	test('should format the entry correctly when doNotFormatContent is false', () => {

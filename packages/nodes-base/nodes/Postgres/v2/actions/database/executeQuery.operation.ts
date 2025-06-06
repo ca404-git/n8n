@@ -3,10 +3,9 @@ import type {
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeProperties,
+	NodeParameterValueType,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-
-import { getResolvables, updateDisplayOptions } from '@utils/utilities';
 
 import type {
 	PgpDatabase,
@@ -14,13 +13,11 @@ import type {
 	QueriesRunner,
 	QueryWithValues,
 } from '../../helpers/interfaces';
-import {
-	evaluateExpression,
-	isJSON,
-	replaceEmptyStringsByNulls,
-	stringToArray,
-} from '../../helpers/utils';
+
+import { replaceEmptyStringsByNulls } from '../../helpers/utils';
+
 import { optionsCollection } from '../common.descriptions';
+import { getResolvables, updateDisplayOptions } from '@utils/utilities';
 
 const properties: INodeProperties[] = [
 	{
@@ -58,19 +55,20 @@ export async function execute(
 	nodeOptions: PostgresNodeOptions,
 	_db?: PgpDatabase,
 ): Promise<INodeExecutionData[]> {
-	const queries: QueryWithValues[] = replaceEmptyStringsByNulls(
-		items,
-		nodeOptions.replaceEmptyStrings as boolean,
-	).map((_, index) => {
-		let query = this.getNodeParameter('query', index) as string;
+	items = replaceEmptyStringsByNulls(items, nodeOptions.replaceEmptyStrings as boolean);
+
+	const queries: QueryWithValues[] = [];
+
+	for (let i = 0; i < items.length; i++) {
+		let query = this.getNodeParameter('query', i) as string;
 
 		for (const resolvable of getResolvables(query)) {
-			query = query.replace(resolvable, this.evaluateExpression(resolvable, index) as string);
+			query = query.replace(resolvable, this.evaluateExpression(resolvable, i) as string);
 		}
 
 		let values: Array<IDataObject | string> = [];
 
-		let queryReplacement = this.getNodeParameter('options.queryReplacement', index, '');
+		let queryReplacement = this.getNodeParameter('options.queryReplacement', i, '');
 
 		if (typeof queryReplacement === 'number') {
 			queryReplacement = String(queryReplacement);
@@ -81,6 +79,14 @@ export async function execute(
 
 			const rawReplacements = (node.parameters.options as IDataObject)?.queryReplacement as string;
 
+			const stringToArray = (str: NodeParameterValueType | undefined) => {
+				if (str === undefined) return [];
+				return String(str)
+					.split(',')
+					.filter((entry) => entry)
+					.map((entry) => entry.trim());
+			};
+
 			if (rawReplacements) {
 				const nodeVersion = nodeOptions.nodeVersion as number;
 
@@ -89,13 +95,7 @@ export async function execute(
 					const resolvables = getResolvables(rawValues);
 					if (resolvables.length) {
 						for (const resolvable of resolvables) {
-							const evaluatedExpression = evaluateExpression(
-								this.evaluateExpression(`${resolvable}`, index),
-							);
-							const evaluatedValues = isJSON(evaluatedExpression)
-								? [evaluatedExpression]
-								: stringToArray(evaluatedExpression);
-
+							const evaluatedValues = stringToArray(this.evaluateExpression(`${resolvable}`, i));
 							if (evaluatedValues.length) values.push(...evaluatedValues);
 						}
 					} else {
@@ -113,7 +113,7 @@ export async function execute(
 
 						if (resolvables.length) {
 							for (const resolvable of resolvables) {
-								values.push(this.evaluateExpression(`${resolvable}`, index) as IDataObject);
+								values.push(this.evaluateExpression(`${resolvable}`, i) as IDataObject);
 							}
 						} else {
 							values.push(rawValue);
@@ -128,7 +128,7 @@ export async function execute(
 				throw new NodeOperationError(
 					this.getNode(),
 					'Query Parameters must be a string of comma-separated values or an array of values',
-					{ itemIndex: index },
+					{ itemIndex: i },
 				);
 			}
 		}
@@ -143,8 +143,8 @@ export async function execute(
 			}
 		}
 
-		return { query, values, options: { partial: true } };
-	});
+		queries.push({ query, values });
+	}
 
 	return await runQueries(queries, items, nodeOptions);
 }

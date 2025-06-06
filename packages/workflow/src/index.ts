@@ -1,26 +1,27 @@
-import * as LoggerProxy from './logger-proxy';
-import * as NodeHelpers from './node-helpers';
-import * as ObservableObject from './observable-object';
-import * as TelemetryHelpers from './telemetry-helpers';
+import * as LoggerProxy from './LoggerProxy';
+export * as ErrorReporterProxy from './ErrorReporterProxy';
+export * as ExpressionEvaluatorProxy from './ExpressionEvaluatorProxy';
+import * as NodeHelpers from './NodeHelpers';
+import * as ObservableObject from './ObservableObject';
+import * as TelemetryHelpers from './TelemetryHelpers';
 
 export * from './errors';
-export * from './constants';
-export * from './cron';
-export * from './deferred-promise';
-export * from './global-state';
-export * from './interfaces';
-export * from './message-event-bus';
-export * from './execution-status';
-export * from './expression';
-export * from './from-ai-parse-utils';
-export * from './node-helpers';
-export * from './node-reference-parser-utils';
-export * from './metadata-utils';
-export * from './workflow';
-export * from './workflow-data-proxy';
-export * from './workflow-data-proxy-env-provider';
-export * from './versioned-node-type';
-export * from './type-validation';
+export * from './Constants';
+export * from './Cron';
+export * from './DeferredPromise';
+export * from './GlobalState';
+export * from './Interfaces';
+export * from './MessageEventBus';
+export * from './ExecutionStatus';
+export * from './Expression';
+export * from './NodeHelpers';
+export * from './RoutingNode';
+export * from './Workflow';
+export * from './WorkflowDataProxy';
+export * from './WorkflowDataProxyEnvProvider';
+export * from './WorkflowHooks';
+export * from './VersionedNodeType';
+export * from './TypeValidation';
 export * from './result';
 export { LoggerProxy, NodeHelpers, ObservableObject, TelemetryHelpers };
 export {
@@ -36,8 +37,6 @@ export {
 	updateDisplayOptions,
 	randomInt,
 	randomString,
-	isSafeObjectProperty,
-	setSafeObjectProperty,
 } from './utils';
 export {
 	isINodeProperties,
@@ -47,21 +46,13 @@ export {
 	isINodePropertyCollectionList,
 	isINodePropertyOptionsList,
 	isResourceMapperValue,
-	isResourceLocatorValue,
 	isFilterValue,
 } from './type-guards';
 
-export {
-	parseExtractableSubgraphSelection,
-	buildAdjacencyList,
-	type ExtractableErrorResult,
-	type ExtractableSubgraphData,
-	type IConnectionAdjacencyList as AdjacencyList,
-} from './graph/graph-utils';
-export { ExpressionExtensions } from './extensions';
-export * as ExpressionParser from './extensions/expression-parser';
-export { NativeMethods } from './native-methods';
-export * from './node-parameters/filter-parameter';
+export { ExpressionExtensions } from './Extensions';
+export * as ExpressionParser from './Extensions/ExpressionParser';
+export { NativeMethods } from './NativeMethods';
+export * from './NodeParameters/FilterParameter';
 
 export type {
 	DocMetadata,
@@ -69,7 +60,7 @@ export type {
 	DocMetadataArgument,
 	DocMetadataExample,
 	Extension,
-} from './extensions';
+} from './Extensions';
 
 declare module 'http' {
 	export interface IncomingMessage {

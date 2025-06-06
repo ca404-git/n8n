@@ -1,13 +1,8 @@
-import {
-	OptionsRequestDto,
-	ResourceLocatorRequestDto,
-	ResourceMapperFieldsRequestDto,
-	ActionResultRequestDto,
-} from '@n8n/api-types';
-import { Post, RestController, Body } from '@n8n/decorators';
 import type { INodePropertyOptions, NodeParameterValueType } from 'n8n-workflow';
 
-import { AuthenticatedRequest } from '@/requests';
+import { Post, RestController } from '@/decorators';
+import { BadRequestError } from '@/errors/response-errors/bad-request.error';
+import { DynamicNodeParametersRequest } from '@/requests';
 import { DynamicNodeParametersService } from '@/services/dynamic-node-parameters.service';
 import { getBase } from '@/workflow-execute-additional-data';
 
@@ -16,11 +11,7 @@ export class DynamicNodeParametersController {
 	constructor(private readonly service: DynamicNodeParametersService) {}
 
 	@Post('/options')
-	async getOptions(
-		req: AuthenticatedRequest,
-		_res: Response,
-		@Body payload: OptionsRequestDto,
-	): Promise<INodePropertyOptions[]> {
+	async getOptions(req: DynamicNodeParametersRequest.Options): Promise<INodePropertyOptions[]> {
 		const {
 			credentials,
 			currentNodeParameters,
@@ -28,7 +19,7 @@ export class DynamicNodeParametersController {
 			path,
 			methodName,
 			loadOptions,
-		} = payload;
+		} = req.body;
 
 		const additionalData = await getBase(req.user.id, currentNodeParameters);
 
@@ -57,11 +48,7 @@ export class DynamicNodeParametersController {
 	}
 
 	@Post('/resource-locator-results')
-	async getResourceLocatorResults(
-		req: AuthenticatedRequest,
-		_res: Response,
-		@Body payload: ResourceLocatorRequestDto,
-	) {
+	async getResourceLocatorResults(req: DynamicNodeParametersRequest.ResourceLocatorResults) {
 		const {
 			path,
 			methodName,
@@ -70,7 +57,9 @@ export class DynamicNodeParametersController {
 			credentials,
 			currentNodeParameters,
 			nodeTypeAndVersion,
-		} = payload;
+		} = req.body;
+
+		if (!methodName) throw new BadRequestError('Missing `methodName` in request body');
 
 		const additionalData = await getBase(req.user.id, currentNodeParameters);
 
@@ -87,12 +76,10 @@ export class DynamicNodeParametersController {
 	}
 
 	@Post('/resource-mapper-fields')
-	async getResourceMappingFields(
-		req: AuthenticatedRequest,
-		_res: Response,
-		@Body payload: ResourceMapperFieldsRequestDto,
-	) {
-		const { path, methodName, credentials, currentNodeParameters, nodeTypeAndVersion } = payload;
+	async getResourceMappingFields(req: DynamicNodeParametersRequest.ResourceMapperFields) {
+		const { path, methodName, credentials, currentNodeParameters, nodeTypeAndVersion } = req.body;
+
+		if (!methodName) throw new BadRequestError('Missing `methodName` in request body');
 
 		const additionalData = await getBase(req.user.id, currentNodeParameters);
 
@@ -106,49 +93,27 @@ export class DynamicNodeParametersController {
 		);
 	}
 
-	@Post('/local-resource-mapper-fields')
-	async getLocalResourceMappingFields(
-		req: AuthenticatedRequest,
-		_res: Response,
-		@Body payload: ResourceMapperFieldsRequestDto,
-	) {
-		const { path, methodName, currentNodeParameters, nodeTypeAndVersion } = payload;
-
-		const additionalData = await getBase(req.user.id, currentNodeParameters);
-
-		return await this.service.getLocalResourceMappingFields(
-			methodName,
-			path,
-			additionalData,
-			nodeTypeAndVersion,
-		);
-	}
-
 	@Post('/action-result')
 	async getActionResult(
-		req: AuthenticatedRequest,
-		_res: Response,
-		@Body payload: ActionResultRequestDto,
+		req: DynamicNodeParametersRequest.ActionResult,
 	): Promise<NodeParameterValueType> {
-		const {
-			currentNodeParameters,
-			nodeTypeAndVersion,
-			path,
-			credentials,
-			handler,
-			payload: actionPayload,
-		} = payload;
+		const { currentNodeParameters, nodeTypeAndVersion, path, credentials, handler, payload } =
+			req.body;
 
 		const additionalData = await getBase(req.user.id, currentNodeParameters);
 
-		return await this.service.getActionResult(
-			handler,
-			path,
-			additionalData,
-			nodeTypeAndVersion,
-			currentNodeParameters,
-			actionPayload,
-			credentials,
-		);
+		if (handler) {
+			return await this.service.getActionResult(
+				handler,
+				path,
+				additionalData,
+				nodeTypeAndVersion,
+				currentNodeParameters,
+				payload,
+				credentials,
+			);
+		}
+
+		return;
 	}
 }

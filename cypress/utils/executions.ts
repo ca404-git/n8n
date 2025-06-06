@@ -1,12 +1,4 @@
-import { stringify } from 'flatted';
-import pick from 'lodash/pick';
-import type {
-	IDataObject,
-	IRunData,
-	IRunExecutionData,
-	ITaskData,
-	ITaskDataConnections,
-} from 'n8n-workflow';
+import type { IDataObject, IPinData, ITaskData, ITaskDataConnections } from 'n8n-workflow';
 import { nanoid } from 'nanoid';
 
 import { clickExecuteWorkflowButton } from '../composables/workflow';
@@ -23,9 +15,8 @@ export function createMockNodeExecutionData(
 ): Record<string, ITaskData> {
 	return {
 		[name]: {
-			startTime: Date.now(),
-			executionIndex: 0,
-			executionTime: 1,
+			startTime: new Date().getTime(),
+			executionTime: 0,
 			executionStatus,
 			data: jsonData
 				? Object.keys(jsonData).reduce((acc, key) => {
@@ -42,8 +33,45 @@ export function createMockNodeExecutionData(
 					}, {} as ITaskDataConnections)
 				: data,
 			source: [null],
-			inputOverride,
 			...rest,
+		},
+	};
+}
+
+export function createMockWorkflowExecutionData({
+	executionId,
+	runData,
+	pinData = {},
+	lastNodeExecuted,
+}: {
+	executionId: string;
+	runData: Record<string, ITaskData | ITaskData[]>;
+	pinData?: IPinData;
+	lastNodeExecuted: string;
+}) {
+	return {
+		executionId,
+		data: {
+			data: {
+				startData: {},
+				resultData: {
+					runData,
+					pinData,
+					lastNodeExecuted,
+				},
+				executionData: {
+					contextData: {},
+					nodeExecutionStack: [],
+					metadata: {},
+					waitingExecution: {},
+					waitingExecutionSource: {},
+				},
+			},
+			mode: 'manual',
+			startedAt: new Date().toISOString(),
+			stoppedAt: new Date().toISOString(),
+			status: 'success',
+			finished: true,
 		},
 	};
 }
@@ -52,35 +80,14 @@ export function runMockWorkflowExecution({
 	trigger,
 	lastNodeExecuted,
 	runData,
+	workflowExecutionData,
 }: {
 	trigger?: () => void;
 	lastNodeExecuted: string;
 	runData: Array<ReturnType<typeof createMockNodeExecutionData>>;
+	workflowExecutionData?: ReturnType<typeof createMockWorkflowExecutionData>;
 }) {
-	const workflowId = nanoid();
-	const executionId = Math.floor(Math.random() * 1_000_000).toString();
-
-	const resolvedRunData = runData.reduce<IRunData>((acc, nodeExecution) => {
-		const nodeName = Object.keys(nodeExecution)[0];
-		acc[nodeName] = [nodeExecution[nodeName]];
-		return acc;
-	}, {});
-
-	const executionData: IRunExecutionData = {
-		startData: {},
-		resultData: {
-			runData: resolvedRunData,
-			pinData: {},
-			lastNodeExecuted,
-		},
-		executionData: {
-			contextData: {},
-			nodeExecutionStack: [],
-			metadata: {},
-			waitingExecution: {},
-			waitingExecutionSource: {},
-		},
-	};
+	const executionId = nanoid(8);
 
 	cy.intercept('POST', '/rest/workflows/**/run?**', {
 		statusCode: 201,
@@ -99,15 +106,7 @@ export function runMockWorkflowExecution({
 
 	cy.wait('@runWorkflow');
 
-	cy.push('executionStarted', {
-		workflowId,
-		executionId,
-		mode: 'manual',
-		startedAt: new Date(),
-		workflowName: '',
-		flattedRunData: '',
-	});
-
+	const resolvedRunData: Record<string, ITaskData> = {};
 	runData.forEach((nodeExecution) => {
 		const nodeName = Object.keys(nodeExecution)[0];
 		const nodeRunData = nodeExecution[nodeName];
@@ -115,19 +114,23 @@ export function runMockWorkflowExecution({
 		cy.push('nodeExecuteBefore', {
 			executionId,
 			nodeName,
-			data: pick(nodeRunData, ['startTime', 'executionIndex', 'source', 'hints']),
 		});
 		cy.push('nodeExecuteAfter', {
 			executionId,
 			nodeName,
 			data: nodeRunData,
 		});
+
+		resolvedRunData[nodeName] = nodeExecution[nodeName];
 	});
 
-	cy.push('executionFinished', {
-		executionId,
-		workflowId,
-		status: 'success',
-		rawData: stringify(executionData),
-	});
+	cy.push(
+		'executionFinished',
+		createMockWorkflowExecutionData({
+			executionId,
+			lastNodeExecuted,
+			runData: resolvedRunData,
+			...workflowExecutionData,
+		}),
+	);
 }

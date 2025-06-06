@@ -4,7 +4,6 @@ import type {
 	INodeProperties,
 	IExecuteFunctions,
 } from 'n8n-workflow';
-
 import {
 	generatePairedItemData,
 	updateDisplayOptions,

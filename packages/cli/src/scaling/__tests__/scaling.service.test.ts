@@ -1,10 +1,11 @@
 import { GlobalConfig } from '@n8n/config';
-import { Container } from '@n8n/di';
 import * as BullModule from 'bull';
 import { mock } from 'jest-mock-extended';
 import { InstanceSettings } from 'n8n-core';
-import { ApplicationError, ExecutionCancelledError } from 'n8n-workflow';
+import { ApplicationError } from 'n8n-workflow';
+import Container from 'typedi';
 
+import type { OrchestrationService } from '@/services/orchestration.service';
 import { mockInstance, mockLogger } from '@test/mocking';
 
 import { JOB_TYPE_NAME, QUEUE_NAME } from '../constants';
@@ -46,6 +47,7 @@ describe('ScalingService', () => {
 	});
 
 	const instanceSettings = Container.get(InstanceSettings);
+	const orchestrationService = mock<OrchestrationService>({ isMultiMainSetupEnabled: false });
 	const jobProcessor = mock<JobProcessor>();
 
 	let scalingService: ScalingService;
@@ -54,7 +56,6 @@ describe('ScalingService', () => {
 	let registerWorkerListenersSpy: jest.SpyInstance;
 	let scheduleQueueRecoverySpy: jest.SpyInstance;
 	let stopQueueRecoverySpy: jest.SpyInstance;
-	let stopQueueMetricsSpy: jest.SpyInstance;
 	let getRunningJobsCountSpy: jest.SpyInstance;
 
 	const bullConstructorArgs = [
@@ -75,11 +76,11 @@ describe('ScalingService', () => {
 		scalingService = new ScalingService(
 			mockLogger(),
 			mock(),
-			mock(),
 			jobProcessor,
 			globalConfig,
 			mock(),
 			instanceSettings,
+			orchestrationService,
 			mock(),
 		);
 
@@ -98,9 +99,6 @@ describe('ScalingService', () => {
 		scheduleQueueRecoverySpy = jest.spyOn(scalingService, 'scheduleQueueRecovery');
 		// @ts-expect-error Private method
 		stopQueueRecoverySpy = jest.spyOn(scalingService, 'stopQueueRecovery');
-
-		// @ts-expect-error Private method
-		stopQueueMetricsSpy = jest.spyOn(scalingService, 'stopQueueMetrics');
 	});
 
 	describe('setupQueue', () => {
@@ -182,37 +180,15 @@ describe('ScalingService', () => {
 	});
 
 	describe('stop', () => {
-		describe('if main', () => {
-			it('should pause queue, stop queue recovery and queue metrics', async () => {
-				// @ts-expect-error readonly property
-				instanceSettings.instanceType = 'main';
-				await scalingService.setupQueue();
-				// @ts-expect-error readonly property
-				scalingService.queueRecoveryContext.timeout = 1;
-				jest.spyOn(scalingService, 'isQueueMetricsEnabled', 'get').mockReturnValue(true);
+		it('should pause queue, wait for running jobs, stop queue recovery', async () => {
+			await scalingService.setupQueue();
+			jobProcessor.getRunningJobIds.mockReturnValue([]);
 
-				await scalingService.stop();
+			await scalingService.stop();
 
-				expect(getRunningJobsCountSpy).not.toHaveBeenCalled();
-				expect(queue.pause).toHaveBeenCalledWith(true, true);
-				expect(stopQueueRecoverySpy).toHaveBeenCalled();
-				expect(stopQueueMetricsSpy).toHaveBeenCalled();
-			});
-		});
-
-		describe('if worker', () => {
-			it('should pause queue and wait for running jobs to finish', async () => {
-				// @ts-expect-error readonly property
-				instanceSettings.instanceType = 'worker';
-				await scalingService.setupQueue();
-				jobProcessor.getRunningJobIds.mockReturnValue([]);
-
-				await scalingService.stop();
-
-				expect(getRunningJobsCountSpy).toHaveBeenCalled();
-				expect(queue.pause).toHaveBeenCalled();
-				expect(stopQueueRecoverySpy).not.toHaveBeenCalled();
-			});
+			expect(queue.pause).toHaveBeenCalledWith(true, true);
+			expect(stopQueueRecoverySpy).toHaveBeenCalled();
+			expect(getRunningJobsCountSpy).toHaveBeenCalled();
 		});
 	});
 
@@ -286,8 +262,6 @@ describe('ScalingService', () => {
 			const result = await scalingService.stopJob(job);
 
 			expect(job.progress).toHaveBeenCalledWith({ kind: 'abort-job' });
-			expect(job.discard).toHaveBeenCalled();
-			expect(job.moveToFailed).toHaveBeenCalledWith(new ExecutionCancelledError('123'), true);
 			expect(result).toBe(true);
 		});
 

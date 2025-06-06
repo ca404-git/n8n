@@ -1,4 +1,3 @@
-import moment from 'moment-timezone';
 import type {
 	IExecuteFunctions,
 	ILoadOptionsFunctions,
@@ -7,8 +6,9 @@ import type {
 	IHttpRequestMethods,
 	IRequestOptions,
 } from 'n8n-workflow';
-import { isSafeObjectProperty, NodeApiError } from 'n8n-workflow';
+import { NodeApiError } from 'n8n-workflow';
 
+import moment from 'moment-timezone';
 import { getGoogleAccessToken } from '../../GenericFunctions';
 
 export async function googleApiRequest(
@@ -49,6 +49,7 @@ export async function googleApiRequest(
 			(options.headers as IDataObject).Authorization = `Bearer ${access_token}`;
 		}
 
+		//@ts-ignore
 		return await this.helpers.requestWithAuthentication.call(this, credentialType, options);
 	} catch (error) {
 		throw new NodeApiError(this.getNode(), error as JsonObject);
@@ -104,11 +105,10 @@ export function jsonToDocument(value: string | number | IDataObject | IDataObjec
 	} else if (value && value.constructor === Array) {
 		return { arrayValue: { values: value.map((v) => jsonToDocument(v)) } };
 	} else if (typeof value === 'object') {
-		const obj: IDataObject = {};
-		for (const key of Object.keys(value)) {
-			if (value.hasOwnProperty(key) && isSafeObjectProperty(key)) {
-				obj[key] = jsonToDocument((value as IDataObject)[key] as IDataObject);
-			}
+		const obj = {};
+		for (const o of Object.keys(value)) {
+			//@ts-ignore
+			obj[o] = jsonToDocument(value[o] as IDataObject);
 		}
 		return { mapValue: { fields: obj } };
 	}

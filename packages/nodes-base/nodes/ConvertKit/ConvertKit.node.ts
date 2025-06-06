@@ -6,14 +6,19 @@ import {
 	type INodePropertyOptions,
 	type INodeType,
 	type INodeTypeDescription,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
-import { customFieldFields, customFieldOperations } from './CustomFieldDescription';
-import { formFields, formOperations } from './FormDescription';
 import { convertKitApiRequest } from './GenericFunctions';
+
+import { customFieldFields, customFieldOperations } from './CustomFieldDescription';
+
+import { formFields, formOperations } from './FormDescription';
+
 import { sequenceFields, sequenceOperations } from './SequenceDescription';
+
 import { tagFields, tagOperations } from './TagDescription';
+
 import { tagSubscriberFields, tagSubscriberOperations } from './TagSubscriberDescription';
 
 export class ConvertKit implements INodeType {
@@ -28,9 +33,8 @@ export class ConvertKit implements INodeType {
 		defaults: {
 			name: 'ConvertKit',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'convertKitApi',

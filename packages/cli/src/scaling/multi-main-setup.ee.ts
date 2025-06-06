@@ -1,11 +1,10 @@
-import { Logger } from '@n8n/backend-common';
 import { GlobalConfig } from '@n8n/config';
-import { MultiMainMetadata } from '@n8n/decorators';
-import { Container, Service } from '@n8n/di';
 import { InstanceSettings } from 'n8n-core';
+import { Service } from 'typedi';
 
 import config from '@/config';
-import { Time } from '@/constants';
+import { TIME } from '@/constants';
+import { Logger } from '@/logging/logger.service';
 import { Publisher } from '@/scaling/pubsub/publisher.service';
 import { RedisClientService } from '@/services/redis-client.service';
 import { TypedEmitter } from '@/typed-emitter';
@@ -14,14 +13,14 @@ type MultiMainEvents = {
 	/**
 	 * Emitted when this instance loses leadership. In response, its various
 	 * services will stop triggers, pollers, pruning, wait-tracking, license
-	 * renewal, queue recovery, insights, etc.
+	 * renewal, queue recovery, etc.
 	 */
 	'leader-stepdown': never;
 
 	/**
 	 * Emitted when this instance gains leadership. In response, its various
 	 * services will start triggers, pollers, pruning, wait-tracking, license
-	 * renewal, queue recovery, insights, etc.
+	 * renewal, queue recovery, etc.
 	 */
 	'leader-takeover': never;
 };
@@ -35,17 +34,16 @@ export class MultiMainSetup extends TypedEmitter<MultiMainEvents> {
 		private readonly publisher: Publisher,
 		private readonly redisClientService: RedisClientService,
 		private readonly globalConfig: GlobalConfig,
-		private readonly metadata: MultiMainMetadata,
 	) {
 		super();
-		this.logger = this.logger.scoped(['scaling', 'multi-main-setup']);
+		this.logger = this.logger.withScope('scaling');
 	}
 
 	private leaderKey: string;
 
 	private readonly leaderKeyTtl = this.globalConfig.multiMainSetup.ttl;
 
-	private leaderCheckInterval: NodeJS.Timeout | undefined;
+	private leaderCheckInterval: NodeJS.Timer | undefined;
 
 	async init() {
 		const prefix = config.getEnv('redis.prefix');
@@ -56,10 +54,9 @@ export class MultiMainSetup extends TypedEmitter<MultiMainEvents> {
 
 		this.leaderCheckInterval = setInterval(async () => {
 			await this.checkLeader();
-		}, this.globalConfig.multiMainSetup.interval * Time.seconds.toMilliseconds);
+		}, this.globalConfig.multiMainSetup.interval * TIME.SECOND);
 	}
 
-	// @TODO: Use `@OnShutdown()` decorator
 	async shutdown() {
 		clearInterval(this.leaderCheckInterval);
 
@@ -112,16 +109,14 @@ export class MultiMainSetup extends TypedEmitter<MultiMainEvents> {
 		const { hostId } = this.instanceSettings;
 
 		// this can only succeed if leadership is currently vacant
-		const keySetSuccessfully = await this.publisher.setIfNotExists(
-			this.leaderKey,
-			hostId,
-			this.leaderKeyTtl,
-		);
+		const keySetSuccessfully = await this.publisher.setIfNotExists(this.leaderKey, hostId);
 
 		if (keySetSuccessfully) {
-			this.logger.info(`[Instance ID ${hostId}] Leader is now this instance`);
+			this.logger.debug(`[Instance ID ${hostId}] Leader is now this instance`);
 
 			this.instanceSettings.markAsLeader();
+
+			await this.publisher.setExpiration(this.leaderKey, this.leaderKeyTtl);
 
 			this.emit('leader-takeover');
 		} else {
@@ -131,17 +126,5 @@ export class MultiMainSetup extends TypedEmitter<MultiMainEvents> {
 
 	async fetchLeaderKey() {
 		return await this.publisher.get(this.leaderKey);
-	}
-
-	registerEventHandlers() {
-		const handlers = this.metadata.getHandlers();
-
-		for (const { eventHandlerClass, methodName, eventName } of handlers) {
-			const instance = Container.get(eventHandlerClass);
-			this.on(eventName, async () => {
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-				return instance[methodName].call(instance);
-			});
-		}
 	}
 }

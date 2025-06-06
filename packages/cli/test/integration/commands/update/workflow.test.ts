@@ -10,7 +10,7 @@ mockInstance(LoadNodesAndCredentials);
 const command = setupTestCommand(UpdateWorkflowCommand);
 
 beforeEach(async () => {
-	await testDb.truncate(['WorkflowEntity']);
+	await testDb.truncate(['Workflow']);
 });
 
 test('update:workflow can activate all workflows', async () => {

@@ -14,7 +14,7 @@ mockInstance(LoadNodesAndCredentials);
 const command = setupTestCommand(ImportCredentialsCommand);
 
 beforeEach(async () => {
-	await testDb.truncate(['CredentialsEntity', 'SharedCredentials', 'User']);
+	await testDb.truncate(['Credentials', 'SharedCredentials', 'User']);
 });
 
 test('import:credentials should import a credential', async () => {

@@ -65,10 +65,9 @@ function bundleOpenApiSpecs() {
 }
 
 function generateTimezoneData() {
-	const timezones = ['Etc/UTC', 'Etc/GMT', ...rawTimeZones.map((tz) => tz.name)];
-	const data = timezones.sort().reduce((acc, name) => {
-		acc[name] = name.replaceAll('_', ' ');
+	const timezones = rawTimeZones.reduce((acc, tz) => {
+		acc[tz.name] = tz.name.replaceAll('_', ' ');
 		return acc;
 	}, {});
-	writeFileSync(path.resolve(ROOT_DIR, 'dist/timezones.json'), JSON.stringify({ data }));
+	writeFileSync(path.resolve(ROOT_DIR, 'dist/timezones.json'), JSON.stringify({ data: timezones }));
 }

@@ -1,7 +1,5 @@
 /* eslint-disable n8n-nodes-base/node-dirname-against-convention */
-import type { BaseChatMemory } from '@langchain/community/memory/chat_memory';
-import { AIMessage, SystemMessage, HumanMessage, type BaseMessage } from '@langchain/core/messages';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -9,6 +7,8 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
+import type { BaseChatMemory } from '@langchain/community/memory/chat_memory';
+import { AIMessage, SystemMessage, HumanMessage, type BaseMessage } from '@langchain/core/messages';
 
 type MessageRole = 'ai' | 'system' | 'user';
 interface MessageRecord {
@@ -92,11 +92,11 @@ export class MemoryManager implements INodeType {
 		inputs: [
 			{
 				displayName: '',
-				type: NodeConnectionTypes.Main,
+				type: NodeConnectionType.Main,
 			},
 			{
 				displayName: 'Memory',
-				type: NodeConnectionTypes.AiMemory,
+				type: NodeConnectionType.AiMemory,
 				required: true,
 				maxConnections: 1,
 			},
@@ -105,7 +105,7 @@ export class MemoryManager implements INodeType {
 		outputs: [
 			{
 				displayName: '',
-				type: NodeConnectionTypes.Main,
+				type: NodeConnectionType.Main,
 			},
 		],
 		properties: [
@@ -297,7 +297,7 @@ export class MemoryManager implements INodeType {
 		const items = this.getInputData();
 		const mode = this.getNodeParameter('mode', 0, 'load') as 'load' | 'insert' | 'delete';
 		const memory = (await this.getInputConnectionData(
-			NodeConnectionTypes.AiMemory,
+			NodeConnectionType.AiMemory,
 			0,
 		)) as BaseChatMemory;
 

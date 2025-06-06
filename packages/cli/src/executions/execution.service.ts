@@ -1,19 +1,4 @@
-import { Logger } from '@n8n/backend-common';
 import { GlobalConfig } from '@n8n/config';
-import type {
-	User,
-	CreateExecutionPayload,
-	ExecutionSummaries,
-	IExecutionResponse,
-	IGetExecutionsQueryFilter,
-} from '@n8n/db';
-import {
-	ExecutionAnnotationRepository,
-	ExecutionRepository,
-	AnnotationTagMappingRepository,
-	WorkflowRepository,
-} from '@n8n/db';
-import { Service } from '@n8n/di';
 import { validate as jsonSchemaValidate } from 'jsonschema';
 import type {
 	ExecutionError,
@@ -25,29 +10,41 @@ import type {
 	IWorkflowExecutionDataProcess,
 } from 'n8n-workflow';
 import {
+	ApplicationError,
 	ExecutionStatusList,
-	UnexpectedError,
-	UserError,
 	Workflow,
 	WorkflowOperationError,
 } from 'n8n-workflow';
+import { Container, Service } from 'typedi';
 
 import { ActiveExecutions } from '@/active-executions';
 import { ConcurrencyControlService } from '@/concurrency/concurrency-control.service';
 import config from '@/config';
+import type { User } from '@/databases/entities/user';
+import { AnnotationTagMappingRepository } from '@/databases/repositories/annotation-tag-mapping.repository.ee';
+import { ExecutionAnnotationRepository } from '@/databases/repositories/execution-annotation.repository';
+import { ExecutionRepository } from '@/databases/repositories/execution.repository';
+import type { IGetExecutionsQueryFilter } from '@/databases/repositories/execution.repository';
+import { WorkflowRepository } from '@/databases/repositories/workflow.repository';
 import { AbortedExecutionRetryError } from '@/errors/aborted-execution-retry.error';
 import { MissingExecutionStopError } from '@/errors/missing-execution-stop.error';
 import { QueuedExecutionRetryError } from '@/errors/queued-execution-retry.error';
 import { InternalServerError } from '@/errors/response-errors/internal-server.error';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
-import type { IExecutionFlattedResponse } from '@/interfaces';
+import type {
+	CreateExecutionPayload,
+	IExecutionFlattedResponse,
+	IExecutionResponse,
+	IWorkflowDb,
+} from '@/interfaces';
 import { License } from '@/license';
+import { Logger } from '@/logging/logger.service';
 import { NodeTypes } from '@/node-types';
 import { WaitTracker } from '@/wait-tracker';
 import { WorkflowRunner } from '@/workflow-runner';
 import { WorkflowSharingService } from '@/workflows/workflow-sharing.service';
 
-import type { ExecutionRequest, StopResult } from './execution.types';
+import type { ExecutionRequest, ExecutionSummaries, StopResult } from './execution.types';
 
 export const schemaGetExecutionsQueryFilter = {
 	$id: '/IGetExecutionsQueryFilter',
@@ -69,7 +66,6 @@ export const schemaGetExecutionsQueryFilter = {
 		startedBefore: { type: 'date-time' },
 		annotationTags: { type: 'array', items: { type: 'string' } },
 		vote: { type: 'string' },
-		projectId: { type: 'string' },
 	},
 	$defs: {
 		metadata: {
@@ -80,10 +76,6 @@ export const schemaGetExecutionsQueryFilter = {
 					type: 'string',
 				},
 				value: { type: 'string' },
-				exactMatch: {
-					type: 'boolean',
-					default: true,
-				},
 			},
 		},
 	},
@@ -154,7 +146,7 @@ export class ExecutionService {
 		if (!execution.data.executionData) throw new AbortedExecutionRetryError();
 
 		if (execution.finished) {
-			throw new UnexpectedError('The execution succeeded, so it cannot be retried.');
+			throw new ApplicationError('The execution succeeded, so it cannot be retried.');
 		}
 
 		const executionMode = 'retry';
@@ -196,7 +188,7 @@ export class ExecutionService {
 			})) as IWorkflowBase;
 
 			if (workflowData === undefined) {
-				throw new UserError(
+				throw new ApplicationError(
 					'Workflow could not be found and so the data not be loaded for the retry.',
 					{ extra: { workflowId } },
 				);
@@ -240,15 +232,15 @@ export class ExecutionService {
 		const executionData = await this.activeExecutions.getPostExecutePromise(retriedExecutionId);
 
 		if (!executionData) {
-			throw new UnexpectedError('The retry did not start for an unknown reason.');
+			throw new ApplicationError('The retry did not start for an unknown reason.');
 		}
 
-		return executionData.status;
+		return !!executionData.finished;
 	}
 
 	async delete(req: ExecutionRequest.Delete, sharedWorkflowIds: string[]) {
 		const { deleteBefore, ids, filters: requestFiltersRaw } = req.body;
-		let requestFilters: IGetExecutionsQueryFilter | undefined;
+		let requestFilters;
 		if (requestFiltersRaw) {
 			try {
 				Object.keys(requestFiltersRaw).map((key) => {
@@ -258,7 +250,7 @@ export class ExecutionService {
 					requestFilters = requestFiltersRaw as IGetExecutionsQueryFilter;
 				}
 			} catch (error) {
-				throw new InternalServerError('Parameter "filter" contained invalid JSON string.', error);
+				throw new InternalServerError('Parameter "filter" contained invalid JSON string.');
 			}
 		}
 
@@ -275,7 +267,7 @@ export class ExecutionService {
 	async createErrorExecution(
 		error: ExecutionError,
 		node: INode,
-		workflowData: IWorkflowBase,
+		workflowData: IWorkflowDb,
 		workflow: Workflow,
 		mode: WorkflowExecuteMode,
 	) {
@@ -318,7 +310,6 @@ export class ExecutionService {
 					[node.name]: [
 						{
 							startTime: 0,
-							executionIndex: 0,
 							executionTime: 0,
 							error,
 							source: [],
@@ -472,12 +463,29 @@ export class ExecutionService {
 	}
 
 	private async stopInScalingMode(execution: IExecutionResponse) {
+		if (execution.mode === 'manual') {
+			// manual executions in scaling mode are processed by main
+			return await this.stopInRegularMode(execution);
+		}
+
 		if (this.activeExecutions.has(execution.id)) {
 			this.activeExecutions.stopExecution(execution.id);
 		}
 
 		if (this.waitTracker.has(execution.id)) {
 			this.waitTracker.stopExecution(execution.id);
+		}
+
+		const { ScalingService } = await import('@/scaling/scaling.service');
+		const scalingService = Container.get(ScalingService);
+		const jobs = await scalingService.findJobsByStatus(['active', 'waiting']);
+
+		const job = jobs.find(({ data }) => data.executionId === execution.id);
+
+		if (job) {
+			await scalingService.stopJob(job);
+		} else {
+			this.logger.debug('Job to stop not in queue', { executionId: execution.id });
 		}
 
 		return await this.executionRepository.stopDuringRun(execution);
@@ -495,7 +503,7 @@ export class ExecutionService {
 		}
 	}
 
-	async annotate(
+	public async annotate(
 		executionId: string,
 		updateData: ExecutionRequest.ExecutionUpdatePayload,
 		sharedWorkflowIds: string[],

@@ -1,40 +1,32 @@
 import type { IHourlyRateDto, IMembershipDto } from './CommonDtos';
 
-export const AdminOnlyPages = {
-	PROJECT: 'PROJECT',
-	TEAM: 'TEAM',
-	REPORTS: 'REPORTS',
-} as const;
+const enum AdminOnlyPagesEnum {
+	PROJECT = 'PROJECT',
+	TEAM = 'TEAM',
+	REPORTS = 'REPORTS',
+}
 
-export type AdminOnlyPagesEnum = (typeof AdminOnlyPages)[keyof typeof AdminOnlyPages];
+const enum DaysOfWeekEnum {
+	MONDAY = 'MONDAY',
+	TUESDAY = 'TUESDAY',
+	WEDNESDAY = 'WEDNESDAY',
+	THURSDAY = 'THURSDAY',
+	FRIDAY = 'FRIDAY',
+	SATURDAY = 'SATURDAY',
+	SUNDAY = 'SUNDAY',
+}
 
-export const DaysOfWeek = {
-	MONDAY: 'MONDAY',
-	TUESDAY: 'TUESDAY',
-	WEDNESDAY: 'WEDNESDAY',
-	THURSDAY: 'THURSDAY',
-	FRIDAY: 'FRIDAY',
-	SATURDAY: 'SATURDAY',
-	SUNDAY: 'SUNDAY',
-} as const;
+const enum DatePeriodEnum {
+	DAYS = 'DAYS',
+	WEEKS = 'WEEKS',
+	MONTHS = 'MONTHS',
+}
 
-export type DaysOfWeekEnum = (typeof DaysOfWeek)[keyof typeof DaysOfWeek];
-
-export const DatePeriods = {
-	DAYS: 'DAYS',
-	WEEKS: 'WEEKS',
-	MONTHS: 'MONTHS',
-} as const;
-
-export type DatePeriodEnum = (typeof DatePeriods)[keyof typeof DatePeriods];
-
-export const AutomaticLockTypes = {
-	WEEKLY: 'WEEKLY',
-	MONTHLY: 'MONTHLY',
-	OLDER_THAN: 'OLDER_THAN',
-} as const;
-
-export type AutomaticLockTypeEnum = (typeof AutomaticLockTypes)[keyof typeof AutomaticLockTypes];
+const enum AutomaticLockTypeEnum {
+	WEEKLY = 'WEEKLY',
+	MONTHLY = 'MONTHLY',
+	OLDER_THAN = 'OLDER_THAN',
+}
 
 interface IAutomaticLockDto {
 	changeDay: DaysOfWeekEnum;

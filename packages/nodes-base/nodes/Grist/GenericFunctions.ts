@@ -22,8 +22,9 @@ export async function gristApiRequest(
 	body: IDataObject | number[] = {},
 	qs: IDataObject = {},
 ) {
-	const { apiKey, planType, customSubdomain, selfHostedUrl } =
-		await this.getCredentials<GristCredentials>('gristApi');
+	const { apiKey, planType, customSubdomain, selfHostedUrl } = (await this.getCredentials(
+		'gristApi',
+	)) as GristCredentials;
 
 	const gristapiurl =
 		planType === 'free'

@@ -1,6 +1,8 @@
-import { Container } from '@n8n/di';
+import { Container } from 'typedi';
 
 import { ClearLicenseCommand } from '@/commands/license/clear';
+import { SETTINGS_LICENSE_CERT_KEY } from '@/constants';
+import { SettingsRepository } from '@/databases/repositories/settings.repository';
 import { License } from '@/license';
 import { LoadNodesAndCredentials } from '@/load-nodes-and-credentials';
 import { setupTestCommand } from '@test-integration/utils/test-command';
@@ -8,30 +10,26 @@ import { setupTestCommand } from '@test-integration/utils/test-command';
 import { mockInstance } from '../../shared/mocking';
 
 mockInstance(LoadNodesAndCredentials);
+const license = mockInstance(License);
 const command = setupTestCommand(ClearLicenseCommand);
 
-test('license:clear invokes clear() to release any floating entitlements and deletes the license cert from the DB', async () => {
-	const license = Container.get(License);
+test('license:clear invokes shutdown() to release any floating entitlements', async () => {
+	await command.run();
 
-	const manager = {
-		clear: jest.fn().mockImplementation(async () => {
-			await license.saveCertStr('');
-		}),
-	};
+	expect(license.init).toHaveBeenCalledTimes(1);
+	expect(license.shutdown).toHaveBeenCalledTimes(1);
+});
 
-	const initSpy = jest.spyOn(license, 'init').mockImplementation(async () => {
-		Object.defineProperty(license, 'manager', {
-			value: manager,
-			writable: true,
-		});
-	});
+test('license:clear deletes the license from the DB even if shutdown() fails', async () => {
+	license.shutdown.mockRejectedValueOnce(new Error('shutdown failed'));
 
-	const clearSpy = jest.spyOn(license, 'clear');
-	const saveCertStrSpy = jest.spyOn(license, 'saveCertStr');
+	const settingsRepository = Container.get(SettingsRepository);
+
+	settingsRepository.delete = jest.fn();
 
 	await command.run();
 
-	expect(initSpy).toHaveBeenCalledTimes(1);
-	expect(clearSpy).toHaveBeenCalledTimes(1);
-	expect(saveCertStrSpy).toHaveBeenCalledWith('');
+	expect(settingsRepository.delete).toHaveBeenCalledWith({
+		key: SETTINGS_LICENSE_CERT_KEY,
+	});
 });

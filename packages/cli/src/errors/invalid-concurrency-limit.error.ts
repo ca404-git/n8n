@@ -1,7 +1,7 @@
-import { UserError } from 'n8n-workflow';
+import { ApplicationError } from 'n8n-workflow';
 
-export class InvalidConcurrencyLimitError extends UserError {
+export class InvalidConcurrencyLimitError extends ApplicationError {
 	constructor(value: number) {
-		super('Concurrency limit set to invalid value', { extra: { value } });
+		super('Concurrency limit set to invalid value', { level: 'warning', extra: { value } });
 	}
 }

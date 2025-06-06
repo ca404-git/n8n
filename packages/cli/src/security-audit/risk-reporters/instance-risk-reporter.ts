@@ -1,13 +1,12 @@
-import { inDevelopment, Logger } from '@n8n/backend-common';
 import { GlobalConfig } from '@n8n/config';
-import { separate } from '@n8n/db';
-import { Service } from '@n8n/di';
 import axios from 'axios';
 import { InstanceSettings } from 'n8n-core';
-import type { IWorkflowBase } from 'n8n-workflow';
+import { Service } from 'typedi';
 
 import config from '@/config';
-import { N8N_VERSION } from '@/constants';
+import { getN8nPackageJson, inDevelopment } from '@/constants';
+import type { WorkflowEntity } from '@/databases/entities/workflow-entity';
+import { Logger } from '@/logging/logger.service';
 import { isApiEnabled } from '@/public-api';
 import {
 	ENV_VARS_DOCS_URL,
@@ -17,6 +16,7 @@ import {
 } from '@/security-audit/constants';
 import type { RiskReporter, Risk, n8n } from '@/security-audit/types';
 import { toFlaggedNode } from '@/security-audit/utils';
+import { separate } from '@/utils';
 
 @Service()
 export class InstanceRiskReporter implements RiskReporter {
@@ -26,7 +26,7 @@ export class InstanceRiskReporter implements RiskReporter {
 		private readonly globalConfig: GlobalConfig,
 	) {}
 
-	async report(workflows: IWorkflowBase[]) {
+	async report(workflows: WorkflowEntity[]) {
 		const unprotectedWebhooks = this.getUnprotectedWebhookNodes(workflows);
 		const outdatedState = await this.getOutdatedState();
 		const securitySettings = this.getSecuritySettings();
@@ -103,7 +103,7 @@ export class InstanceRiskReporter implements RiskReporter {
 		};
 
 		settings.telemetry = {
-			diagnosticsEnabled: this.globalConfig.diagnostics.enabled,
+			diagnosticsEnabled: config.getEnv('diagnostics.enabled'),
 		};
 
 		return settings;
@@ -116,10 +116,10 @@ export class InstanceRiskReporter implements RiskReporter {
 		node,
 		workflow,
 	}: {
-		node: IWorkflowBase['nodes'][number];
-		workflow: IWorkflowBase;
+		node: WorkflowEntity['nodes'][number];
+		workflow: WorkflowEntity;
 	}) {
-		const childNodeNames = workflow.connections[node.name]?.main[0]?.map((i) => i.node);
+		const childNodeNames = workflow.connections[node.name]?.main[0].map((i) => i.node);
 
 		if (!childNodeNames) return false;
 
@@ -128,7 +128,7 @@ export class InstanceRiskReporter implements RiskReporter {
 		);
 	}
 
-	private getUnprotectedWebhookNodes(workflows: IWorkflowBase[]) {
+	private getUnprotectedWebhookNodes(workflows: WorkflowEntity[]) {
 		return workflows.reduce<Risk.NodeLocation[]>((acc, workflow) => {
 			if (!workflow.active) return acc;
 
@@ -176,7 +176,7 @@ export class InstanceRiskReporter implements RiskReporter {
 	private async getOutdatedState() {
 		let versions = [];
 
-		const localVersion = N8N_VERSION;
+		const localVersion = getN8nPackageJson().version;
 
 		try {
 			versions = await this.getNextVersions(localVersion).then((v) => this.removeIconData(v));

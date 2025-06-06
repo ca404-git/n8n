@@ -13,7 +13,6 @@ import * as testDb from '../shared/test-db';
 
 describe('Users in Public API', () => {
 	const testServer = setupTestServer({ endpointGroups: ['publicApi'] });
-
 	mockInstance(Telemetry);
 
 	beforeAll(async () => {

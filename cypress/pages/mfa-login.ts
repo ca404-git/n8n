@@ -3,31 +3,23 @@ import { SigninPage } from './signin';
 import { WorkflowsPage } from './workflows';
 import { N8N_AUTH_COOKIE } from '../constants';
 
-/**
- * @deprecated Use functional composables from @composables instead.
- * If a composable doesn't exist for your use case, please create a new one in:
- * cypress/composables
- *
- * This class-based approach is being phased out in favor of more modular functional composables.
- * Each getter and action in this class should be moved to individual composable functions.
- */
 export class MfaLoginPage extends BasePage {
 	url = '/mfa';
 
 	getters = {
 		form: () => cy.getByTestId('mfa-login-form'),
-		mfaCode: () => cy.getByTestId('mfaCode'),
-		mfaRecoveryCode: () => cy.getByTestId('mfaRecoveryCode'),
+		token: () => cy.getByTestId('token'),
+		recoveryCode: () => cy.getByTestId('recoveryCode'),
 		enterRecoveryCodeButton: () => cy.getByTestId('mfa-enter-recovery-code-button'),
 	};
 
 	actions = {
-		loginWithMfaCode: (email: string, password: string, mfaCode: string) => {
+		loginWithMfaToken: (email: string, password: string, mfaToken: string) => {
 			const signinPage = new SigninPage();
 			const workflowsPage = new WorkflowsPage();
 
 			cy.session(
-				[mfaCode],
+				[mfaToken],
 				() => {
 					cy.visit(signinPage.url);
 
@@ -38,7 +30,7 @@ export class MfaLoginPage extends BasePage {
 					});
 
 					this.getters.form().within(() => {
-						this.getters.mfaCode().type(mfaCode);
+						this.getters.token().type(mfaToken);
 					});
 
 					// we should be redirected to /workflows
@@ -51,12 +43,12 @@ export class MfaLoginPage extends BasePage {
 				},
 			);
 		},
-		loginWithMfaRecoveryCode: (email: string, password: string, mfaRecoveryCode: string) => {
+		loginWithRecoveryCode: (email: string, password: string, recoveryCode: string) => {
 			const signinPage = new SigninPage();
 			const workflowsPage = new WorkflowsPage();
 
 			cy.session(
-				[mfaRecoveryCode],
+				[recoveryCode],
 				() => {
 					cy.visit(signinPage.url);
 
@@ -69,7 +61,7 @@ export class MfaLoginPage extends BasePage {
 					this.getters.enterRecoveryCodeButton().click();
 
 					this.getters.form().within(() => {
-						this.getters.mfaRecoveryCode().type(mfaRecoveryCode);
+						this.getters.recoveryCode().type(recoveryCode);
 					});
 
 					// we should be redirected to /workflows

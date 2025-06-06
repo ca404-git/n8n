@@ -1,4 +1,5 @@
-import moment from 'moment-timezone';
+import type { Readable } from 'stream';
+
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -13,23 +14,17 @@ import type {
 	INodeTypeDescription,
 	JsonObject,
 } from 'n8n-workflow';
+
 import {
 	BINARY_ENCODING,
-	NodeConnectionTypes,
+	NodeConnectionType,
 	NodeOperationError,
 	SEND_AND_WAIT_OPERATION,
+	WAIT_TIME_UNLIMITED,
 } from 'n8n-workflow';
-import type { Readable } from 'stream';
 
+import moment from 'moment-timezone';
 import { channelFields, channelOperations } from './ChannelDescription';
-import { fileFields, fileOperations } from './FileDescription';
-import {
-	slackApiRequest,
-	slackApiRequestAllItems,
-	getMessageContent,
-	getTarget,
-	createSendAndWaitMessageBody,
-} from './GenericFunctions';
 import {
 	channelRLC,
 	messageFields,
@@ -37,12 +32,18 @@ import {
 	sendToSelector,
 	userRLC,
 } from './MessageDescription';
-import { reactionFields, reactionOperations } from './ReactionDescription';
 import { starFields, starOperations } from './StarDescription';
-import { userFields, userOperations } from './UserDescription';
+import { fileFields, fileOperations } from './FileDescription';
+import { reactionFields, reactionOperations } from './ReactionDescription';
 import { userGroupFields, userGroupOperations } from './UserGroupDescription';
-import { configureWaitTillDate } from '../../../utils/sendAndWait/configureWaitTillDate.util';
-import { sendAndWaitWebhooksDescription } from '../../../utils/sendAndWait/descriptions';
+import { userFields, userOperations } from './UserDescription';
+import {
+	slackApiRequest,
+	slackApiRequestAllItems,
+	getMessageContent,
+	getTarget,
+	createSendAndWaitMessageBody,
+} from './GenericFunctions';
 import { getSendAndWaitProperties, sendAndWaitWebhook } from '../../../utils/sendAndWait/utils';
 
 export class SlackV2 implements INodeType {
@@ -51,12 +52,12 @@ export class SlackV2 implements INodeType {
 	constructor(baseDescription: INodeTypeBaseDescription) {
 		this.description = {
 			...baseDescription,
-			version: [2, 2.1, 2.2, 2.3],
+			version: [2, 2.1, 2.2],
 			defaults: {
 				name: 'Slack',
 			},
-			inputs: [NodeConnectionTypes.Main],
-			outputs: [NodeConnectionTypes.Main],
+			inputs: [NodeConnectionType.Main],
+			outputs: [NodeConnectionType.Main],
 			usableAsTool: true,
 			credentials: [
 				{
@@ -78,7 +79,17 @@ export class SlackV2 implements INodeType {
 					},
 				},
 			],
-			webhooks: sendAndWaitWebhooksDescription,
+			webhooks: [
+				{
+					name: 'default',
+					httpMethod: 'GET',
+					responseMode: 'onReceived',
+					responseData: '',
+					path: '={{ $nodeId }}',
+					restartWebhook: true,
+					isFullPath: true,
+				},
+			],
 			properties: [
 				{
 					displayName: 'Authentication',
@@ -368,9 +379,7 @@ export class SlackV2 implements INodeType {
 				createSendAndWaitMessageBody(this),
 			);
 
-			const waitTill = configureWaitTillDate(this);
-
-			await this.putExecutionToWait(waitTill);
+			await this.putExecutionToWait(new Date(WAIT_TIME_UNLIMITED));
 			return [this.getInputData()];
 		}
 

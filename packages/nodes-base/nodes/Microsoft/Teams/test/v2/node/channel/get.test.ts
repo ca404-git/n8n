@@ -1,14 +1,15 @@
-import { NodeTestHarness } from '@nodes-testing/node-test-harness';
+import type { INodeTypes } from 'n8n-workflow';
 import nock from 'nock';
+import * as transport from '../../../../v2/transport';
+import { getResultNodeData, setup, workflowToTests } from '@test/nodes/Helpers';
+import type { WorkflowTestData } from '@test/nodes/types';
+import { executeWorkflow } from '@test/nodes/ExecuteWorkflow';
 
-import { credentials } from '../../../credentials';
+const microsoftApiRequestSpy = jest.spyOn(transport, 'microsoftApiRequest');
 
-describe('Test MicrosoftTeamsV2, channel => get', () => {
-	nock('https://graph.microsoft.com')
-		.get(
-			'/v1.0/teams/e25bae35-7bcc-4fb7-b4f2-0d5caef251fd/channels/19:dff84a49e5124cc89dff0192c621ea0f@thread.tacv2',
-		)
-		.reply(200, {
+microsoftApiRequestSpy.mockImplementation(async (method: string) => {
+	if (method === 'GET') {
+		return {
 			'@odata.context':
 				"https://graph.microsoft.com/v1.0/$metadata#teams('e25bae35-7bcc-4fb7-b4f2-0d5caef251fd')/channels/$entity",
 			id: '19:dff84a49e5124cc89dff0192c621ea0f@thread.tacv2',
@@ -21,10 +22,44 @@ describe('Test MicrosoftTeamsV2, channel => get', () => {
 			webUrl:
 				'https://teams.microsoft.com/l/channel/19%3Adff84a49e5124cc89dff0192c621ea0f%40thread.tacv2/General?groupId=e25bae35-7bcc-4fb7-b4f2-0d5caef251fd&tenantId=tenantId-111-222-333&allowXTenantAccess=True',
 			membershipType: 'standard',
+		};
+	}
+});
+
+describe('Test MicrosoftTeamsV2, channel => get', () => {
+	const workflows = ['nodes/Microsoft/Teams/test/v2/node/channel/get.workflow.json'];
+	const tests = workflowToTests(workflows);
+
+	beforeAll(() => {
+		nock.disableNetConnect();
+	});
+
+	afterAll(() => {
+		nock.restore();
+		jest.resetAllMocks();
+	});
+
+	const nodeTypes = setup(tests);
+
+	const testNode = async (testData: WorkflowTestData, types: INodeTypes) => {
+		const { result } = await executeWorkflow(testData, types);
+
+		const resultNodeData = getResultNodeData(result, testData);
+
+		resultNodeData.forEach(({ nodeName, resultData }) => {
+			return expect(resultData).toEqual(testData.output.nodeData[nodeName]);
 		});
 
-	new NodeTestHarness().setupTests({
-		credentials,
-		workflowFiles: ['get.workflow.json'],
-	});
+		expect(microsoftApiRequestSpy).toHaveBeenCalledTimes(1);
+		expect(microsoftApiRequestSpy).toHaveBeenCalledWith(
+			'GET',
+			'/v1.0/teams/e25bae35-7bcc-4fb7-b4f2-0d5caef251fd/channels/19:dff84a49e5124cc89dff0192c621ea0f@thread.tacv2',
+		);
+
+		expect(result.finished).toEqual(true);
+	};
+
+	for (const testData of tests) {
+		test(testData.description, async () => await testNode(testData, nodeTypes));
+	}
 });

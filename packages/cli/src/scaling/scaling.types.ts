@@ -12,7 +12,6 @@ export type JobId = Job['id'];
 export type JobData = {
 	executionId: string;
 	loadStaticData: boolean;
-	pushRef?: string;
 };
 
 export type JobResult = {

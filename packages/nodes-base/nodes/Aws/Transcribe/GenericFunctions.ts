@@ -1,6 +1,8 @@
+import { URL } from 'url';
+
 import type { Request } from 'aws4';
 import { sign } from 'aws4';
-import get from 'lodash/get';
+
 import type {
 	ICredentialDataDecryptedObject,
 	IDataObject,
@@ -13,7 +15,8 @@ import type {
 	JsonObject,
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
-import { URL } from 'url';
+
+import get from 'lodash/get';
 
 function getEndpointForService(
 	service: string,

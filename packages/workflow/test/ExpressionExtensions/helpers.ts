@@ -1,7 +1,7 @@
-import type { IDataObject } from '@/interfaces';
-import { Workflow } from '@/workflow';
+import type { IDataObject } from '@/Interfaces';
+import { Workflow } from '@/Workflow';
 
-import * as Helpers from '../helpers';
+import * as Helpers from '../Helpers';
 
 export const nodeTypes = Helpers.NodeTypes();
 export const workflow = new Workflow({

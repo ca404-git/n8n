@@ -1,8 +1,4 @@
-import { Logger } from '@n8n/backend-common';
 import { GlobalConfig } from '@n8n/config';
-import { EventDestinationsRepository, ExecutionRepository, WorkflowRepository } from '@n8n/db';
-import { OnPubSubEvent } from '@n8n/decorators';
-import { Service } from '@n8n/di';
 // eslint-disable-next-line n8n-local-rules/misplaced-n8n-typeorm-import
 import type { DeleteResult } from '@n8n/typeorm';
 // eslint-disable-next-line n8n-local-rules/misplaced-n8n-typeorm-import
@@ -10,9 +6,14 @@ import { In } from '@n8n/typeorm';
 import EventEmitter from 'events';
 import uniqby from 'lodash/uniqBy';
 import type { MessageEventBusDestinationOptions } from 'n8n-workflow';
+import { Service } from 'typedi';
 
 import config from '@/config';
+import { EventDestinationsRepository } from '@/databases/repositories/event-destinations.repository';
+import { ExecutionRepository } from '@/databases/repositories/execution.repository';
+import { WorkflowRepository } from '@/databases/repositories/workflow.repository';
 import { License } from '@/license';
+import { Logger } from '@/logging/logger.service';
 import { Publisher } from '@/scaling/pubsub/publisher.service';
 
 import { ExecutionRecoveryService } from '../../executions/execution-recovery.service';
@@ -62,7 +63,7 @@ export class MessageEventBus extends EventEmitter {
 		[key: string]: MessageEventBusDestination;
 	} = {};
 
-	private pushIntervalTimer: NodeJS.Timeout;
+	private pushIntervalTimer: NodeJS.Timer;
 
 	constructor(
 		private readonly logger: Logger,
@@ -264,7 +265,6 @@ export class MessageEventBus extends EventEmitter {
 		this.logger.debug('EventBus shut down.');
 	}
 
-	@OnPubSubEvent('restart-event-bus')
 	async restart() {
 		await this.close();
 		await this.initialize({ skipRecoveryPass: true });

@@ -1,6 +1,5 @@
 import moment from 'moment-timezone';
 import { type CronExpression, randomInt } from 'n8n-workflow';
-
 import type { IRecurrenceRule, ScheduleInterval } from './SchedulerInterface';
 
 export function recurrenceCheck(

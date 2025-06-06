@@ -1,4 +1,3 @@
-import set from 'lodash/set';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -9,7 +8,7 @@ import type {
 	JsonObject,
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
-
+import set from 'lodash/set';
 import { getGoogleAccessToken } from '../../../GenericFunctions';
 
 export async function apiRequest(

@@ -1,13 +1,13 @@
-import { LicenseState, Logger } from '@n8n/backend-common';
-import type { User } from '@n8n/db';
-import { WorkflowRepository } from '@n8n/db';
-import { Service } from '@n8n/di';
 import axios, { AxiosError } from 'axios';
 import { ensureError } from 'n8n-workflow';
+import { Service } from 'typedi';
 
+import type { User } from '@/databases/entities/user';
+import { WorkflowRepository } from '@/databases/repositories/workflow.repository';
 import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 import { EventService } from '@/events/event.service';
 import { License } from '@/license';
+import { Logger } from '@/logging/logger.service';
 import { UrlService } from '@/services/url.service';
 
 type LicenseError = Error & { errorId?: keyof typeof LicenseErrors };
@@ -26,7 +26,6 @@ export class LicenseService {
 	constructor(
 		private readonly logger: Logger,
 		private readonly license: License,
-		private readonly licenseState: LicenseState,
 		private readonly workflowRepository: WorkflowRepository,
 		private readonly urlService: UrlService,
 		private readonly eventService: EventService,
@@ -34,20 +33,14 @@ export class LicenseService {
 
 	async getLicenseData() {
 		const triggerCount = await this.workflowRepository.getActiveTriggerCount();
-		const workflowsWithEvaluationsCount =
-			await this.workflowRepository.getWorkflowsWithEvaluationCount();
 		const mainPlan = this.license.getMainPlan();
 
 		return {
 			usage: {
-				activeWorkflowTriggers: {
+				executions: {
 					value: triggerCount,
 					limit: this.license.getTriggerLimit(),
 					warningThreshold: 0.8,
-				},
-				workflowsHavingEvaluations: {
-					value: workflowsWithEvaluationsCount,
-					limit: this.licenseState.getMaxWorkflowsWithEvaluations(),
 				},
 			},
 			license: {
@@ -68,13 +61,11 @@ export class LicenseService {
 	}
 
 	async registerCommunityEdition({
-		userId,
 		email,
 		instanceId,
 		instanceUrl,
 		licenseType,
 	}: {
-		userId: User['id'];
 		email: string;
 		instanceId: string;
 		instanceUrl: string;
@@ -92,7 +83,7 @@ export class LicenseService {
 					licenseType,
 				},
 			);
-			this.eventService.emit('license-community-plus-registered', { userId, email, licenseKey });
+			this.eventService.emit('license-community-plus-registered', { email, licenseKey });
 			return rest;
 		} catch (e: unknown) {
 			if (e instanceof AxiosError) {

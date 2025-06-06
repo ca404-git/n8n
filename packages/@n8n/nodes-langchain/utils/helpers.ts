@@ -1,20 +1,12 @@
-import type { BaseChatMessageHistory } from '@langchain/core/chat_history';
+import { NodeConnectionType, NodeOperationError, jsonStringify } from 'n8n-workflow';
+import type { AiEvent, IDataObject, IExecuteFunctions, IWebhookFunctions } from 'n8n-workflow';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import type { BaseLLM } from '@langchain/core/language_models/llms';
+import type { BaseOutputParser } from '@langchain/core/output_parsers';
 import type { BaseMessage } from '@langchain/core/messages';
 import type { Tool } from '@langchain/core/tools';
-import { Toolkit } from 'langchain/agents';
+import type { BaseLLM } from '@langchain/core/language_models/llms';
 import type { BaseChatMemory } from 'langchain/memory';
-import { NodeConnectionTypes, NodeOperationError, jsonStringify } from 'n8n-workflow';
-import type {
-	AiEvent,
-	INode,
-	IDataObject,
-	IExecuteFunctions,
-	ISupplyDataFunctions,
-	IWebhookFunctions,
-} from 'n8n-workflow';
-
+import type { BaseChatMessageHistory } from '@langchain/core/chat_history';
 import { N8nTool } from './N8nTool';
 
 function hasMethods<T>(obj: unknown, ...methodNames: Array<string | symbol>): obj is T {
@@ -28,7 +20,7 @@ function hasMethods<T>(obj: unknown, ...methodNames: Array<string | symbol>): ob
 }
 
 export function getMetadataFiltersValues(
-	ctx: IExecuteFunctions | ISupplyDataFunctions,
+	ctx: IExecuteFunctions,
 	itemIndex: number,
 ): Record<string, never> | undefined {
 	const options = ctx.getNodeParameter('options', itemIndex, {});
@@ -74,6 +66,21 @@ export function isToolsInstance(model: unknown): model is Tool {
 	return namespace.includes('tools');
 }
 
+export async function getOptionalOutputParsers(
+	ctx: IExecuteFunctions,
+): Promise<Array<BaseOutputParser<unknown>>> {
+	let outputParsers: BaseOutputParser[] = [];
+
+	if (ctx.getNodeParameter('hasOutputParser', 0, true) === true) {
+		outputParsers = (await ctx.getInputConnectionData(
+			NodeConnectionType.AiOutputParser,
+			0,
+		)) as BaseOutputParser[];
+	}
+
+	return outputParsers;
+}
+
 export function getPromptInputByType(options: {
 	ctx: IExecuteFunctions;
 	i: number;
@@ -101,7 +108,7 @@ export function getPromptInputByType(options: {
 }
 
 export function getSessionId(
-	ctx: ISupplyDataFunctions | IWebhookFunctions,
+	ctx: IExecuteFunctions | IWebhookFunctions,
 	itemIndex: number,
 	selectorKey = 'sessionIdType',
 	autoSelect = 'fromInput',
@@ -132,7 +139,7 @@ export function getSessionId(
 		if (sessionId === '' || sessionId === undefined) {
 			throw new NodeOperationError(ctx.getNode(), 'Key parameter is empty', {
 				description:
-					"Provide a key to use as session ID in the 'Key' parameter or use the 'Connected Chat Trigger Node' option to use the session ID from your Chat Trigger",
+					"Provide a key to use as session ID in the 'Key' parameter or use the 'Take from previous node automatically' option to use the session ID from the previous node, e.t. chat trigger node",
 				itemIndex,
 			});
 		}
@@ -141,13 +148,13 @@ export function getSessionId(
 	return sessionId;
 }
 
-export function logAiEvent(
-	executeFunctions: IExecuteFunctions | ISupplyDataFunctions,
+export async function logAiEvent(
+	executeFunctions: IExecuteFunctions,
 	event: AiEvent,
 	data?: IDataObject,
 ) {
 	try {
-		executeFunctions.logAiEvent(event, data ? jsonStringify(data) : undefined);
+		await executeFunctions.logAiEvent(event, data ? jsonStringify(data) : undefined);
 	} catch (error) {
 		executeFunctions.logger.debug(`Error logging AI event: ${event}`);
 	}
@@ -167,46 +174,19 @@ export function serializeChatHistory(chatHistory: BaseMessage[]): string {
 		.join('\n');
 }
 
-export function escapeSingleCurlyBrackets(text?: string): string | undefined {
-	if (text === undefined) return undefined;
-
-	let result = text;
-
-	result = result
-		// First handle triple brackets to avoid interference with double brackets
-		.replace(/(?<!{){{{(?!{)/g, '{{{{')
-		.replace(/(?<!})}}}(?!})/g, '}}}}')
-		// Then handle single brackets, but only if they're not part of double brackets
-		// Convert single { to {{ if it's not already part of {{ or {{{
-		.replace(/(?<!{){(?!{)/g, '{{')
-		// Convert single } to }} if it's not already part of }} or }}}
-		.replace(/(?<!})}(?!})/g, '}}');
-
-	return result;
-}
-
 export const getConnectedTools = async (
-	ctx: IExecuteFunctions | IWebhookFunctions,
+	ctx: IExecuteFunctions,
 	enforceUniqueNames: boolean,
 	convertStructuredTool: boolean = true,
-	escapeCurlyBrackets: boolean = false,
 ) => {
-	const connectedTools = (
-		((await ctx.getInputConnectionData(NodeConnectionTypes.AiTool, 0)) as Array<Toolkit | Tool>) ??
-		[]
-	).flatMap((toolOrToolkit) => {
-		if (toolOrToolkit instanceof Toolkit) {
-			return toolOrToolkit.getTools() as Tool[];
-		}
-
-		return toolOrToolkit;
-	});
+	const connectedTools =
+		((await ctx.getInputConnectionData(NodeConnectionType.AiTool, 0)) as Tool[]) || [];
 
 	if (!enforceUniqueNames) return connectedTools;
 
 	const seenNames = new Set<string>();
 
-	const finalTools: Tool[] = [];
+	const finalTools = [];
 
 	for (const tool of connectedTools) {
 		const { name } = tool;
@@ -218,10 +198,6 @@ export const getConnectedTools = async (
 		}
 		seenNames.add(name);
 
-		if (escapeCurlyBrackets) {
-			tool.description = escapeSingleCurlyBrackets(tool.description) ?? tool.description;
-		}
-
 		if (convertStructuredTool && tool instanceof N8nTool) {
 			finalTools.push(tool.asDynamicTool());
 		} else {
@@ -231,30 +207,3 @@ export const getConnectedTools = async (
 
 	return finalTools;
 };
-
-/**
- * Sometimes model output is wrapped in an additional object property.
- * This function unwraps the output if it is in the format { output: { output: { ... } } }
- */
-export function unwrapNestedOutput(output: Record<string, unknown>): Record<string, unknown> {
-	if (
-		'output' in output &&
-		Object.keys(output).length === 1 &&
-		typeof output.output === 'object' &&
-		output.output !== null &&
-		'output' in output.output &&
-		Object.keys(output.output).length === 1
-	) {
-		return output.output as Record<string, unknown>;
-	}
-
-	return output;
-}
-
-/**
- * Converts a node name to a valid tool name by replacing special characters with underscores
- * and collapsing consecutive underscores into a single one.
- */
-export function nodeNameToToolName(node: INode): string {
-	return node.name.replace(/[\s.?!=+#@&*()[\]{}:;,<>\/\\'"^%$]/g, '_').replace(/_+/g, '_');
-}

@@ -5,7 +5,6 @@ import type {
 	INodeListSearchResult,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-
 import type { ResourceLocator } from '../helpers/GoogleSheets.types';
 import { getSpreadsheetId } from '../helpers/GoogleSheets.utils';
 import { apiRequest } from '../transport';

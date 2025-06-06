@@ -1,22 +1,20 @@
 import {
+	NodeOperationError,
+	NodeConnectionType,
 	type IExecuteFunctions,
 	type INodeExecutionData,
 	type INodeType,
 	type INodeTypeDescription,
-	NodeConnectionTypes,
-	type NodeExecutionHint,
-	NodeOperationError,
 } from 'n8n-workflow';
-
+import { generatePairedItemData } from '../../../utils/utilities';
 import {
 	type Aggregations,
 	NUMERICAL_AGGREGATIONS,
 	type SummarizeOptions,
-	aggregateAndSplitData,
+	aggregationToArray,
 	checkIfFieldExists,
 	fieldValueGetter,
-	flattenAggregationResultToArray,
-	flattenAggregationResultToObject,
+	splitData,
 } from './utils';
 
 export class Summarize implements INodeType {
@@ -26,13 +24,13 @@ export class Summarize implements INodeType {
 		icon: 'file:summarize.svg',
 		group: ['transform'],
 		subtitle: '',
-		version: [1, 1.1],
+		version: 1,
 		description: 'Sum, count, max, etc. across items',
 		defaults: {
 			name: 'Summarize',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
 				displayName: 'Fields to Summarize',
@@ -145,7 +143,7 @@ export class Summarize implements INodeType {
 								default: false,
 								displayOptions: {
 									show: {
-										aggregation: ['append', 'concatenate', 'count', 'countUnique'],
+										aggregation: ['append', 'concatenate'],
 									},
 								},
 							},
@@ -249,12 +247,7 @@ export class Summarize implements INodeType {
 						type: 'boolean',
 						default: false,
 						description:
-							"Whether to continue if field to summarize can't be found in any items and return single empty item, otherwise an error would be thrown",
-						displayOptions: {
-							hide: {
-								'@version': [{ _cnd: { gte: 1.1 } }],
-							},
-						},
+							"Whether to continue if field to summarize can't be found in any items and return single empty item, owerwise an error would be thrown",
 					},
 					{
 						displayName: 'Disable Dot Notation',
@@ -320,57 +313,55 @@ export class Summarize implements INodeType {
 
 		const nodeVersion = this.getNode().typeVersion;
 
-		const aggregationResult = aggregateAndSplitData({
-			splitKeys: fieldsToSplitBy,
-			inputItems: newItems,
-			fieldsToSummarize,
-			options,
-			getValue,
-			convertKeysToString: nodeVersion === 1,
-		});
+		if (nodeVersion < 2.1) {
+			try {
+				checkIfFieldExists.call(this, newItems, fieldsToSummarize, getValue);
+			} catch (error) {
+				if (options.continueIfFieldNotFound) {
+					const itemData = generatePairedItemData(items.length);
 
-		const fieldsNotFound: NodeExecutionHint[] = [];
-		try {
-			checkIfFieldExists.call(this, newItems, fieldsToSummarize, getValue);
-		} catch (error) {
-			if (nodeVersion > 1 || options.continueIfFieldNotFound) {
-				const fieldNotFoundHint: NodeExecutionHint = {
-					message: error instanceof Error ? error.message : String(error),
-					location: 'outputPane',
-				};
-				fieldsNotFound.push(fieldNotFoundHint);
-			} else {
-				throw error;
+					return [[{ json: {}, pairedItem: itemData }]];
+				} else {
+					throw error;
+				}
 			}
 		}
 
-		if (fieldsNotFound.length) {
-			this.addExecutionHints(...fieldsNotFound);
-		}
+		const aggregationResult = splitData(
+			fieldsToSplitBy,
+			newItems,
+			fieldsToSummarize,
+			options,
+			getValue,
+		);
 
 		if (options.outputFormat === 'singleItem') {
 			const executionData: INodeExecutionData = {
-				json: flattenAggregationResultToObject(aggregationResult),
+				json: aggregationResult,
 				pairedItem: newItems.map((_v, index) => ({
 					item: index,
 				})),
 			};
 			return [[executionData]];
 		} else {
-			if (!fieldsToSplitBy.length && 'pairedItems' in aggregationResult) {
-				const { pairedItems, returnData } = aggregationResult;
+			if (!fieldsToSplitBy.length) {
+				const { pairedItems, ...json } = aggregationResult;
 				const executionData: INodeExecutionData = {
-					json: returnData,
-					pairedItem: (pairedItems ?? []).map((index) => ({ item: index })),
+					json,
+					pairedItem: ((pairedItems as number[]) || []).map((index: number) => ({
+						item: index,
+					})),
 				};
 				return [[executionData]];
 			}
-			const flatAggregationResults = flattenAggregationResultToArray(aggregationResult);
-			const executionData = flatAggregationResults.map((item) => {
-				const { pairedItems, returnData } = item;
+			const returnData = aggregationToArray(aggregationResult, fieldsToSplitBy);
+			const executionData = returnData.map((item) => {
+				const { pairedItems, ...json } = item;
 				return {
-					json: returnData,
-					pairedItem: (pairedItems ?? []).map((index) => ({ item: index })),
+					json,
+					pairedItem: ((pairedItems as number[]) || []).map((index: number) => ({
+						item: index,
+					})),
 				};
 			});
 			return [executionData];

@@ -7,17 +7,19 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, jsonParse } from 'n8n-workflow';
+import { NodeConnectionType, jsonParse } from 'n8n-workflow';
 
-import { collectionFields, collectionOperations } from './CollectionDescription';
-import { documentFields, documentOperations } from './DocumentDescription';
+import { generatePairedItemData } from '../../../../utils/utilities';
 import {
 	fullDocumentToJson,
 	googleApiRequest,
 	googleApiRequestAllItems,
 	jsonToDocument,
 } from './GenericFunctions';
-import { generatePairedItemData } from '../../../../utils/utilities';
+
+import { collectionFields, collectionOperations } from './CollectionDescription';
+
+import { documentFields, documentOperations } from './DocumentDescription';
 
 export class GoogleFirebaseCloudFirestore implements INodeType {
 	description: INodeTypeDescription = {
@@ -32,9 +34,8 @@ export class GoogleFirebaseCloudFirestore implements INodeType {
 		defaults: {
 			name: 'Google Cloud Firestore',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'googleFirebaseCloudFirestoreOAuth2Api',

@@ -1,7 +1,3 @@
-import { capitalCase } from 'change-case';
-import omit from 'lodash/omit';
-import pickBy from 'lodash/pickBy';
-import { NodeApiError } from 'n8n-workflow';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -13,8 +9,15 @@ import type {
 	IRequestOptions,
 	JsonObject,
 } from 'n8n-workflow';
+import { NodeApiError } from 'n8n-workflow';
+
+import { capitalCase } from 'change-case';
+
+import omit from 'lodash/omit';
+import pickBy from 'lodash/pickBy';
 
 import type { CustomField, GeneralAddress, Ref } from './descriptions/Shared.interface';
+
 import type { DateFieldsUi, Option, QuickBooksOAuth2Credentials, TransactionReport } from './types';
 
 /**
@@ -40,7 +43,9 @@ export async function quickBooksApiRequest(
 	const productionUrl = 'https://quickbooks.api.intuit.com';
 	const sandboxUrl = 'https://sandbox-quickbooks.api.intuit.com';
 
-	const credentials = await this.getCredentials<QuickBooksOAuth2Credentials>('quickBooksOAuth2Api');
+	const credentials = (await this.getCredentials(
+		'quickBooksOAuth2Api',
+	)) as QuickBooksOAuth2Credentials;
 
 	const options: IRequestOptions = {
 		headers: {
@@ -231,9 +236,9 @@ export async function handleBinaryData(
 	const data = await quickBooksApiRequest.call(this, 'GET', endpoint, {}, {}, { encoding: null });
 
 	items[i].binary = items[i].binary ?? {};
-	items[i].binary[binaryProperty] = await this.helpers.prepareBinaryData(data as Buffer);
-	items[i].binary[binaryProperty].fileName = fileName;
-	items[i].binary[binaryProperty].fileExtension = 'pdf';
+	items[i].binary![binaryProperty] = await this.helpers.prepareBinaryData(data as Buffer);
+	items[i].binary![binaryProperty].fileName = fileName;
+	items[i].binary![binaryProperty].fileExtension = 'pdf';
 
 	return items;
 }
@@ -249,7 +254,9 @@ export async function loadResource(this: ILoadOptionsFunctions, resource: string
 		oauthTokenData: {
 			callbackQueryString: { realmId },
 		},
-	} = await this.getCredentials<QuickBooksOAuth2Credentials>('quickBooksOAuth2Api');
+	} = await this.getCredentials<{
+		oauthTokenData: { callbackQueryString: { realmId: string } };
+	}>('quickBooksOAuth2Api');
 	const endpoint = `/v3/company/${realmId}/query`;
 
 	const resourceItems = await quickBooksApiRequestAllItems.call(
@@ -329,14 +336,9 @@ export function processLines(this: IExecuteFunctions, lines: IDataObject[], reso
 					TaxCodeRef: {
 						value: line.TaxCodeRef,
 					},
-					Qty: line.Qty,
 				};
-				if (line.Qty === undefined) {
-					delete (line.SalesItemLineDetail as IDataObject).Qty;
-				}
 				delete line.itemId;
 				delete line.TaxCodeRef;
-				delete line.Qty;
 			}
 		}
 	});

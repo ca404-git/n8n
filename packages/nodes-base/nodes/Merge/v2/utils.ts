@@ -1,8 +1,4 @@
-import assign from 'lodash/assign';
-import assignWith from 'lodash/assignWith';
-import get from 'lodash/get';
-import merge from 'lodash/merge';
-import mergeWith from 'lodash/mergeWith';
+import { ApplicationError } from 'n8n-workflow';
 import type {
 	GenericValue,
 	IBinaryKeyData,
@@ -10,11 +6,15 @@ import type {
 	INodeExecutionData,
 	IPairedItemData,
 } from 'n8n-workflow';
-import { ApplicationError } from 'n8n-workflow';
 
-import { fuzzyCompare, preparePairedItemDataArray } from '@utils/utilities';
+import assign from 'lodash/assign';
+import assignWith from 'lodash/assignWith';
+import get from 'lodash/get';
+import merge from 'lodash/merge';
+import mergeWith from 'lodash/mergeWith';
 
 import type { ClashResolveOptions, MatchFieldsJoinMode, MatchFieldsOptions } from './interfaces';
+import { fuzzyCompare, preparePairedItemDataArray } from '@utils/utilities';
 
 type PairToMatch = {
 	field1: string;

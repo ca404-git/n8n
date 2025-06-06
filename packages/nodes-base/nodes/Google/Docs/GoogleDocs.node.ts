@@ -8,9 +8,8 @@ import type {
 	INodeTypeDescription,
 	JsonObject,
 } from 'n8n-workflow';
-import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionType } from 'n8n-workflow';
 
-import { documentFields, documentOperations } from './DocumentDescription';
 import {
 	extractID,
 	googleApiRequest,
@@ -18,6 +17,9 @@ import {
 	hasKeys,
 	upperFirst,
 } from './GenericFunctions';
+
+import { documentFields, documentOperations } from './DocumentDescription';
+
 import type { IUpdateBody, IUpdateFields } from './interfaces';
 
 export class GoogleDocs implements INodeType {
@@ -32,8 +34,8 @@ export class GoogleDocs implements INodeType {
 		defaults: {
 			name: 'Google Docs',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		usableAsTool: true,
 		credentials: [
 			{

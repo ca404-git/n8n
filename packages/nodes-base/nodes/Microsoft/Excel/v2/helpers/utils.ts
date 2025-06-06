@@ -1,9 +1,7 @@
 import type { IDataObject, IExecuteFunctions, INode, INodeExecutionData } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-
-import { generatePairedItemData, wrapData } from '@utils/utilities';
-
 import type { ExcelResponse, SheetData, UpdateSummary } from './interfaces';
+import { generatePairedItemData, wrapData } from '@utils/utilities';
 
 type PrepareOutputConfig = {
 	rawData: boolean;

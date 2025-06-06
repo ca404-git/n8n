@@ -1,19 +1,18 @@
 import { BaseCallbackHandler } from '@langchain/core/callbacks/base';
-import type { SerializedFields } from '@langchain/core/dist/load/map_keys';
 import { getModelNameForTiktoken } from '@langchain/core/language_models/base';
+import { encodingForModel } from '@langchain/core/utils/tiktoken';
 import type {
 	Serialized,
 	SerializedNotImplemented,
 	SerializedSecret,
 } from '@langchain/core/load/serializable';
-import type { BaseMessage } from '@langchain/core/messages';
 import type { LLMResult } from '@langchain/core/outputs';
-import { encodingForModel } from '@langchain/core/utils/tiktoken';
-import pick from 'lodash/pick';
-import type { IDataObject, ISupplyDataFunctions, JsonObject } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeError, NodeOperationError } from 'n8n-workflow';
-
-import { logAiEvent } from '@utils/helpers';
+import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
+import { pick } from 'lodash';
+import type { BaseMessage } from '@langchain/core/messages';
+import type { SerializedFields } from '@langchain/core/dist/load/map_keys';
+import { logAiEvent } from '../../utils/helpers';
 
 type TokensUsageParser = (llmOutput: LLMResult['llmOutput']) => {
 	completionTokens: number;
@@ -31,11 +30,9 @@ const TIKTOKEN_ESTIMATE_MODEL = 'gpt-4o';
 export class N8nLlmTracing extends BaseCallbackHandler {
 	name = 'N8nLlmTracing';
 
-	// This flag makes sure that LangChain will wait for the handlers to finish before continuing
-	// This is crucial for the handleLLMError handler to work correctly (it should be called before the error is propagated to the root node)
-	awaitHandlers = true;
+	executionFunctions: IExecuteFunctions;
 
-	connectionType = NodeConnectionTypes.AiLanguageModel;
+	connectionType = NodeConnectionType.AiLanguageModel;
 
 	promptTokensEstimate = 0;
 
@@ -61,17 +58,14 @@ export class N8nLlmTracing extends BaseCallbackHandler {
 				totalTokens: completionTokens + promptTokens,
 			};
 		},
-		errorDescriptionMapper: (error: NodeError) => error.description,
 	};
 
 	constructor(
-		private executionFunctions: ISupplyDataFunctions,
-		options?: {
-			tokensUsageParser?: TokensUsageParser;
-			errorDescriptionMapper?: (error: NodeError) => string;
-		},
+		executionFunctions: IExecuteFunctions,
+		options?: { tokensUsageParser: TokensUsageParser },
 	) {
 		super();
+		this.executionFunctions = executionFunctions;
 		this.options = { ...this.options, ...options };
 	}
 
@@ -144,8 +138,7 @@ export class N8nLlmTracing extends BaseCallbackHandler {
 		this.executionFunctions.addOutputData(this.connectionType, runDetails.index, [
 			[{ json: { ...response } }],
 		]);
-
-		logAiEvent(this.executionFunctions, 'ai-llm-generated-output', {
+		void logAiEvent(this.executionFunctions, 'ai-llm-generated-output', {
 			messages: parsedMessages,
 			options: runDetails.options,
 			response,
@@ -182,8 +175,6 @@ export class N8nLlmTracing extends BaseCallbackHandler {
 		runId: string,
 		parentRunId?: string | undefined,
 	) {
-		const runDetails = this.runsMap[runId] ?? { index: Object.keys(this.runsMap).length };
-
 		// Filter out non-x- headers to avoid leaking sensitive information in logs
 		if (typeof error === 'object' && error?.hasOwnProperty('headers')) {
 			const errorWithHeaders = error as { headers: Record<string, unknown> };
@@ -195,24 +186,7 @@ export class N8nLlmTracing extends BaseCallbackHandler {
 			});
 		}
 
-		if (error instanceof NodeError) {
-			if (this.options.errorDescriptionMapper) {
-				error.description = this.options.errorDescriptionMapper(error);
-			}
-
-			this.executionFunctions.addOutputData(this.connectionType, runDetails.index, error);
-		} else {
-			// If the error is not a NodeError, we wrap it in a NodeOperationError
-			this.executionFunctions.addOutputData(
-				this.connectionType,
-				runDetails.index,
-				new NodeOperationError(this.executionFunctions.getNode(), error as JsonObject, {
-					functionality: 'configuration-node',
-				}),
-			);
-		}
-
-		logAiEvent(this.executionFunctions, 'ai-llm-errored', {
+		void logAiEvent(this.executionFunctions, 'ai-llm-errored', {
 			error: Object.keys(error).length === 0 ? error.toString() : error,
 			runId,
 			parentRunId,

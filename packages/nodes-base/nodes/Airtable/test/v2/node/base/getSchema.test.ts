@@ -1,55 +1,48 @@
-import { mockDeep } from 'jest-mock-extended';
-import get from 'lodash/get';
-import type { IExecuteFunctions } from 'n8n-workflow';
+import nock from 'nock';
 
 import * as getSchema from '../../../../v2/actions/base/getSchema.operation';
+
 import * as transport from '../../../../v2/transport';
+import { createMockExecuteFunction } from '../helpers';
 
 jest.mock('../../../../v2/transport', () => {
 	const originalModule = jest.requireActual('../../../../v2/transport');
 	return {
 		...originalModule,
 		apiRequest: jest.fn(async function () {
-			return { tables: [] };
+			return {};
 		}),
 	};
 });
 
 describe('Test AirtableV2, base => getSchema', () => {
+	beforeAll(() => {
+		nock.disableNetConnect();
+	});
+
+	afterAll(() => {
+		nock.restore();
+		jest.unmock('../../../../v2/transport');
+	});
+
 	it('should return all bases', async () => {
 		const nodeParameters = {
 			resource: 'base',
 			operation: 'getSchema',
 			base: {
-				value: '={{$json.id}}',
+				value: 'appYobase',
 			},
 		};
 
 		const items = [
 			{
-				json: { id: 'appYobase1' },
-			},
-			{
-				json: { id: 'appYobase2' },
+				json: {},
 			},
 		];
 
-		await getSchema.execute.call(
-			mockDeep<IExecuteFunctions>({
-				getInputData: jest.fn(() => items),
-				getNodeParameter: jest.fn((param: string, itemIndex: number) => {
-					if (param === 'base') {
-						return items[itemIndex].json.id;
-					}
+		await getSchema.execute.call(createMockExecuteFunction(nodeParameters), items);
 
-					return get(nodeParameters, param);
-				}),
-			}),
-			items,
-		);
-
-		expect(transport.apiRequest).toBeCalledTimes(2);
-		expect(transport.apiRequest).toHaveBeenCalledWith('GET', 'meta/bases/appYobase1/tables');
-		expect(transport.apiRequest).toHaveBeenCalledWith('GET', 'meta/bases/appYobase2/tables');
+		expect(transport.apiRequest).toBeCalledTimes(1);
+		expect(transport.apiRequest).toHaveBeenCalledWith('GET', 'meta/bases/appYobase/tables');
 	});
 });

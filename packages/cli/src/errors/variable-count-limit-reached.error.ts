@@ -1,3 +1,3 @@
-import { UserError } from 'n8n-workflow';
+import { ApplicationError } from 'n8n-workflow';
 
-export class VariableCountLimitReachedError extends UserError {}
+export class VariableCountLimitReachedError extends ApplicationError {}

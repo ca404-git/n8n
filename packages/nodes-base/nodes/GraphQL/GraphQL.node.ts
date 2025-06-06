@@ -10,7 +10,7 @@ import type {
 	IRequestOptions,
 	IHttpRequestMethods,
 } from 'n8n-workflow';
-import { NodeApiError, NodeConnectionTypes, NodeOperationError, jsonParse } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionType, NodeOperationError, jsonParse } from 'n8n-workflow';
 
 export class GraphQL implements INodeType {
 	description: INodeTypeDescription = {
@@ -19,14 +19,13 @@ export class GraphQL implements INodeType {
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-icon-not-svg
 		icon: 'file:graphql.png',
 		group: ['input'],
-		version: [1, 1.1],
+		version: 1,
 		description: 'Makes a GraphQL request and returns the received data',
 		defaults: {
 			name: 'GraphQL',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'httpBasicAuth',
@@ -161,7 +160,7 @@ export class GraphQL implements INodeType {
 				required: true,
 			},
 			{
-				displayName: 'Ignore SSL Issues (Insecure)',
+				displayName: 'Ignore SSL Issues',
 				name: 'allowUnauthorizedCerts',
 				type: 'boolean',
 				default: false,
@@ -187,57 +186,25 @@ export class GraphQL implements INodeType {
 				displayOptions: {
 					show: {
 						requestMethod: ['POST'],
-						'@version': [1],
 					},
 				},
 				default: 'graphql',
 				description: 'The format for the query payload',
 			},
 			{
-				displayName: 'Request Format',
-				name: 'requestFormat',
-				type: 'options',
-				required: true,
-				options: [
-					{
-						name: 'JSON (Recommended)',
-						value: 'json',
-						description:
-							'JSON object with query, variables, and operationName properties. The standard and most widely supported format for GraphQL requests.',
-					},
-					{
-						name: 'GraphQL (Raw)',
-						value: 'graphql',
-						description:
-							'Raw GraphQL query string. Not all servers support this format. Use JSON for better compatibility.',
-					},
-				],
-				displayOptions: {
-					show: {
-						requestMethod: ['POST'],
-						'@version': [{ _cnd: { gte: 1.1 } }],
-					},
-				},
-				default: 'json',
-				description: 'The request format for the query payload',
-			},
-			{
 				displayName: 'Query',
 				name: 'query',
-				type: 'string',
+				type: 'json',
 				default: '',
 				description: 'GraphQL query',
 				required: true,
-				typeOptions: {
-					rows: 6,
-				},
 			},
 			{
 				displayName: 'Variables',
 				name: 'variables',
 				type: 'json',
 				default: '',
-				description: 'Query variables as JSON object',
+				description: 'Query variables',
 				displayOptions: {
 					show: {
 						requestFormat: ['json'],
@@ -383,7 +350,11 @@ export class GraphQL implements INodeType {
 					'POST',
 				) as IHttpRequestMethods;
 				const endpoint = this.getNodeParameter('endpoint', itemIndex, '') as string;
-				const requestFormat = this.getNodeParameter('requestFormat', itemIndex, 'json') as string;
+				const requestFormat = this.getNodeParameter(
+					'requestFormat',
+					itemIndex,
+					'graphql',
+				) as string;
 				const responseFormat = this.getNodeParameter('responseFormat', 0) as string;
 				const { parameter }: { parameter?: Array<{ name: string; value: string }> } =
 					this.getNodeParameter('headerParametersUi', itemIndex, {}) as IDataObject;
@@ -447,49 +418,40 @@ export class GraphQL implements INodeType {
 
 				const gqlQuery = this.getNodeParameter('query', itemIndex, '') as string;
 				if (requestMethod === 'GET') {
-					requestOptions.qs = requestOptions.qs ?? {};
+					if (!requestOptions.qs) {
+						requestOptions.qs = {};
+					}
 					requestOptions.qs.query = gqlQuery;
-				}
-
-				if (requestFormat === 'json') {
-					const variables = this.getNodeParameter('variables', itemIndex, {});
-
-					let parsedVariables;
-					if (typeof variables === 'string') {
-						try {
-							parsedVariables = JSON.parse(variables || '{}');
-						} catch (error) {
-							throw new NodeOperationError(
-								this.getNode(),
-								`Using variables failed:\n${variables}\n\nWith error message:\n${error}`,
-								{ itemIndex },
-							);
-						}
-					} else if (typeof variables === 'object' && variables !== null) {
-						parsedVariables = variables;
-					} else {
-						throw new NodeOperationError(
-							this.getNode(),
-							`Using variables failed:\n${variables}\n\nGraphQL variables should be either an object or a string.`,
-							{ itemIndex },
-						);
-					}
-
-					const jsonBody = {
-						...requestOptions.body,
-						query: gqlQuery,
-						variables: parsedVariables,
-						operationName: this.getNodeParameter('operationName', itemIndex, '') as string,
-					};
-
-					if (jsonBody.operationName === '') {
-						jsonBody.operationName = null;
-					}
-
-					requestOptions.json = true;
-					requestOptions.body = jsonBody;
 				} else {
-					requestOptions.body = gqlQuery;
+					if (requestFormat === 'json') {
+						const jsonBody = {
+							...requestOptions.body,
+							query: gqlQuery,
+							variables: this.getNodeParameter('variables', itemIndex, {}) as object,
+							operationName: this.getNodeParameter('operationName', itemIndex) as string,
+						};
+						if (typeof jsonBody.variables === 'string') {
+							try {
+								jsonBody.variables = JSON.parse(jsonBody.variables || '{}');
+							} catch (error) {
+								throw new NodeOperationError(
+									this.getNode(),
+									'Using variables failed:\n' +
+										(jsonBody.variables as string) +
+										'\n\nWith error message:\n' +
+										(error as string),
+									{ itemIndex },
+								);
+							}
+						}
+						if (jsonBody.operationName === '') {
+							jsonBody.operationName = null;
+						}
+						requestOptions.json = true;
+						requestOptions.body = jsonBody;
+					} else {
+						requestOptions.body = gqlQuery;
+					}
 				}
 
 				let response;
@@ -547,19 +509,22 @@ export class GraphQL implements INodeType {
 					throw new NodeApiError(this.getNode(), response.errors as JsonObject, { message });
 				}
 			} catch (error) {
-				if (!this.continueOnFail()) {
-					throw error;
+				if (this.continueOnFail()) {
+					const errorData = this.helpers.returnJsonArray({
+						$error: error,
+						json: this.getInputData(itemIndex),
+						itemIndex,
+					});
+					const exectionErrorWithMetaData = this.helpers.constructExecutionMetaData(errorData, {
+						itemData: { item: itemIndex },
+					});
+					returnItems.push(...exectionErrorWithMetaData);
+					continue;
 				}
-
-				const errorData = this.helpers.returnJsonArray({
-					error: error.message,
-				});
-				const exectionErrorWithMetaData = this.helpers.constructExecutionMetaData(errorData, {
-					itemData: { item: itemIndex },
-				});
-				returnItems.push(...exectionErrorWithMetaData);
+				throw error;
 			}
 		}
+
 		return [returnItems];
 	}
 }

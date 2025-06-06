@@ -1,7 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
-
-import { getAdditionalOptions, getId, mapWith, showFor } from './utils';
 import { organizationPresend } from '../GenericFunctions';
+import { getAdditionalOptions, getId, mapWith, showFor } from './utils';
 
 const displayOpts = showFor(['organization']);
 

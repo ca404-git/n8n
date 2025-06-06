@@ -1,6 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-import { TLPs } from '../interfaces/AlertInterface';
+import { TLP } from '../interfaces/AlertInterface';
 
 export const alertOperations: INodeProperties[] = [
 	{
@@ -185,19 +185,19 @@ export const alertFields: INodeProperties[] = [
 		options: [
 			{
 				name: 'White',
-				value: TLPs.white,
+				value: TLP.white,
 			},
 			{
 				name: 'Green',
-				value: TLPs.green,
+				value: TLP.green,
 			},
 			{
 				name: 'Amber',
-				value: TLPs.amber,
+				value: TLP.amber,
 			},
 			{
 				name: 'Red',
-				value: TLPs.red,
+				value: TLP.red,
 			},
 		],
 		displayOptions: {
@@ -722,19 +722,19 @@ export const alertFields: INodeProperties[] = [
 				options: [
 					{
 						name: 'White',
-						value: TLPs.white,
+						value: TLP.white,
 					},
 					{
 						name: 'Green',
-						value: TLPs.green,
+						value: TLP.green,
 					},
 					{
 						name: 'Amber',
-						value: TLPs.amber,
+						value: TLP.amber,
 					},
 					{
 						name: 'Red',
-						value: TLPs.red,
+						value: TLP.red,
 					},
 				],
 				description: 'Traffict Light Protocol (TLP). Default=Amber.',
@@ -891,19 +891,19 @@ export const alertFields: INodeProperties[] = [
 				options: [
 					{
 						name: 'White',
-						value: TLPs.white,
+						value: TLP.white,
 					},
 					{
 						name: 'Green',
-						value: TLPs.green,
+						value: TLP.green,
 					},
 					{
 						name: 'Amber',
-						value: TLPs.amber,
+						value: TLP.amber,
 					},
 					{
 						name: 'Red',
-						value: TLPs.red,
+						value: TLP.red,
 					},
 				],
 				description: 'Traffict Light Protocol (TLP). Default=Amber.',

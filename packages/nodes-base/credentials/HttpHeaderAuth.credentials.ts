@@ -27,12 +27,6 @@ export class HttpHeaderAuth implements ICredentialType {
 			},
 			default: '',
 		},
-		{
-			displayName: 'To send multiple headers, use a "Custom Auth" credential instead',
-			name: 'useCustomAuth',
-			type: 'notice',
-			default: '',
-		},
 	];
 
 	authenticate: IAuthenticateGeneric = {

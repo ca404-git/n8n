@@ -1,4 +1,3 @@
-import get from 'lodash/get';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -8,11 +7,11 @@ import type {
 	IRequestOptions,
 	IWebhookFunctions,
 } from 'n8n-workflow';
+
 import { NodeOperationError } from 'n8n-workflow';
 
-import type { SendAndWaitMessageBody } from './MessageInterface';
+import get from 'lodash/get';
 import { getSendAndWaitConfig } from '../../../utils/sendAndWait/utils';
-import { createUtmCampaignLink } from '../../../utils/utilities';
 
 export async function slackApiRequest(
 	this: IExecuteFunctions | ILoadOptionsFunctions | IWebhookFunctions,
@@ -124,7 +123,7 @@ export async function slackApiRequestAllItems(
 	if (endpoint.includes('files.list')) {
 		query.count = 100;
 	} else {
-		query.limit = query.limit ?? 100;
+		query.limit = 100;
 	}
 	do {
 		responseData = await slackApiRequest.call(this, method, endpoint, body as IDataObject, query);
@@ -266,7 +265,7 @@ export function createSendAndWaitMessageBody(context: IExecuteFunctions) {
 
 	const config = getSendAndWaitConfig(context);
 
-	const body: SendAndWaitMessageBody = {
+	const body: IDataObject = {
 		channel: target,
 		blocks: [
 			{
@@ -275,7 +274,7 @@ export function createSendAndWaitMessageBody(context: IExecuteFunctions) {
 			{
 				type: 'section',
 				text: {
-					type: context.getNode().typeVersion > 2.2 ? 'mrkdwn' : 'plain_text',
+					type: 'plain_text',
 					text: config.message,
 					emoji: true,
 				},
@@ -307,23 +306,6 @@ export function createSendAndWaitMessageBody(context: IExecuteFunctions) {
 			},
 		],
 	};
-
-	if (config.appendAttribution) {
-		const instanceId = context.getInstanceId();
-		const attributionText = 'This message was sent automatically with ';
-		const link = createUtmCampaignLink('n8n-nodes-base.slack', instanceId);
-		body.blocks.push({
-			type: 'section',
-			text: {
-				type: 'mrkdwn',
-				text: `${attributionText} _<${link}|n8n>_`,
-			},
-		});
-	}
-
-	if (context.getNode().typeVersion > 2.2 && body.blocks?.[1]?.type === 'section') {
-		delete body.blocks[1].text.emoji;
-	}
 
 	return body;
 }

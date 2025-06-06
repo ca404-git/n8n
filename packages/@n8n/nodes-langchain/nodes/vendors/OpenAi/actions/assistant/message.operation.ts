@@ -12,27 +12,41 @@ import type {
 } from 'n8n-workflow';
 import {
 	ApplicationError,
-	NodeConnectionTypes,
+	NodeConnectionType,
 	NodeOperationError,
 	updateDisplayOptions,
 } from 'n8n-workflow';
 import { OpenAI as OpenAIClient } from 'openai';
 
-import { promptTypeOptions } from '@utils/descriptions';
-import { getConnectedTools } from '@utils/helpers';
-import { getTracingConfig } from '@utils/tracing';
-
-import { formatToOpenAIAssistantTool, getChatMessages } from '../../helpers/utils';
+import { getConnectedTools } from '../../../../../utils/helpers';
+import { getTracingConfig } from '../../../../../utils/tracing';
+import { formatToOpenAIAssistantTool } from '../../helpers/utils';
 import { assistantRLC } from '../descriptions';
 
 const properties: INodeProperties[] = [
 	assistantRLC,
 	{
-		...promptTypeOptions,
+		displayName: 'Prompt',
 		name: 'prompt',
+		type: 'options',
+		options: [
+			{
+				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-miscased
+				name: 'Take from previous node automatically',
+				value: 'auto',
+				description: 'Looks for an input field called chatInput',
+			},
+			{
+				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-miscased
+				name: 'Define below',
+				value: 'define',
+				description: 'Use an expression to reference data in previous nodes or enter static text',
+			},
+		],
+		default: 'auto',
 	},
 	{
-		displayName: 'Prompt (User Message)',
+		displayName: 'Text',
 		name: 'text',
 		type: 'string',
 		default: '',
@@ -106,11 +120,6 @@ const properties: INodeProperties[] = [
 				default: 'https://api.openai.com/v1',
 				description: 'Override the default base URL for the API',
 				type: 'string',
-				displayOptions: {
-					hide: {
-						'@version': [{ _cnd: { gte: 1.8 } }],
-					},
-				},
 			},
 			{
 				displayName: 'Max Retries',
@@ -187,13 +196,11 @@ export async function execute(this: IExecuteFunctions, i: number): Promise<INode
 		preserveOriginalTools?: boolean;
 	};
 
-	const baseURL = (options.baseURL ?? credentials.url) as string;
-
 	const client = new OpenAIClient({
 		apiKey: credentials.apiKey as string,
 		maxRetries: options.maxRetries ?? 2,
 		timeout: options.timeout ?? 10000,
-		baseURL,
+		baseURL: options.baseURL,
 	});
 
 	const agent = new OpenAIAssistantRunnable({ assistantId, client, asAgent: true });
@@ -235,7 +242,7 @@ export async function execute(this: IExecuteFunctions, i: number): Promise<INode
 		nodeVersion >= 1.6 && this.getNodeParameter('memory', i) === 'connector';
 	const memory =
 		useMemoryConnector || nodeVersion < 1.6
-			? ((await this.getInputConnectionData(NodeConnectionTypes.AiMemory, 0)) as
+			? ((await this.getInputConnectionData(NodeConnectionType.AiMemory, 0)) as
 					| BufferWindowMemory
 					| undefined)
 			: undefined;
@@ -252,7 +259,7 @@ export async function execute(this: IExecuteFunctions, i: number): Promise<INode
 	};
 	let thread: OpenAIClient.Beta.Threads.Thread;
 	if (memory) {
-		const chatMessages = await getChatMessages(memory);
+		const chatMessages = await memory.chatHistory.getMessages();
 
 		// Construct a new thread from the chat history to map the memory
 		if (chatMessages.length) {

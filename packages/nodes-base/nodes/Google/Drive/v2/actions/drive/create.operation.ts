@@ -4,11 +4,10 @@ import type {
 	INodeExecutionData,
 	INodeProperties,
 } from 'n8n-workflow';
+
 import { v4 as uuid } from 'uuid';
-
-import { updateDisplayOptions } from '@utils/utilities';
-
 import { googleApiRequest } from '../../transport';
+import { updateDisplayOptions } from '@utils/utilities';
 
 const properties: INodeProperties[] = [
 	{
@@ -160,7 +159,7 @@ const properties: INodeProperties[] = [
 						name: 'canShare',
 						type: 'boolean',
 						default: false,
-						description: 'Whether the current user can share files or folders in this shared drive',
+						description: 'Whether the current user can rename this shared drive',
 					},
 					{
 						displayName: 'Can Trash Children',

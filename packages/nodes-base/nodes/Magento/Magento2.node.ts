@@ -1,4 +1,3 @@
-import { capitalCase } from 'change-case';
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -8,9 +7,9 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeApiError } from 'n8n-workflow';
+import { NodeConnectionType, NodeApiError } from 'n8n-workflow';
 
-import { customerFields, customerOperations } from './CustomerDescription';
+import { capitalCase } from 'change-case';
 import {
 	adjustAddresses,
 	getFilterQuery,
@@ -21,9 +20,15 @@ import {
 	sort,
 	validateJSON,
 } from './GenericFunctions';
-import { invoiceFields, invoiceOperations } from './InvoiceDescription';
+
+import { customerFields, customerOperations } from './CustomerDescription';
+
 import { orderFields, orderOperations } from './OrderDescription';
+
 import { productFields, productOperations } from './ProductDescription';
+
+import { invoiceFields, invoiceOperations } from './InvoiceDescription';
+
 import type {
 	CustomAttribute,
 	CustomerAttributeMetadata,
@@ -45,9 +50,8 @@ export class Magento2 implements INodeType {
 		defaults: {
 			name: 'Magento 2',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'magento2Api',

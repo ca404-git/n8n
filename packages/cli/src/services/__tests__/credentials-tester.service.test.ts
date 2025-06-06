@@ -8,13 +8,7 @@ import { CredentialsTester } from '@/services/credentials-tester.service';
 describe('CredentialsTester', () => {
 	const credentialTypes = mock<CredentialTypes>();
 	const nodeTypes = mock<NodeTypes>();
-	const credentialsTester = new CredentialsTester(
-		mock(),
-		mock(),
-		credentialTypes,
-		nodeTypes,
-		mock(),
-	);
+	const credentialsTester = new CredentialsTester(mock(), credentialTypes, nodeTypes, mock());
 
 	beforeEach(() => {
 		jest.clearAllMocks();

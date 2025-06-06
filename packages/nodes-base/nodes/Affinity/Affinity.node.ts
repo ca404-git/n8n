@@ -7,14 +7,20 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
 
 import { affinityApiRequest, affinityApiRequestAllItems } from './GenericFunctions';
-import { listFields, listOperations } from './ListDescription';
-import { listEntryFields, listEntryOperations } from './ListEntryDescription';
+
 import { organizationFields, organizationOperations } from './OrganizationDescription';
-import type { IOrganization } from './OrganizationInterface';
+
 import { personFields, personOperations } from './PersonDescription';
+
+import { listFields, listOperations } from './ListDescription';
+
+import { listEntryFields, listEntryOperations } from './ListEntryDescription';
+
+import type { IOrganization } from './OrganizationInterface';
+
 import type { IPerson } from './PersonInterface';
 
 export class Affinity implements INodeType {
@@ -29,9 +35,8 @@ export class Affinity implements INodeType {
 		defaults: {
 			name: 'Affinity',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'affinityApi',

@@ -1,6 +1,6 @@
 import type { BaseChatMemory } from '@langchain/community/memory/chat_memory';
-import pick from 'lodash/pick';
-import { Node, NodeConnectionTypes } from 'n8n-workflow';
+import { pick } from 'lodash';
+import { Node, NodeConnectionType, commonCORSParameters } from 'n8n-workflow';
 import type {
 	IDataObject,
 	IWebhookFunctions,
@@ -12,7 +12,6 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 
-import { cssVariables } from './constants';
 import { validateAuth } from './GenericFunctions';
 import { createPage } from './templates';
 import type { LoadPreviousSessionChatOption } from './types';
@@ -70,12 +69,12 @@ export class ChatTrigger extends Node {
 				{
 					displayName: 'Memory',
 					maxConnections: 1,
-					type: '${NodeConnectionTypes.AiMemory}',
+					type: '${NodeConnectionType.AiMemory}',
 					required: true,
 				}
 			];
 		 })() }}`,
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				// eslint-disable-next-line n8n-nodes-base/node-class-description-credentials-name-unsuffixed
@@ -242,19 +241,14 @@ export class ChatTrigger extends Node {
 				default: {},
 				options: [
 					// CORS parameters are only valid for when chat is used in hosted or webhook mode
-					{
-						displayName: 'Allowed Origins (CORS)',
-						name: 'allowedOrigins',
-						type: 'string',
-						default: '*',
-						description:
-							'Comma-separated list of URLs allowed for cross-origin non-preflight requests. Use * (default) to allow all origins.',
+					...commonCORSParameters.map((p) => ({
+						...p,
 						displayOptions: {
 							show: {
 								'/mode': ['hostedChat', 'webhook'],
 							},
 						},
-					},
+					})),
 					{
 						...allowFileUploadsOption,
 						displayOptions: {
@@ -379,29 +373,6 @@ export class ChatTrigger extends Node {
 						placeholder: 'e.g. Welcome',
 						description: 'Shown at the top of the chat',
 					},
-					{
-						displayName: 'Custom Chat Styling',
-						name: 'customCss',
-						type: 'string',
-						typeOptions: {
-							rows: 10,
-							editor: 'cssEditor',
-						},
-						displayOptions: {
-							show: {
-								'/mode': ['hostedChat'],
-							},
-						},
-						default: `
-${cssVariables}
-
-/* You can override any class styles, too. Right-click inspect in Chat UI to find class to override. */
-.chat-message {
-	max-width: 50%;
-}
-`.trim(),
-						description: 'Override default styling of the public chat interface with CSS',
-					},
 				],
 			},
 		],
@@ -490,7 +461,6 @@ ${cssVariables}
 			title?: string;
 			allowFileUploads?: boolean;
 			allowedFilesMimeTypes?: string;
-			customCss?: string;
 		};
 
 		const req = ctx.getRequestObject();
@@ -542,7 +512,6 @@ ${cssVariables}
 					authentication,
 					allowFileUploads: options.allowFileUploads,
 					allowedFilesMimeTypes: options.allowedFilesMimeTypes,
-					customCss: options.customCss,
 				});
 
 				res.status(200).send(page).end();
@@ -554,7 +523,7 @@ ${cssVariables}
 
 		if (bodyData.action === 'loadPreviousSession') {
 			if (options?.loadPreviousSession === 'memory') {
-				const memory = (await ctx.getInputConnectionData(NodeConnectionTypes.AiMemory, 0)) as
+				const memory = (await ctx.getInputConnectionData(NodeConnectionType.AiMemory, 0)) as
 					| BaseChatMemory
 					| undefined;
 				const messages = ((await memory?.chatHistory.getMessages()) ?? [])
@@ -563,7 +532,7 @@ ${cssVariables}
 				return {
 					webhookResponse: { data: messages },
 				};
-			} else if (!options?.loadPreviousSession || options?.loadPreviousSession === 'notSupported') {
+			} else if (options?.loadPreviousSession === 'notSupported') {
 				// If messages of a previous session should not be loaded, simply return an empty array
 				return {
 					webhookResponse: { data: [] },

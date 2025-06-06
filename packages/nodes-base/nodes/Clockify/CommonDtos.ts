@@ -3,21 +3,17 @@ export interface IHourlyRateDto {
 	currency: string;
 }
 
-const MembershipStatuses = {
-	PENDING: 'PENDING',
-	ACTIVE: 'ACTIVE',
-	DECLINED: 'DECLINED',
-	INACTIVE: 'INACTIVE',
-} as const;
+const enum MembershipStatusEnum {
+	PENDING = 'PENDING',
+	ACTIVE = 'ACTIVE',
+	DECLINED = 'DECLINED',
+	INACTIVE = 'INACTIVE',
+}
 
-type MembershipStatusEnum = (typeof MembershipStatuses)[keyof typeof MembershipStatuses];
-
-const TaskStatuses = {
-	ACTIVE: 'ACTIVE',
-	DONE: 'DONE',
-} as const;
-
-type TaskStatusEnum = (typeof TaskStatuses)[keyof typeof TaskStatuses];
+const enum TaskStatusEnum {
+	ACTIVE = 'ACTIVE',
+	DONE = 'DONE',
+}
 
 export interface IMembershipDto {
 	hourlyRate: IHourlyRateDto;

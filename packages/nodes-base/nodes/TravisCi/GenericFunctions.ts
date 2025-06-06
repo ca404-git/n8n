@@ -1,4 +1,3 @@
-import get from 'lodash/get';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -9,6 +8,8 @@ import type {
 	IHttpRequestMethods,
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
+
+import get from 'lodash/get';
 
 export async function travisciApiRequest(
 	this: IHookFunctions | IExecuteFunctions | ILoadOptionsFunctions,

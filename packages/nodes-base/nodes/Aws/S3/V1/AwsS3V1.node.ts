@@ -1,5 +1,8 @@
-import { paramCase, snakeCase } from 'change-case';
 import { createHash } from 'crypto';
+import { paramCase, snakeCase } from 'change-case';
+
+import { Builder } from 'xml2js';
+
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -8,12 +11,14 @@ import type {
 	INodeTypeBaseDescription,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
-import { Builder } from 'xml2js';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
 import { bucketFields, bucketOperations } from './BucketDescription';
-import { fileFields, fileOperations } from './FileDescription';
+
 import { folderFields, folderOperations } from './FolderDescription';
+
+import { fileFields, fileOperations } from './FileDescription';
+
 import {
 	awsApiRequestREST,
 	awsApiRequestSOAP,
@@ -36,8 +41,8 @@ export class AwsS3V1 implements INodeType {
 			defaults: {
 				name: 'AWS S3',
 			},
-			inputs: [NodeConnectionTypes.Main],
-			outputs: [NodeConnectionTypes.Main],
+			inputs: [NodeConnectionType.Main],
+			outputs: [NodeConnectionType.Main],
 			credentials: [
 				{
 					name: 'aws',

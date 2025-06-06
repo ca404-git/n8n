@@ -7,19 +7,23 @@ import {
 	type INodeType,
 	type INodeTypeDescription,
 	type INodeTypeBaseDescription,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
-import { channelFields, channelOperations } from './ChannelDescription';
-import { channelMessageFields, channelMessageOperations } from './ChannelMessageDescription';
-import { chatMessageFields, chatMessageOperations } from './ChatMessageDescription';
+import { oldVersionNotice } from '../../../../utils/descriptions';
 import {
 	microsoftApiRequest,
 	microsoftApiRequestAllItems,
 	prepareMessage,
 } from './GenericFunctions';
+
+import { channelFields, channelOperations } from './ChannelDescription';
+
+import { channelMessageFields, channelMessageOperations } from './ChannelMessageDescription';
+
+import { chatMessageFields, chatMessageOperations } from './ChatMessageDescription';
+
 import { taskFields, taskOperations } from './TaskDescription';
-import { oldVersionNotice } from '../../../../utils/descriptions';
 
 const versionDescription: INodeTypeDescription = {
 	displayName: 'Microsoft Teams',
@@ -32,8 +36,8 @@ const versionDescription: INodeTypeDescription = {
 	defaults: {
 		name: 'Microsoft Teams',
 	},
-	inputs: [NodeConnectionTypes.Main],
-	outputs: [NodeConnectionTypes.Main],
+	inputs: [NodeConnectionType.Main],
+	outputs: [NodeConnectionType.Main],
 	credentials: [
 		{
 			name: 'microsoftTeamsOAuth2Api',

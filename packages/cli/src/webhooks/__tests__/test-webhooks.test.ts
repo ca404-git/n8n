@@ -1,23 +1,18 @@
-import { generateNanoId } from '@n8n/db';
 import type * as express from 'express';
 import { mock } from 'jest-mock-extended';
-import type { ITaskData, IWorkflowBase } from 'n8n-workflow';
-import {
-	type IWebhookData,
-	type IWorkflowExecuteAdditionalData,
-	type Workflow,
-} from 'n8n-workflow';
+import type { IWebhookData, IWorkflowExecuteAdditionalData, Workflow } from 'n8n-workflow';
 import { v4 as uuid } from 'uuid';
 
+import { generateNanoId } from '@/databases/utils/generators';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import { WebhookNotFoundError } from '@/errors/response-errors/webhook-not-found.error';
+import type { IWorkflowDb } from '@/interfaces';
 import type {
 	TestWebhookRegistrationsService,
 	TestWebhookRegistration,
 } from '@/webhooks/test-webhook-registrations.service';
 import { TestWebhooks } from '@/webhooks/test-webhooks';
 import * as WebhookHelpers from '@/webhooks/webhook-helpers';
-import type { WebhookService } from '@/webhooks/webhook.service';
 import type { WebhookRequest } from '@/webhooks/webhook.types';
 import * as AdditionalData from '@/workflow-execute-additional-data';
 
@@ -25,7 +20,7 @@ jest.mock('@/workflow-execute-additional-data');
 
 const mockedAdditionalData = AdditionalData as jest.Mocked<typeof AdditionalData>;
 
-const workflowEntity = mock<IWorkflowBase>({ id: generateNanoId(), nodes: [] });
+const workflowEntity = mock<IWorkflowDb>({ id: generateNanoId(), nodes: [] });
 
 const httpMethod = 'GET';
 const path = uuid();
@@ -38,33 +33,22 @@ const webhook = mock<IWebhookData>({
 	userId,
 });
 
+const registrations = mock<TestWebhookRegistrationsService>();
+
+let testWebhooks: TestWebhooks;
+
 describe('TestWebhooks', () => {
-	const registrations = mock<TestWebhookRegistrationsService>();
-	const webhookService = mock<WebhookService>();
-
-	const testWebhooks = new TestWebhooks(
-		mock(),
-		mock(),
-		registrations,
-		mock(),
-		mock(),
-		webhookService,
-	);
-
 	beforeAll(() => {
+		testWebhooks = new TestWebhooks(mock(), mock(), registrations, mock(), mock());
 		jest.useFakeTimers();
 	});
 
-	beforeEach(() => {
-		jest.resetAllMocks();
-	});
-
 	describe('needsWebhook()', () => {
-		const args: Parameters<typeof testWebhooks.needsWebhook>[0] = {
+		const args: Parameters<typeof testWebhooks.needsWebhook> = [
 			userId,
 			workflowEntity,
-			additionalData: mock<IWorkflowExecuteAdditionalData>(),
-		};
+			mock<IWorkflowExecuteAdditionalData>(),
+		];
 
 		test('if webhook is needed, should register then create webhook and return true', async () => {
 			const workflow = mock<Workflow>();
@@ -72,10 +56,10 @@ describe('TestWebhooks', () => {
 			jest.spyOn(testWebhooks, 'toWorkflow').mockReturnValueOnce(workflow);
 			jest.spyOn(WebhookHelpers, 'getWorkflowWebhooks').mockReturnValue([webhook]);
 
-			const needsWebhook = await testWebhooks.needsWebhook(args);
+			const needsWebhook = await testWebhooks.needsWebhook(...args);
 
 			const [registerOrder] = registrations.register.mock.invocationCallOrder;
-			const [createOrder] = webhookService.createWebhookIfNotExists.mock.invocationCallOrder;
+			const [createOrder] = workflow.createWebhookIfNotExists.mock.invocationCallOrder;
 
 			expect(registerOrder).toBeLessThan(createOrder);
 			expect(needsWebhook).toBe(true);
@@ -88,7 +72,7 @@ describe('TestWebhooks', () => {
 			jest.spyOn(registrations, 'register').mockRejectedValueOnce(new Error(msg));
 			registrations.getAllRegistrations.mockResolvedValue([]);
 
-			const needsWebhook = testWebhooks.needsWebhook(args);
+			const needsWebhook = testWebhooks.needsWebhook(...args);
 
 			await expect(needsWebhook).rejects.toThrowError(msg);
 		});
@@ -97,54 +81,9 @@ describe('TestWebhooks', () => {
 			webhook.webhookDescription.restartWebhook = true;
 			jest.spyOn(WebhookHelpers, 'getWorkflowWebhooks').mockReturnValue([webhook]);
 
-			const result = await testWebhooks.needsWebhook(args);
+			const result = await testWebhooks.needsWebhook(...args);
 
 			expect(result).toBe(false);
-		});
-
-		test('returns false if a triggerToStartFrom with triggerData is given', async () => {
-			const workflow = mock<Workflow>();
-			jest.spyOn(testWebhooks, 'toWorkflow').mockReturnValueOnce(workflow);
-			jest.spyOn(WebhookHelpers, 'getWorkflowWebhooks').mockReturnValue([webhook]);
-
-			const needsWebhook = await testWebhooks.needsWebhook({
-				...args,
-				triggerToStartFrom: {
-					name: 'trigger',
-					data: mock<ITaskData>(),
-				},
-			});
-
-			expect(needsWebhook).toBe(false);
-		});
-
-		test('returns true, registers and then creates webhook if triggerToStartFrom is given with no triggerData', async () => {
-			// ARRANGE
-			const workflow = mock<Workflow>();
-			const webhook2 = mock<IWebhookData>({
-				node: 'trigger',
-				httpMethod,
-				path,
-				workflowId: workflowEntity.id,
-				userId,
-			});
-			jest.spyOn(testWebhooks, 'toWorkflow').mockReturnValueOnce(workflow);
-			jest.spyOn(WebhookHelpers, 'getWorkflowWebhooks').mockReturnValue([webhook, webhook2]);
-
-			// ACT
-			const needsWebhook = await testWebhooks.needsWebhook({
-				...args,
-				triggerToStartFrom: { name: 'trigger' },
-			});
-
-			// ASSERT
-			const [registerOrder] = registrations.register.mock.invocationCallOrder;
-			const [createOrder] = webhookService.createWebhookIfNotExists.mock.invocationCallOrder;
-
-			expect(registerOrder).toBeLessThan(createOrder);
-			expect(registrations.register.mock.calls[0][0].webhook.node).toBe(webhook2.node);
-			expect(webhookService.createWebhookIfNotExists.mock.calls[0][1].node).toBe(webhook2.node);
-			expect(needsWebhook).toBe(true);
 		});
 	});
 
@@ -190,21 +129,6 @@ describe('TestWebhooks', () => {
 			await testWebhooks.deactivateWebhooks(workflow);
 
 			expect(mockedAdditionalData.getBase).toHaveBeenCalledWith(userId);
-		});
-	});
-
-	describe('getWebhookMethods()', () => {
-		test('should normalize trailing slash', async () => {
-			const METHOD = 'POST';
-			const PATH_WITH_SLASH = 'register/';
-			const PATH_WITHOUT_SLASH = 'register';
-			registrations.getAllKeys.mockResolvedValue([`${METHOD}|${PATH_WITHOUT_SLASH}`]);
-
-			const resultWithSlash = await testWebhooks.getWebhookMethods(PATH_WITH_SLASH);
-			const resultWithoutSlash = await testWebhooks.getWebhookMethods(PATH_WITHOUT_SLASH);
-
-			expect(resultWithSlash).toEqual([METHOD]);
-			expect(resultWithoutSlash).toEqual([METHOD]);
 		});
 	});
 });

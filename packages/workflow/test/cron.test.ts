@@ -1,5 +1,5 @@
-import { toCronExpression } from '@/cron';
-import type { CronExpression } from '@/interfaces';
+import { toCronExpression } from '@/Cron';
+import type { CronExpression } from '@/Interfaces';
 
 describe('Cron', () => {
 	describe('toCronExpression', () => {

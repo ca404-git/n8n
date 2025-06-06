@@ -4,24 +4,12 @@ import type { INodeExecutionData } from 'n8n-workflow';
 import { ValidationError } from './errors/validation-error';
 import { isObject } from './obj-utils';
 
-export const REQUIRED_N8N_ITEM_KEYS = new Set([
-	'json',
-	'binary',
-	'pairedItem',
-	'error',
-
-	/**
-	 * The `index` key was added accidentally to Function, FunctionItem, Gong,
-	 * Execute Workflow, and ToolWorkflowV2, so we need to allow it temporarily.
-	 * Once we stop using it in all nodes, we can stop allowing the `index` key.
-	 */
-	'index',
-]);
+export const REQUIRED_N8N_ITEM_KEYS = new Set(['json', 'binary', 'pairedItem', 'error']);
 
 function validateTopLevelKeys(item: INodeExecutionData, itemIndex: number) {
 	for (const key in item) {
 		if (Object.prototype.hasOwnProperty.call(item, key)) {
-			if (REQUIRED_N8N_ITEM_KEYS.has(key)) continue;
+			if (REQUIRED_N8N_ITEM_KEYS.has(key)) return;
 
 			throw new ValidationError({
 				message: `Unknown top-level item key: ${key}`,
@@ -50,26 +38,20 @@ function validateItem({ json, binary }: INodeExecutionData, itemIndex: number) {
 	}
 }
 
-export class NonArrayOfObjectsError extends ValidationError {
-	constructor() {
-		super({
-			message: "Code doesn't return items properly",
-			description: 'Please return an array of objects, one for each item you would like to output.',
-		});
-	}
-}
-
 /**
  * Validates the output of a code node in 'Run for All Items' mode.
  */
 export function validateRunForAllItemsOutput(
 	executionResult: INodeExecutionData | INodeExecutionData[] | undefined,
 ) {
-	if (Array.isArray(executionResult)) {
-		for (const item of executionResult) {
-			if (!isObject(item)) throw new NonArrayOfObjectsError();
-		}
+	if (typeof executionResult !== 'object') {
+		throw new ValidationError({
+			message: "Code doesn't return items properly",
+			description: 'Please return an array of objects, one for each item you would like to output.',
+		});
+	}
 
+	if (Array.isArray(executionResult)) {
 		/**
 		 * If at least one top-level key is an n8n item key (`json`, `binary`, etc.),
 		 * then require all item keys to be an n8n item key.
@@ -87,8 +69,6 @@ export function validateRunForAllItemsOutput(
 				validateTopLevelKeys(item, index);
 			}
 		}
-	} else if (!isObject(executionResult)) {
-		throw new NonArrayOfObjectsError();
 	}
 
 	const returnData = normalizeItems(executionResult);

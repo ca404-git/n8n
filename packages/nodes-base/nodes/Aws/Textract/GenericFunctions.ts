@@ -1,5 +1,10 @@
+import { URL } from 'url';
+
 import type { Request } from 'aws4';
 import { sign } from 'aws4';
+
+import { parseString } from 'xml2js';
+
 import type {
 	ICredentialDataDecryptedObject,
 	ICredentialTestFunctions,
@@ -13,8 +18,6 @@ import type {
 	IRequestOptions,
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
-import { URL } from 'url';
-import { parseString } from 'xml2js';
 
 function getEndpointForService(
 	service: string,

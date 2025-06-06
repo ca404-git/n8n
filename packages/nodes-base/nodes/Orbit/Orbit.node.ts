@@ -6,11 +6,15 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
+
+import { NodeApiError, NodeConnectionType } from 'n8n-workflow';
 
 import { activityFields, activityOperations } from './ActivityDescription';
+
 import { memberFields, memberOperations } from './MemberDescription';
+
 import { noteFields, noteOperations } from './NoteDescription';
+
 import { postFields, postOperations } from './PostDescription';
 
 export class Orbit implements INodeType {
@@ -26,8 +30,8 @@ export class Orbit implements INodeType {
 		defaults: {
 			name: 'Orbit',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'orbitApi',

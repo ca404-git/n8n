@@ -1,5 +1,4 @@
 import type { INodeProperties } from 'n8n-workflow';
-
 import { TIMEZONE_VALIDATION_REGEX } from './GenericFunctions';
 
 export const calendarOperations: INodeProperties[] = [
@@ -84,7 +83,6 @@ export const calendarFields: INodeProperties[] = [
 			show: {
 				operation: ['availability'],
 				resource: ['calendar'],
-				'@version': [{ _cnd: { lt: 1.3 } }],
 			},
 		},
 		default: '',
@@ -99,43 +97,10 @@ export const calendarFields: INodeProperties[] = [
 			show: {
 				operation: ['availability'],
 				resource: ['calendar'],
-				'@version': [{ _cnd: { lt: 1.3 } }],
 			},
 		},
 		default: '',
 		description: 'End of the interval',
-	},
-	{
-		displayName: 'Start Time',
-		name: 'timeMin',
-		type: 'dateTime',
-		required: true,
-		displayOptions: {
-			show: {
-				operation: ['availability'],
-				resource: ['calendar'],
-				'@version': [{ _cnd: { gte: 1.3 } }],
-			},
-		},
-		default: '={{ $now }}',
-		description:
-			'Start of the interval, use <a href="https://docs.n8n.io/code/cookbook/luxon/" target="_blank">expression</a> to set a date, or switch to fixed mode to choose date from widget',
-	},
-	{
-		displayName: 'End Time',
-		name: 'timeMax',
-		type: 'dateTime',
-		required: true,
-		displayOptions: {
-			show: {
-				operation: ['availability'],
-				resource: ['calendar'],
-				'@version': [{ _cnd: { gte: 1.3 } }],
-			},
-		},
-		default: "={{ $now.plus(1, 'hour') }}",
-		description:
-			'End of the interval, use <a href="https://docs.n8n.io/code/cookbook/luxon/" target="_blank">expression</a> to set a date, or switch to fixed mode to choose date from widget',
 	},
 	{
 		displayName: 'Options',

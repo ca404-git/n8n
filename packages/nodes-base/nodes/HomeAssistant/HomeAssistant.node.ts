@@ -9,22 +9,30 @@ import {
 	type INodePropertyOptions,
 	type INodeType,
 	type INodeTypeDescription,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
-import { cameraProxyFields, cameraProxyOperations } from './CameraProxyDescription';
 import { configOperations } from './ConfigDescription';
+
+import { serviceFields, serviceOperations } from './ServiceDescription';
+
+import { stateFields, stateOperations } from './StateDescription';
+
 import { eventFields, eventOperations } from './EventDescription';
+
+import { logFields, logOperations } from './LogDescription';
+
+import { templateFields, templateOperations } from './TemplateDescription';
+
+import { historyFields, historyOperations } from './HistoryDescription';
+
+import { cameraProxyFields, cameraProxyOperations } from './CameraProxyDescription';
+
 import {
 	getHomeAssistantEntities,
 	getHomeAssistantServices,
 	homeAssistantApiRequest,
 } from './GenericFunctions';
-import { historyFields, historyOperations } from './HistoryDescription';
-import { logFields, logOperations } from './LogDescription';
-import { serviceFields, serviceOperations } from './ServiceDescription';
-import { stateFields, stateOperations } from './StateDescription';
-import { templateFields, templateOperations } from './TemplateDescription';
 
 export class HomeAssistant implements INodeType {
 	description: INodeTypeDescription = {
@@ -38,9 +46,8 @@ export class HomeAssistant implements INodeType {
 		defaults: {
 			name: 'Home Assistant',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'homeAssistantApi',
@@ -215,6 +222,7 @@ export class HomeAssistant implements INodeType {
 						if (Object.entries(serviceAttributes).length) {
 							if (serviceAttributes.attributes !== undefined) {
 								serviceAttributes.attributes.map((attribute) => {
+									// @ts-ignore
 									body[attribute.name as string] = attribute.value;
 								});
 							}

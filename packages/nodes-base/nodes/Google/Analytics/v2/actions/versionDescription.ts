@@ -1,8 +1,7 @@
 /* eslint-disable n8n-nodes-base/node-filename-against-convention */
-import { NodeConnectionTypes, type INodeTypeDescription } from 'n8n-workflow';
-
-import * as report from './report/Report.resource';
+import { NodeConnectionType, type INodeTypeDescription } from 'n8n-workflow';
 import * as userActivity from './userActivity/UserActivity.resource';
+import * as report from './report/Report.resource';
 
 export const versionDescription: INodeTypeDescription = {
 	displayName: 'Google Analytics',
@@ -15,8 +14,8 @@ export const versionDescription: INodeTypeDescription = {
 	defaults: {
 		name: 'Google Analytics',
 	},
-	inputs: [NodeConnectionTypes.Main],
-	outputs: [NodeConnectionTypes.Main],
+	inputs: [NodeConnectionType.Main],
+	outputs: [NodeConnectionType.Main],
 	credentials: [
 		{
 			name: 'googleAnalyticsOAuth2',

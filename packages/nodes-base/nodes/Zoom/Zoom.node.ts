@@ -1,4 +1,3 @@
-import moment from 'moment-timezone';
 import {
 	type IExecuteFunctions,
 	type IDataObject,
@@ -7,10 +6,12 @@ import {
 	type INodePropertyOptions,
 	type INodeType,
 	type INodeTypeDescription,
-	NodeConnectionTypes,
+	NodeConnectionType,
 } from 'n8n-workflow';
 
+import moment from 'moment-timezone';
 import { zoomApiRequest, zoomApiRequestAllItems } from './GenericFunctions';
+
 import { meetingFields, meetingOperations } from './MeetingDescription';
 
 // import {
@@ -53,9 +54,8 @@ export class Zoom implements INodeType {
 			name: 'Zoom',
 		},
 		icon: 'file:zoom.svg',
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				// create a JWT app on Zoom Marketplace

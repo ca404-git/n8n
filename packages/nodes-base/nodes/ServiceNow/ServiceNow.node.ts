@@ -7,16 +7,8 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
-import { attachmentFields, attachmentOperations } from './AttachmentDescription';
-import { businessServiceFields, businessServiceOperations } from './BusinessServiceDescription';
-import {
-	configurationItemsFields,
-	configurationItemsOperations,
-} from './ConfigurationItemsDescription';
-import { departmentFields, departmentOperations } from './DepartmentDescription';
-import { dictionaryFields, dictionaryOperations } from './DictionaryDescription';
 import {
 	mapEndpoint,
 	serviceNowApiRequest,
@@ -24,10 +16,28 @@ import {
 	serviceNowRequestAllItems,
 	sortData,
 } from './GenericFunctions';
+
+import { attachmentFields, attachmentOperations } from './AttachmentDescription';
+
+import { businessServiceFields, businessServiceOperations } from './BusinessServiceDescription';
+
+import {
+	configurationItemsFields,
+	configurationItemsOperations,
+} from './ConfigurationItemsDescription';
+
+import { departmentFields, departmentOperations } from './DepartmentDescription';
+
+import { dictionaryFields, dictionaryOperations } from './DictionaryDescription';
+
 import { incidentFields, incidentOperations } from './IncidentDescription';
+
 import { tableRecordFields, tableRecordOperations } from './TableRecordDescription';
+
 import { userFields, userOperations } from './UserDescription';
+
 import { userGroupFields, userGroupOperations } from './UserGroupDescription';
+
 import { userRoleFields, userRoleOperations } from './UserRoleDescription';
 
 export class ServiceNow implements INodeType {
@@ -42,9 +52,8 @@ export class ServiceNow implements INodeType {
 		defaults: {
 			name: 'ServiceNow',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'serviceNowOAuth2Api',

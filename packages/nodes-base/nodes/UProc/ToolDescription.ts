@@ -2,6 +2,7 @@ import type { IDataObject, INodeProperties } from 'n8n-workflow';
 import { deepCopy } from 'n8n-workflow';
 
 import { groups } from './Json/Groups';
+
 import { tools } from './Json/Tools';
 
 function capitalize(str: string): string {
@@ -74,7 +75,10 @@ for (const tool of (tools as IDataObject).processors as IDataObject[]) {
 			options: param.o,
 			displayOptions: {
 				show: {
-					group: [tool.g],
+					group: [
+						//@ts-ignore
+						tool.g,
+					],
 					tool: [tool.k],
 				},
 			},
@@ -92,6 +96,7 @@ for (const tool of (tools as IDataObject).processors as IDataObject[]) {
 		//if exists, other wise
 		if (modifiedParam) {
 			//Assign new group and tool
+			//@ts-ignore
 			modifiedParam.displayOptions.show.group.push(tool.g);
 			modifiedParam.displayOptions.show.tool.push(tool.k);
 

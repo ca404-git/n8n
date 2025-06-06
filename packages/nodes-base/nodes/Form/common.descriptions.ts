@@ -1,12 +1,5 @@
 import type { INodeProperties } from 'n8n-workflow';
-
 import { appendAttributionOption } from '../../utils/descriptions';
-
-export const placeholder: string = `
-<!-- Your custom HTML here --->
-
-
-`.trimStart();
 
 export const webhookPath: INodeProperties = {
 	displayName: 'Form Path',
@@ -35,18 +28,18 @@ export const formDescription: INodeProperties = {
 	default: '',
 	placeholder: "e.g. We'll get back to you soon",
 	description:
-		'Shown underneath the Form Title. Can be used to prompt the user on how to complete the form. Accepts HTML.',
+		'Shown underneath the Form Title. Can be used to prompt the user on how to complete the form.',
 	typeOptions: {
 		rows: 2,
 	},
 };
 
 export const formFields: INodeProperties = {
-	displayName: 'Form Elements',
+	displayName: 'Form Fields',
 	name: 'formFields',
-	placeholder: 'Add Form Element',
+	placeholder: 'Add Form Field',
 	type: 'fixedCollection',
-	default: {},
+	default: { values: [{ label: '', fieldType: 'text' }] },
 	typeOptions: {
 		multipleValues: true,
 		sortable: true,
@@ -57,30 +50,21 @@ export const formFields: INodeProperties = {
 			name: 'values',
 			values: [
 				{
-					displayName: 'Field Name',
+					displayName: 'Field Label',
 					name: 'fieldLabel',
 					type: 'string',
 					default: '',
 					placeholder: 'e.g. What is your name?',
 					description: 'Label that appears above the input field',
 					required: true,
-					displayOptions: {
-						hide: {
-							fieldType: ['hiddenField', 'html'],
-						},
-					},
 				},
 				{
-					displayName: 'Element Type',
+					displayName: 'Field Type',
 					name: 'fieldType',
 					type: 'options',
 					default: 'text',
 					description: 'The type of field to add to the form',
 					options: [
-						{
-							name: 'Custom HTML',
-							value: 'html',
-						},
 						{
 							name: 'Date',
 							value: 'date',
@@ -96,10 +80,6 @@ export const formFields: INodeProperties = {
 						{
 							name: 'File',
 							value: 'file',
-						},
-						{
-							name: 'Hidden Field',
-							value: 'hiddenField',
 						},
 						{
 							name: 'Number',
@@ -121,19 +101,6 @@ export const formFields: INodeProperties = {
 					required: true,
 				},
 				{
-					displayName: 'Element Name',
-					name: 'elementName',
-					type: 'string',
-					default: '',
-					placeholder: 'e.g. content-section',
-					description: 'Optional field. It can be used to include the html in the output.',
-					displayOptions: {
-						show: {
-							fieldType: ['html'],
-						},
-					},
-				},
-				{
 					displayName: 'Placeholder',
 					name: 'placeholder',
 					description: 'Sample text to display inside the field',
@@ -141,33 +108,7 @@ export const formFields: INodeProperties = {
 					default: '',
 					displayOptions: {
 						hide: {
-							fieldType: ['dropdown', 'date', 'file', 'html', 'hiddenField'],
-						},
-					},
-				},
-				{
-					displayName: 'Field Name',
-					name: 'fieldName',
-					description:
-						'The name of the field, used in input attributes and referenced by the workflow',
-					type: 'string',
-					default: '',
-					displayOptions: {
-						show: {
-							fieldType: ['hiddenField'],
-						},
-					},
-				},
-				{
-					displayName: 'Field Value',
-					name: 'fieldValue',
-					description:
-						'Input value can be set here or will be passed as a query parameter via Field Name if no value is set',
-					type: 'string',
-					default: '',
-					displayOptions: {
-						show: {
-							fieldType: ['hiddenField'],
+							fieldType: ['dropdown', 'date', 'file'],
 						},
 					},
 				},
@@ -217,23 +158,6 @@ export const formFields: INodeProperties = {
 					},
 				},
 				{
-					displayName: 'HTML',
-					name: 'html',
-					typeOptions: {
-						editor: 'htmlEditor',
-					},
-					type: 'string',
-					noDataExpression: true,
-					default: placeholder,
-					description: 'HTML elements to display on the form page',
-					hint: 'Does not accept <code>&lt;script&gt;</code>, <code>&lt;style&gt;</code> or <code>&lt;input&gt;</code> tags',
-					displayOptions: {
-						show: {
-							fieldType: ['html'],
-						},
-					},
-				},
-				{
 					displayName: 'Multiple Files',
 					name: 'multipleFiles',
 					type: 'boolean',
@@ -261,10 +185,14 @@ export const formFields: INodeProperties = {
 					},
 				},
 				{
-					displayName: "The displayed date is formatted based on the locale of the user's browser",
+					displayName: 'Format Date As',
 					name: 'formatDate',
-					type: 'notice',
+					type: 'string',
 					default: '',
+					description:
+						'How to format the date in the output data. For a table of tokens and their interpretations, see <a href="https://moment.github.io/luxon/#/formatting?ID=table-of-tokens" target="_blank">here</a>.',
+					placeholder: 'e.g. dd/mm/yyyy',
+					hint: 'Leave empty to use the default format',
 					displayOptions: {
 						show: {
 							fieldType: ['date'],
@@ -278,11 +206,6 @@ export const formFields: INodeProperties = {
 					default: false,
 					description:
 						'Whether to require the user to enter a value for this field before submitting the form',
-					displayOptions: {
-						hide: {
-							fieldType: ['html', 'hiddenField'],
-						},
-					},
 				},
 			],
 		},
@@ -318,9 +241,9 @@ export const formTriggerPanel = {
 	header: 'Pull in a test form submission',
 	executionsHelp: {
 		inactive:
-			"Form Trigger has two modes: test and production. <br /> <br /> <b>Use test mode while you build your workflow</b>. Click the 'Execute step' button, then fill out the test form that opens in a popup tab. The executions will show up in the editor.<br /> <br /> <b>Use production mode to run your workflow automatically</b>. <a data-key=\"activate\">Activate</a> the workflow, then make requests to the production URL. Then every time there's a form submission via the Production Form URL, the workflow will execute. These executions will show up in the executions list, but not in the editor.",
+			"Form Trigger has two modes: test and production. <br /> <br /> <b>Use test mode while you build your workflow</b>. Click the 'Test step' button, then fill out the test form that opens in a popup tab. The executions will show up in the editor.<br /> <br /> <b>Use production mode to run your workflow automatically</b>. <a data-key=\"activate\">Activate</a> the workflow, then make requests to the production URL. Then every time there's a form submission via the Production Form URL, the workflow will execute. These executions will show up in the executions list, but not in the editor.",
 		active:
-			"Form Trigger has two modes: test and production. <br /> <br /> <b>Use test mode while you build your workflow</b>. Click the 'Execute step' button, then fill out the test form that opens in a popup tab. The executions will show up in the editor.<br /> <br /> <b>Use production mode to run your workflow automatically</b>. <a data-key=\"activate\">Activate</a> the workflow, then make requests to the production URL. Then every time there's a form submission via the Production Form URL, the workflow will execute. These executions will show up in the executions list, but not in the editor.",
+			"Form Trigger has two modes: test and production. <br /> <br /> <b>Use test mode while you build your workflow</b>. Click the 'Test step' button, then fill out the test form that opens in a popup tab. The executions will show up in the editor.<br /> <br /> <b>Use production mode to run your workflow automatically</b>. <a data-key=\"activate\">Activate</a> the workflow, then make requests to the production URL. Then every time there's a form submission via the Production Form URL, the workflow will execute. These executions will show up in the executions list, but not in the editor.",
 	},
 	activationHint: {
 		active:

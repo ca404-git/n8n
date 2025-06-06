@@ -8,7 +8,6 @@ import type {
 	INodeExecutionData,
 	IPollFunctions,
 } from 'n8n-workflow';
-
 import { prepareApiError } from '../helpers/utils';
 
 export async function microsoftApiRequest(

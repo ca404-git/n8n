@@ -54,7 +54,7 @@ export class MicrosoftSql implements ICredentialType {
 			default: true,
 		},
 		{
-			displayName: 'Ignore SSL Issues (Insecure)',
+			displayName: 'Ignore SSL Issues',
 			name: 'allowUnauthorizedCerts',
 			type: 'boolean',
 			default: false,

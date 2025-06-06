@@ -4,7 +4,6 @@ import type {
 	ResourceMapperField,
 	ResourceMapperFields,
 } from 'n8n-workflow';
-
 import { GoogleSheet } from '../helpers/GoogleSheet';
 import { ROW_NUMBER, type ResourceLocator } from '../helpers/GoogleSheets.types';
 import { getSpreadsheetId } from '../helpers/GoogleSheets.utils';
@@ -31,23 +30,7 @@ export async function getMappingColumns(
 		sheetMode,
 		sheetWithinDocument,
 	);
-
-	const locationDefine = this.getNodeParameter(
-		'options.locationDefine.values',
-		0,
-		{},
-	) as IDataObject;
-
-	let columnNamesRow = 1;
-
-	if (locationDefine.headerRow) {
-		columnNamesRow = locationDefine.headerRow as number;
-	}
-
-	const sheetData = await sheet.getData(
-		`${sheetName}!${columnNamesRow}:${columnNamesRow}`,
-		'FORMATTED_VALUE',
-	);
+	const sheetData = await sheet.getData(`${sheetName}!1:1`, 'FORMATTED_VALUE');
 
 	const columns = sheet.testFilter(sheetData || [], 0, 0).filter((col) => col !== '');
 

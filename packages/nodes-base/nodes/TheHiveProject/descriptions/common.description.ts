@@ -1,6 +1,5 @@
 import type { INodeProperties } from 'n8n-workflow';
-
-import { TLPs } from '../helpers/interfaces';
+import { TLP } from '../helpers/interfaces';
 
 export const returnAllAndLimit: INodeProperties[] = [
 	{
@@ -54,19 +53,19 @@ export const tlpOptions: INodeProperties = {
 	options: [
 		{
 			name: 'White',
-			value: TLPs.white,
+			value: TLP.white,
 		},
 		{
 			name: 'Green',
-			value: TLPs.green,
+			value: TLP.green,
 		},
 		{
 			name: 'Amber',
-			value: TLPs.amber,
+			value: TLP.amber,
 		},
 		{
 			name: 'Red',
-			value: TLPs.red,
+			value: TLP.red,
 		},
 	],
 };

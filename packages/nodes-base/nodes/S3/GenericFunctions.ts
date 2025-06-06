@@ -1,6 +1,11 @@
+import { URL } from 'url';
 import type { Request } from 'aws4';
 import { sign } from 'aws4';
+
 import get from 'lodash/get';
+
+import { parseString } from 'xml2js';
+
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -12,8 +17,6 @@ import type {
 	JsonObject,
 } from 'n8n-workflow';
 import { NodeApiError, NodeOperationError } from 'n8n-workflow';
-import { URL } from 'url';
-import { parseString } from 'xml2js';
 
 function queryToString(params: IDataObject) {
 	return Object.keys(params)
@@ -51,7 +54,7 @@ export async function s3ApiRequest(
 		}
 	}
 
-	endpoint.pathname = `${endpoint.pathname === '/' ? '' : endpoint.pathname}${path}`;
+	endpoint.pathname = path;
 
 	// Sign AWS API request with the user credentials
 	const signOpts = {
@@ -59,7 +62,7 @@ export async function s3ApiRequest(
 		region: region || credentials.region,
 		host: endpoint.host,
 		method,
-		path: `${endpoint.pathname}?${queryToString(query).replace(/\+/g, '%2B')}`,
+		path: `${path}?${queryToString(query).replace(/\+/g, '%2B')}`,
 		service: 's3',
 		body,
 	} as Request;

@@ -1,5 +1,3 @@
-import isEmpty from 'lodash/isEmpty';
-import omit from 'lodash/omit';
 import type {
 	IExecuteFunctions,
 	IDataObject,
@@ -8,7 +6,12 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+
+import isEmpty from 'lodash/isEmpty';
+import omit from 'lodash/omit';
+
+import { raindropApiRequest } from './GenericFunctions';
 
 import {
 	bookmarkFields,
@@ -20,7 +23,6 @@ import {
 	userFields,
 	userOperations,
 } from './descriptions';
-import { raindropApiRequest } from './GenericFunctions';
 
 export class Raindrop implements INodeType {
 	description: INodeTypeDescription = {
@@ -34,9 +36,8 @@ export class Raindrop implements INodeType {
 		defaults: {
 			name: 'Raindrop',
 		},
-		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionType.Main],
 		credentials: [
 			{
 				name: 'raindropOAuth2Api',

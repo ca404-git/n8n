@@ -1,8 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
-
-import * as executeQuery from './executeQuery.operation';
-import * as insert from './insert.operation';
 import { datasetRLC, projectRLC, tableRLC } from '../commonDescriptions/RLC.description';
+import * as insert from './insert.operation';
+import * as executeQuery from './executeQuery.operation';
 
 export { executeQuery, insert };
 
